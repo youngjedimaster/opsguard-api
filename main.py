@@ -1,28 +1,25 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+
+from config import settings
 from routers import users, shifts, availability
-from database import db
 
-app = FastAPI()
+app = FastAPI(title=settings.APP_NAME)
 
-# CORS CONFIGURATION
-origins = [
-    "https://titannglobal.com",
-    "https://www.titannglobal.com"
-]
-
+# CORS using the allowed origins from config.py
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=settings.ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# ROUTES
-app.include_router(users.router, prefix="/api/auth", tags=["auth"])
-app.include_router(shifts.router, prefix="/api/shifts", tags=["shifts"])
-app.include_router(availability.router, prefix="/api/availability", tags=["availability"])
+# Routers already have their own prefixes
+app.include_router(users.router)
+app.include_router(shifts.router)
+app.include_router(availability.router)
+
 
 @app.get("/api/health")
 async def health():
