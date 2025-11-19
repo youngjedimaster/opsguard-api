@@ -6,7 +6,7 @@ from routers import users, shifts, availability
 
 app = FastAPI(title=settings.APP_NAME)
 
-# CORS using the allowed origins from config.py
+# CORS using allowed origins from config.py
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.ALLOWED_ORIGINS,
@@ -15,7 +15,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Routers already have their own prefixes
+# Routers already define their own prefixes
 app.include_router(users.router)
 app.include_router(shifts.router)
 app.include_router(availability.router)
