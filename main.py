@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from config import settings
-from routers import users, shifts, availability
+from routers import users, shifts, availability, schedules
 
 app = FastAPI(title=settings.APP_NAME)
 
@@ -19,7 +19,7 @@ app.add_middleware(
 app.include_router(users.router)
 app.include_router(shifts.router)
 app.include_router(availability.router)
-
+app.include_router(schedules.router)
 
 @app.get("/api/health")
 async def health():
