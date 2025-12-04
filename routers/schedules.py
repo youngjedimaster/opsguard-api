@@ -1,11 +1,12 @@
 from datetime import datetime
-from typing import List, Optional
+from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException
 
 from database import get_db
 from deps import get_admin_user, get_current_user
 
+# Important: prefix starts with /api so the final path is /api/schedules/...
 router = APIRouter(prefix="/api/schedules", tags=["schedules"])
 
 
@@ -109,26 +110,20 @@ async def get_my_schedules(
     """
     Guard endpoint to fetch schedules that admins created for them.
 
-    It matches either guard_id or guard name/email, then returns a list of schedule documents.
+    It matches either guard_id or guard name or guard email.
     """
     user_id = str(current_user["_id"])
     name = (current_user.get("name") or current_user.get("full_name") or "").strip()
     email = (current_user.get("email") or "").lower().strip()
 
-    query = {
-        "$or": [
-            {"guard_id": user_id},
-            {"guard": name} if name else {},
-            {"guard": email} if email else {},
-        ]
-    }
+    # Build a flexible query
+    or_clauses = [{"guard_id": user_id}]
+    if name:
+        or_clauses.append({"guard": name})
+    if email:
+        or_clauses.append({"guard": email})
 
-    # Clean out any empty dicts from the $or list
-    query["$or"] = [c for c in query["$or"] if c]
-
-    if not query["$or"]:
-        # Fallback: no good keys, so just return empty
-        return []
+    query = {"$or": or_clauses}
 
     cursor = db.schedules.find(query).sort("created_at", -1)
 
