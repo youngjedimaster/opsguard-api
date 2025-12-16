@@ -136,7 +136,7 @@ async def delete_shift(
         raise HTTPException(status_code=404, detail="Shift not found")
 
     is_admin = bool(user.get("is_admin")) or bool(user.get("admin")) or (user.get("role") == "admin")
-    if not is_admin and str(doc.get("user_id")) != str(user["_id"]):
+    if not is_admin and str(doc.get("user_id")) != str(user.get("_id")):
         raise HTTPException(status_code=403, detail="Not allowed")
 
     await db.shifts.delete_one({"_id": ObjectId(shift_id)})
