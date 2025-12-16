@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
 from datetime import datetime
 from bson import ObjectId
 
@@ -7,6 +8,10 @@ from deps import get_current_user, get_admin_user
 from models import ShiftCreate
 
 router = APIRouter(prefix="/api/shifts", tags=["shifts"])
+
+
+class PaidUpdate(BaseModel):
+    paid: bool
 
 
 def serialize_shift(doc: dict) -> dict:
@@ -31,7 +36,6 @@ def serialize_shift(doc: dict) -> dict:
         "notes": doc.get("notes"),
         "paid": bool(doc.get("paid", False)),
         "created_at": created_at.isoformat() if isinstance(created_at, datetime) else created_at,
-        # for admin listing we may attach this:
         "guard_name": doc.get("guard_name"),
     }
 
@@ -100,3 +104,27 @@ async def admin_list_shifts(
         items.append(serialize_shift(doc))
 
     return {"items": items}
+
+
+@router.post("/{shift_id}/paid")
+async def set_shift_paid(
+    shift_id: str,
+    payload: PaidUpdate,
+    admin=Depends(get_admin_user),
+    db=Depends(get_db),
+):
+    try:
+        oid = ObjectId(shift_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid shift id")
+
+    res = await db.shifts.update_one(
+        {"_id": oid},
+        {"$set": {"paid": payload.paid}},
+    )
+
+    if res.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Shift not found")
+
+    doc = await db.shifts.find_one({"_id": oid})
+    return serialize_shift(doc)
