@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
 from datetime import datetime
 from bson import ObjectId
+from pydantic import BaseModel
 
 from database import get_db
 from deps import get_current_user, get_admin_user
@@ -89,7 +89,12 @@ async def admin_list_shifts(
     items = []
 
     async for doc in cursor:
-        guard_doc = await db.users.find_one({"_id": ObjectId(doc["user_id"])})
+        guard_doc = None
+        try:
+            guard_doc = await db.users.find_one({"_id": ObjectId(doc["user_id"])})
+        except Exception:
+            guard_doc = None
+
         doc["guard_name"] = guard_doc["name"] if guard_doc else None
         items.append(serialize_shift(doc))
 
@@ -103,20 +108,17 @@ async def set_shift_paid(
     admin=Depends(get_admin_user),
     db=Depends(get_db),
 ):
-    try:
-        oid = ObjectId(shift_id)
-    except Exception:
+    if not ObjectId.is_valid(shift_id):
         raise HTTPException(status_code=400, detail="Invalid shift id")
 
     res = await db.shifts.update_one(
-        {"_id": oid},
-        {"$set": {"paid": payload.paid}},
+        {"_id": ObjectId(shift_id)},
+        {"$set": {"paid": bool(payload.paid), "updated_at": datetime.utcnow()}},
     )
-
     if res.matched_count == 0:
         raise HTTPException(status_code=404, detail="Shift not found")
 
-    doc = await db.shifts.find_one({"_id": oid})
+    doc = await db.shifts.find_one({"_id": ObjectId(shift_id)})
     return serialize_shift(doc)
 
 
@@ -126,23 +128,16 @@ async def delete_shift(
     user=Depends(get_current_user),
     db=Depends(get_db),
 ):
-    # Validate ObjectId
-    try:
-        oid = ObjectId(shift_id)
-    except Exception:
+    if not ObjectId.is_valid(shift_id):
         raise HTTPException(status_code=400, detail="Invalid shift id")
 
-    # Fetch shift
-    doc = await db.shifts.find_one({"_id": oid})
+    doc = await db.shifts.find_one({"_id": ObjectId(shift_id)})
     if not doc:
         raise HTTPException(status_code=404, detail="Shift not found")
 
-    # Permission check:
-    # - admin can delete any
-    # - guard can delete only their own
-    is_admin = bool(user.get("is_admin", False))
-    if not is_admin and str(doc.get("user_id")) != str(user.get("_id")):
-        raise HTTPException(status_code=403, detail="Not allowed to delete this shift")
+    is_admin = bool(user.get("is_admin")) or bool(user.get("admin")) or (user.get("role") == "admin")
+    if not is_admin and str(doc.get("user_id")) != str(user["_id"]):
+        raise HTTPException(status_code=403, detail="Not allowed")
 
-    await db.shifts.delete_one({"_id": oid})
-    return {"ok": True}
+    await db.shifts.delete_one({"_id": ObjectId(shift_id)})
+    return {"status": "deleted", "id": shift_id}
