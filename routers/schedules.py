@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from database import get_db
 from deps import get_admin_user, get_current_user
 
-# Important: prefix starts with /api so the final path is /api/schedules/...
+# Prefix starts with /api so the final paths are /api/schedules and /api/schedules/me
 router = APIRouter(prefix="/api/schedules", tags=["schedules"])
 
 
