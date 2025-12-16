@@ -29,6 +29,7 @@ def serialize_shift(doc: dict) -> dict:
         "end_time": doc.get("end_time"),
         "total_hours": doc.get("total_hours"),
         "notes": doc.get("notes"),
+        "paid": bool(doc.get("paid", False)),
         "created_at": created_at.isoformat() if isinstance(created_at, datetime) else created_at,
         # for admin listing we may attach this:
         "guard_name": doc.get("guard_name"),
@@ -49,11 +50,11 @@ async def create_shift(
         "end_time": shift.end_time,
         "total_hours": shift.total_hours,
         "notes": shift.notes,
+        "paid": False,
         "created_at": datetime.utcnow(),
     }
 
     res = await db.shifts.insert_one(doc)
-    # attach Mongo _id to the doc so we can serialize it
     doc["_id"] = res.inserted_id
 
     return serialize_shift(doc)
@@ -94,7 +95,6 @@ async def admin_list_shifts(
     items = []
 
     async for doc in cursor:
-        # doc["user_id"] is stored as a string of the user's ObjectId
         guard_doc = await db.users.find_one({"_id": ObjectId(doc["user_id"])})
         doc["guard_name"] = guard_doc["name"] if guard_doc else None
         items.append(serialize_shift(doc))
