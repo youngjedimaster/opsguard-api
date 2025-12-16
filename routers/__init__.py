@@ -1,3 +1,2 @@
-from . import auth, users, shifts, availability, schedules
-
-__all__ = ["auth", "users", "shifts", "availability", "schedules"]
+# Keep this file empty on purpose.
+# Import routers directly in main.py (users, shifts, availability, schedules).
