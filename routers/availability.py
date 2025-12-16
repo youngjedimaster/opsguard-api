@@ -2,14 +2,12 @@ from datetime import datetime
 from typing import Optional, List
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from bson import ObjectId
 
 from database import get_db
 from deps import get_current_user, get_admin_user
 
 router = APIRouter(prefix="/api/availability", tags=["availability"])
-
-
-# ---------- Pydantic models ----------
 
 from pydantic import BaseModel
 
@@ -40,17 +38,10 @@ class AvailabilityOut(BaseModel):
     updated_at: Optional[datetime] = None
 
 
-# ---------- Helpers ----------
-
-
 def serialize_availability(doc: dict, user: Optional[dict] = None) -> AvailabilityOut:
-    """
-    Turn a Mongo document into a clean API response.
-    """
     if not doc:
         raise ValueError("Cannot serialize empty availability document")
 
-    # Try to use user info provided by caller, otherwise fall back to fields on the document
     user_id = str(doc.get("user_id") or doc.get("user") or "")
     user_name = None
     user_email = None
@@ -78,25 +69,16 @@ def serialize_availability(doc: dict, user: Optional[dict] = None) -> Availabili
     )
 
 
-# ---------- Guard endpoints ----------
-
-
 @router.post("", response_model=AvailabilityOut)
 async def upsert_my_availability(
     payload: AvailabilityIn,
     db=Depends(get_db),
     current_user=Depends(get_current_user),
 ):
-    """
-    Guard submits or updates availability for a specific date.
-    If a document already exists for that user and date, it is updated.
-    Otherwise a new document is created.
-    """
     user_id = str(current_user["_id"])
     user_email = current_user.get("email")
     user_name = current_user.get("name") or current_user.get("full_name")
 
-    # Basic validation of date format
     try:
         _ = datetime.strptime(payload.date, "%Y-%m-%d")
     except ValueError:
@@ -123,7 +105,6 @@ async def upsert_my_availability(
 
     await db.availability.update_one(query, update_doc, upsert=True)
 
-    # Fetch the final version to return to the client
     doc = await db.availability.find_one(query)
     return serialize_availability(doc, current_user)
 
@@ -134,13 +115,8 @@ async def get_my_availability_for_month(
     db=Depends(get_db),
     current_user=Depends(get_current_user),
 ):
-    """
-    Get all availability records for the current user in a given month.
-    This is used by the Availability tab when a guard loads their calendar.
-    """
     user_id = str(current_user["_id"])
 
-    # Basic check of month format
     try:
         datetime.strptime(month + "-01", "%Y-%m-%d")
     except ValueError:
@@ -157,20 +133,12 @@ async def get_my_availability_for_month(
     return items
 
 
-# ---------- Admin endpoints ----------
-
-
 @router.get("", response_model=List[AvailabilityOut])
 async def admin_get_all_for_month(
     month: str = Query(..., description="Month in YYYY-MM format"),
     db=Depends(get_db),
     admin=Depends(get_admin_user),
 ):
-    """
-    Admin endpoint to see all availability for a given month.
-    Used if you want to show an overview of all guards.
-    """
-    # Basic check of month format
     try:
         datetime.strptime(month + "-01", "%Y-%m-%d")
     except ValueError:
@@ -190,45 +158,30 @@ async def admin_get_all_for_month(
 @router.get("/admin", response_model=List[AvailabilityOut])
 async def admin_get_for_guard(
     guard: str = Query(..., description="Guard name or email"),
-    month: Optional[str] = Query(
-        None, description="Optional month filter in YYYY-MM format"
-    ),
+    month: Optional[str] = Query(None, description="Optional month filter in YYYY-MM format"),
     db=Depends(get_db),
     admin=Depends(get_admin_user),
 ):
-    """
-    Admin endpoint for the front end "Check availability" button.
-
-    It returns availability records for a single guard, optionally filtered by month.
-
-    The guard parameter is usually the guard's display name, but it can also be their email.
-    """
     guard = guard.strip()
     if not guard:
         raise HTTPException(status_code=400, detail="guard parameter is required")
 
-    # Try to find the user by name first
     user = await db.users.find_one({"name": guard})
 
-    # If not found by name, try by email
     if not user and "@" in guard:
         user = await db.users.find_one({"email": guard.lower()})
 
-    # If we still cannot find the user, just return an empty list
     if not user:
         return []
 
     user_id = str(user["_id"])
-
     query: dict = {"user_id": user_id}
 
     if month:
         try:
             datetime.strptime(month + "-01", "%Y-%m-%d")
         except ValueError:
-            raise HTTPException(
-                status_code=400, detail="month must be in YYYY-MM format"
-            )
+            raise HTTPException(status_code=400, detail="month must be in YYYY-MM format")
         query["date"] = {"$regex": f"^{month}"}
 
     cursor = db.availability.find(query).sort("date", 1)
@@ -238,3 +191,27 @@ async def admin_get_for_guard(
         items.append(serialize_availability(doc, user))
 
     return items
+
+
+@router.delete("/{availability_id}")
+async def delete_availability(
+    availability_id: str,
+    current_user=Depends(get_current_user),
+    db=Depends(get_db),
+):
+    # Validate ObjectId
+    try:
+        oid = ObjectId(availability_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid availability id")
+
+    doc = await db.availability.find_one({"_id": oid})
+    if not doc:
+        raise HTTPException(status_code=404, detail="Availability not found")
+
+    is_admin = bool(current_user.get("is_admin", False))
+    if not is_admin and str(doc.get("user_id")) != str(current_user.get("_id")):
+        raise HTTPException(status_code=403, detail="Not allowed to delete this availability")
+
+    await db.availability.delete_one({"_id": oid})
+    return {"ok": True}
