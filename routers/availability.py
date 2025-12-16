@@ -3,20 +3,15 @@ from typing import Optional, List
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from bson import ObjectId
+from pydantic import BaseModel
 
 from database import get_db
 from deps import get_current_user, get_admin_user
 
 router = APIRouter(prefix="/api/availability", tags=["availability"])
 
-from pydantic import BaseModel
-
 
 class AvailabilityIn(BaseModel):
-    """
-    Payload used when a guard submits availability.
-    date is expected as YYYY-MM-DD, times as strings like '9:00 PM'.
-    """
     date: str
     is_available: bool
     start_time: Optional[str] = None
@@ -98,13 +93,10 @@ async def upsert_my_availability(
             "notes": payload.notes,
             "updated_at": datetime.utcnow(),
         },
-        "$setOnInsert": {
-            "created_at": datetime.utcnow(),
-        },
+        "$setOnInsert": {"created_at": datetime.utcnow()},
     }
 
     await db.availability.update_one(query, update_doc, upsert=True)
-
     doc = await db.availability.find_one(query)
     return serialize_availability(doc, current_user)
 
@@ -167,7 +159,6 @@ async def admin_get_for_guard(
         raise HTTPException(status_code=400, detail="guard parameter is required")
 
     user = await db.users.find_one({"name": guard})
-
     if not user and "@" in guard:
         user = await db.users.find_one({"email": guard.lower()})
 
@@ -199,7 +190,6 @@ async def delete_availability(
     current_user=Depends(get_current_user),
     db=Depends(get_db),
 ):
-    # Validate ObjectId
     try:
         oid = ObjectId(availability_id)
     except Exception:
@@ -209,9 +199,9 @@ async def delete_availability(
     if not doc:
         raise HTTPException(status_code=404, detail="Availability not found")
 
-    is_admin = bool(current_user.get("is_admin", False))
+    is_admin = bool(current_user.get("is_admin")) or bool(current_user.get("admin")) or (current_user.get("role") == "admin")
     if not is_admin and str(doc.get("user_id")) != str(current_user.get("_id")):
         raise HTTPException(status_code=403, detail="Not allowed to delete this availability")
 
     await db.availability.delete_one({"_id": oid})
-    return {"ok": True}
+    return {"status": "deleted", "id": availability_id}
