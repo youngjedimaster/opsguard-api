@@ -15,11 +15,6 @@ class PaidUpdate(BaseModel):
 
 
 def serialize_shift(doc: dict) -> dict:
-    """
-    Convert a MongoDB shift document into a JSON-serializable dict.
-    This removes / converts any ObjectId or datetime objects so FastAPI
-    can safely return it in JSON responses.
-    """
     if not doc:
         return {}
 
@@ -60,7 +55,6 @@ async def create_shift(
 
     res = await db.shifts.insert_one(doc)
     doc["_id"] = res.inserted_id
-
     return serialize_shift(doc)
 
 
@@ -83,11 +77,7 @@ async def get_my_shifts(
     async for doc in cursor:
         items.append(serialize_shift(doc))
 
-    return {
-        "items": items,
-        "page": page,
-        "page_size": page_size,
-    }
+    return {"items": items, "page": page, "page_size": page_size}
 
 
 @router.get("")
@@ -128,3 +118,31 @@ async def set_shift_paid(
 
     doc = await db.shifts.find_one({"_id": oid})
     return serialize_shift(doc)
+
+
+@router.delete("/{shift_id}")
+async def delete_shift(
+    shift_id: str,
+    user=Depends(get_current_user),
+    db=Depends(get_db),
+):
+    # Validate ObjectId
+    try:
+        oid = ObjectId(shift_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid shift id")
+
+    # Fetch shift
+    doc = await db.shifts.find_one({"_id": oid})
+    if not doc:
+        raise HTTPException(status_code=404, detail="Shift not found")
+
+    # Permission check:
+    # - admin can delete any
+    # - guard can delete only their own
+    is_admin = bool(user.get("is_admin", False))
+    if not is_admin and str(doc.get("user_id")) != str(user.get("_id")):
+        raise HTTPException(status_code=403, detail="Not allowed to delete this shift")
+
+    await db.shifts.delete_one({"_id": oid})
+    return {"ok": True}
