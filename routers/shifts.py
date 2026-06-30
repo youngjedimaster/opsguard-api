@@ -425,7 +425,7 @@ async def admin_export_shifts_csv(
         media_type="text/csv; charset=utf-8",
         headers=headers,
     )
-
+        
 
 @router.post("/{shift_id}/paid")
 async def set_shift_paid(
