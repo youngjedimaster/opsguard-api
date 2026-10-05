@@ -203,5 +203,7 @@ async def delete_availability(
     if not is_admin and str(doc.get("user_id")) != str(current_user.get("_id")):
         raise HTTPException(status_code=403, detail="Not allowed to delete this availability")
 
-    await db.availability.delete_one({"_id": oid})
+    result = await db.availability.delete_one({"_id": oid})
+    if result.deleted_count != 1:
+        raise HTTPException(status_code=409, detail="Availability could not be deleted")
     return {"status": "deleted", "id": availability_id}

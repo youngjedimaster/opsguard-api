@@ -1,5 +1,8 @@
+from pathlib import Path
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse, HTMLResponse
 
 from config import settings
 from routers import users, shifts, availability, schedules
@@ -18,7 +21,6 @@ def _normalize_origins(origins):
     if isinstance(origins, (list, tuple, set)):
         return list(origins)
     if isinstance(origins, str):
-        # allow comma-separated env var like: "https://a.com,https://b.com"
         parts = [o.strip() for o in origins.split(",") if o.strip()]
         return parts if parts else []
     return []
@@ -46,3 +48,12 @@ app.include_router(schedules.router)
 @app.get("/api/health")
 async def health():
     return {"status": "ok"}
+
+
+@app.get("/portal", include_in_schema=False)
+async def opsguard_portal():
+    """Serve the OpsGuard frontend so GoDaddy only needs a small iframe embed."""
+    portal_path = Path(__file__).resolve().parent / "portal.html"
+    if not portal_path.exists():
+        return HTMLResponse("portal.html is missing from the deployed app.", status_code=500)
+    return FileResponse(portal_path, media_type="text/html")

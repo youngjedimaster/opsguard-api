@@ -1,0 +1,819 @@
+<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>OpsGuard Portal</title><style>:root{--bg:#0B1F3B;--bg2:#1F3C88;--radius:14px}*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f3f4f6;color:#111827}header{background:var(--bg);color:#fff;padding:12px 18px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;position:sticky;top:0;z-index:1000}header h1{font-size:1.1rem;margin:0}.nav-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap}.nav-btn{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);padding:6px 10px;color:#fff;border-radius:999px;font-size:.75rem;cursor:pointer}.nav-btn:hover{background:rgba(255,255,255,.18)}.user-menu-wrap{position:relative;display:none}.avatar-btn{width:34px;height:34px;border-radius:999px;display:grid;place-items:center;background:#fff;color:var(--bg);font-weight:800;font-size:.9rem;border:none;cursor:pointer}.user-dropdown{position:absolute;right:0;top:44px;background:#fff;color:#111827;border-radius:12px;min-width:190px;box-shadow:0 10px 30px rgba(0,0,0,.15);overflow:hidden;display:none}.ud-head{padding:8px 10px;border-bottom:1px solid #e5e7eb;font-size:.78rem;color:#374151;background:#f9fafb}.user-dropdown button{width:100%;text-align:left;padding:8px 10px;border:none;background:#fff;font-size:.8rem;cursor:pointer}.user-dropdown button:hover{background:#f3f4f6}.shell{max-width:1100px;margin:18px auto;padding:0 14px 60px}.card{background:#fff;border-radius:var(--radius);padding:12px 12px 16px;box-shadow:0 10px 30px rgba(11,31,59,.08);margin-bottom:12px}.row{display:flex;gap:10px;flex-wrap:wrap}.input-group{margin-bottom:8px;width:100%}label{display:block;font-weight:600;margin-bottom:2px;font-size:.78rem}input,select,textarea{width:100%;padding:6px 8px;border-radius:9px;border:1px solid #d1d5db;font-size:.8rem}button.primary{background:var(--bg2);border:none;color:#fff;padding:7px 11px;border-radius:999px;cursor:pointer;font-weight:600;font-size:.78rem}button.primary:hover{opacity:.95}.hidden{display:none}table{width:100%;border-collapse:collapse;font-size:.72rem}th,td{border-bottom:1px solid #e5e7eb;padding:5px 4px;text-align:left}th{font-weight:600;color:#4b5563}.table-scroll{height:120px;overflow-y:auto;overflow-x:hidden;border-radius:10px;border:1px solid #e5e7eb;background:#fff;margin-top:4px}.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;z-index:2000}.modal{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(520px,calc(100% - 24px));background:#fff;border-radius:16px;padding:12px;box-shadow:0 20px 60px rgba(0,0,0,.25);display:none;z-index:2001;max-height:90vh;overflow-y:auto}.modal h3{margin:0 0 4px;font-size:1rem}.modal small{color:#6b7280;font-size:.72rem}.modal .actions{display:flex;gap:8px;margin-top:6px;flex-wrap:wrap}.modal .actions .secondary{background:#0B1F3B}p.small{font-size:.7rem;margin-top:4px;color:#4b5563}.avail-line{padding:2px 4px;border-radius:6px;font-size:.75rem}.avail-line:hover{background:#e5e7eb}.icon-btn{background:transparent;border:1px solid #d1d5db;border-radius:999px;padding:3px 8px;cursor:pointer;font-size:.72rem}.icon-btn:hover{background:#f3f4f6}a{color:var(--bg2);text-decoration:none}a:hover{text-decoration:underline}.password-wrap{display:flex;gap:4px}.password-wrap input{flex:1}.eye-btn{width:42px;border:1px solid #d1d5db;background:#fff;border-radius:9px;cursor:pointer;font-size:.9rem}@media(min-width:700px){.row>.half{width:calc(50% - 5px)}.row>.third{width:calc(33.333% - 7px)}}</style></head><body>
+<header><h1>OpsGuard Portal</h1><div class="nav-row">
+<button class="nav-btn" onclick="showSection('login')">Login</button>
+<button class="nav-btn" onclick="showSection('submit')">Submit Hours</button>
+<button class="nav-btn" onclick="showSection('availability')">Availability</button>
+<button class="nav-btn" onclick="showSection('schedule')">Schedule</button>
+<button class="nav-btn" onclick="showSection('admin')">Admin</button>
+<div id="user-menu-wrap" class="user-menu-wrap">
+<button id="avatar-btn" class="avatar-btn" onclick="toggleUserDropdown()" aria-label="User menu">U</button>
+<div id="user-dropdown" class="user-dropdown">
+<div class="ud-head"><div id="ud-name" style="font-weight:700">User</div><div id="ud-email">user@example.com</div></div>
+<button onclick="openProfileModal()">Profile</button><button onclick="logout()">Log out</button>
+</div></div></div></header>
+
+<div class="shell">
+<div id="section-login" class="card">
+<h2 style="margin:0 0 4px">Login / Register</h2><p class="small">Use your OpsGuard account to access all tabs.</p>
+<div class="row"><div class="half input-group"><label>Email</label><input id="auth-email" type="email" placeholder="guard@example.com"></div>
+<div class="half input-group"><label>Password</label><div class="password-wrap"><input id="auth-password" type="password" placeholder="********"><button type="button" class="eye-btn" onclick="togglePasswordVisibility('auth-password', this)" title="Show password">👁</button></div></div></div>
+<div class="row"><div class="half input-group"><label>Full name (register)</label><input id="auth-name" type="text" placeholder="John Guard"></div></div>
+<div class="row"><button id="login-btn" class="primary">Login</button><button id="register-btn" class="primary" style="background:#0B1F3B">Register</button></div>
+<p class="small" style="margin-top:6px"><a href="#" onclick="openForgotPasswordModal();return false;">Forgot password?</a></p>
+<p id="auth-status" class="small"></p>
+</div>
+
+<div id="section-submit" class="card hidden">
+<h2 style="margin:0 0 4px">Submit Hours</h2>
+<div class="row"><div class="third input-group"><label>Date</label><input id="shift-date" type="date"></div>
+<div class="third input-group"><label>Venue / Site</label><select id="shift-venue-select" onchange="toggleOtherVenueInput()"><option value="Baby G">Baby G</option><option value="Garrison">Garrison</option><option value="Get Well">Get Well</option><option value="Jean Darlene">Jean Darlene</option><option value="St Anne's">St Anne's</option><option value="Standard Time">Standard Time</option><option value="Two Kats">Two Kats</option><option value="__other__">Other...</option></select><input id="shift-venue-other" class="hidden" type="text" placeholder="Enter other venue" style="margin-top:5px"></div></div>
+<div class="row">
+<div class="third input-group"><label>Start Time</label><div style="display:flex;gap:4px"><select id="start-hour"></select><select id="start-min"></select><select id="start-ampm"><option>AM</option><option>PM</option></select></div></div>
+<div class="third input-group"><label>End Time</label><div style="display:flex;gap:4px"><select id="end-hour"></select><select id="end-min"></select><select id="end-ampm"><option>AM</option><option>PM</option></select></div></div>
+</div>
+<div class="input-group"><label>Notes</label><textarea id="shift-notes" rows="3" placeholder="Optional"></textarea></div>
+<button class="primary" onclick="submitShift()">Submit Shift</button><p id="shift-status" class="small"></p>
+<h3 style="margin:8px 0 4px;font-size:.9rem">My Recent Shifts</h3>
+<div class="table-scroll"><table id="my-shifts-table"><thead><tr><th>Date</th><th>Venue</th><th>Start</th><th>End</th><th>Total</th><th>Delete</th></tr></thead><tbody></tbody></table></div>
+</div>
+
+<div id="section-availability" class="card hidden">
+<h2 style="margin:0 0 4px">My Availability</h2>
+<div class="row"><div class="third input-group"><label>Date</label><input id="avail-date" type="date"></div>
+<div class="third input-group"><label>Available?</label><select id="avail-is"><option value="true">Yes</option><option value="false">No</option></select></div></div>
+<div class="row">
+<div class="third input-group"><label>Start time</label><div style="display:flex;gap:4px"><select id="avail-start-hour"></select><select id="avail-start-min"></select><select id="avail-start-ampm"><option>AM</option><option>PM</option></select></div></div>
+<div class="third input-group"><label>End time</label><div style="display:flex;gap:4px"><select id="avail-end-hour"></select><select id="avail-end-min"></select><select id="avail-end-ampm"><option>AM</option><option>PM</option></select></div></div>
+</div>
+<div class="card" style="margin-top:6px;padding:8px">
+<h3 style="margin:0 0 3px;font-size:.86rem">Bulk apply (optional)</h3><p class="small" style="margin:0 0 4px">Pick months and days to duplicate the same times.</p>
+<div class="row"><div class="half input-group"><label>Months</label><select id="bulk-months" multiple size="4"></select></div>
+<div class="half input-group"><label>Days</label><select id="bulk-days" multiple size="6"></select></div></div>
+</div>
+<div class="input-group"><label>Notes</label><textarea id="avail-notes" placeholder="Optional"></textarea></div>
+<button class="primary" onclick="saveAvailability()">Save</button>
+<button class="primary" style="background:#0B1F3B" onclick="loadMyAvailability()">Load month</button>
+<p id="avail-status" class="small"></p>
+<div class="table-scroll"><table id="my-avail-table"><thead><tr><th>Date</th><th>Avail</th><th>Start</th><th>End</th><th>Notes</th><th>Delete</th></tr></thead><tbody></tbody></table></div>
+</div>
+
+<div id="section-schedule" class="card hidden">
+<h2 style="margin:0 0 4px">My Schedule</h2><p class="small">Schedules sent from the Admin tab will appear here for the logged in guard.</p>
+<div class="table-scroll"><table id="my-schedule-table"><thead><tr><th>Date</th><th>Start</th><th>End</th><th>Guard</th><th>Note</th></tr></thead>
+<tbody><tr><td colspan="5">Login to see your schedule.</td></tr></tbody></table></div>
+</div>
+
+<div id="section-admin" class="card hidden">
+<h2 style="margin:0 0 4px">Admin , All Shifts</h2><p class="small">Requires admin token.</p>
+<div class="row">
+<div class="third input-group"><label>Hourly rate ($)</label><input id="admin-rate" type="number" step=".01" value="20"></div>
+<div class="third input-group"><label>Guard</label><select id="admin-guard-filter"><option value="__all__">All guards</option></select></div>
+<div class="third input-group"><label>Venue</label><select id="admin-venue-filter"><option value="__all__">All venues</option><option value="Baby G">Baby G</option><option value="Garrison">Garrison</option><option value="Get Well">Get Well</option><option value="Jean Darlene">Jean Darlene</option><option value="St Anne's">St Anne's</option><option value="Standard Time">Standard Time</option><option value="Two Kats">Two Kats</option><option value="__other__">Other...</option></select></div>
+</div>
+<div class="row">
+<div class="third input-group"><label>Start date / From</label><input id="admin-from-date-filter" type="date" title="Example: 2026-06-15"></div>
+<div class="third input-group"><label>End date / To</label><input id="admin-to-date-filter" type="date" title="Example: 2026-06-30"></div>
+</div>
+<div class="card" style="padding:8px;margin:4px 0 8px;background:#f9fafb">
+<h3 style="margin:0 0 4px;font-size:.86rem">Admin management</h3>
+<div class="row">
+<div class="third input-group"><label>Selected guard account</label><select id="admin-user-manage"><option value="">Choose registered guard</option></select></div>
+<div class="third input-group"><label>New password</label><div class="password-wrap"><input id="admin-new-password" type="password" placeholder="New password"><button type="button" class="eye-btn" onclick="togglePasswordVisibility('admin-new-password', this)" title="Show password">👁</button></div></div>
+</div>
+<div class="row">
+<button type="button" class="primary" style="background:#0B1F3B" onclick="adminResetSelectedGuardPassword()">Reset guard password</button>
+<button type="button" class="primary" style="background:#991b1b" onclick="adminDeleteSelectedGuard()">Delete selected guard</button>
+</div>
+<div class="row" style="margin-top:6px">
+<div class="half input-group"><label>Pending forgot-password requests</label><select id="admin-reset-request"><option value="">No request selected</option></select></div>
+<div class="half input-group" style="display:flex;align-items:end;gap:6px"><button type="button" class="primary" style="background:#0B1F3B" onclick="loadPasswordResetRequests()">Refresh requests</button><button type="button" class="primary secondary" onclick="useSelectedResetRequest()">Use request</button></div>
+</div>
+<p id="admin-management-status" class="small"></p>
+</div>
+<p class="small" style="margin:2px 0 8px">For a range, choose a Start date and End date, for example 2026-06-15 to 2026-06-30, then click Load shifts or Export CSV.</p>
+<div class="row">
+<button class="primary" onclick="refreshAdminGuardOptionsForCurrentRange().then(loadAllShifts)">Load shifts</button>
+<button type="button" class="primary" style="background:#0B1F3B" onclick="exportAdminCsvDownload()">Export CSV</button>
+<button class="primary" style="background:#0B1F3B" onclick="openCheckAvailabilityModal()">Check Availability</button>
+</div>
+<div class="table-scroll" style="margin-top:6px">
+<table id="admin-shifts"><thead><tr><th>Guard</th><th>Date</th><th>Venue</th><th>Start</th><th>End</th><th>Hours</th><th>Pay</th><th>Paid</th><th>Delete</th></tr></thead><tbody></tbody></table>
+</div>
+<p id="admin-total" class="small"></p><p id="csv-status" class="small"></p><p id="schedule-admin-status" class="small"></p>
+</div>
+</div>
+
+<div id="modal-backdrop" class="modal-backdrop"></div>
+
+<div id="profile-modal" class="modal">
+<h3>Profile</h3><small>Basic profile view. Backend update is not wired yet.</small>
+<div class="input-group" style="margin-top:8px"><label>Current email</label><input id="profile-current-email" type="email" disabled></div>
+<div class="actions"><button class="primary secondary" onclick="closeProfileModal()">Close</button></div>
+<p id="profile-status" class="small"></p>
+</div>
+
+<div id="forgot-modal" class="modal">
+<h3>Forgot password</h3><small>Enter your email. OpsGuard will send the request to the Admin tab so an administrator can reset your password.</small>
+<div class="input-group" style="margin-top:8px"><label>Email</label><input id="forgot-email" type="email" placeholder="guard@example.com"></div>
+<div class="actions"><button class="primary" onclick="sendForgotPassword()">Send reset request</button><button class="primary secondary" onclick="closeForgotPasswordModal()">Close</button></div>
+<p id="forgot-status" class="small"></p>
+</div>
+
+<div id="schedule-modal" class="modal">
+<h3>Check Availability and Build Schedule</h3><small>Shows guard availability if the API supports it and lets you pick days and times.</small>
+<div class="input-group" style="margin-top:8px"><label>Guard</label><input id="schedule-guard-display" type="text" disabled></div>
+<div class="input-group"><label>Note to guard (optional)</label><textarea id="schedule-note" rows="2"></textarea></div>
+<div class="input-group"><label>Availability summary</label>
+<div id="schedule-summary-preview" style="border:1px solid #d1d5db;border-radius:9px;padding:6px 8px;font-size:.75rem;max-height:120px;overflow-y:auto;background:#f9fafb"></div>
+<p class="small">Click a line above to add it to the proposed schedule.</p></div>
+<div class="card" style="margin-top:6px;padding:8px">
+<h3 style="margin:0 0 3px;font-size:.86rem">Add working days for this guard</h3>
+<p class="small" style="margin:0 0 4px">Each added row becomes part of the schedule.</p>
+<div class="row"><div class="half input-group"><label>Date</label><input id="sched-date" type="date"></div></div>
+<div class="row">
+<div class="half input-group"><label>Start time</label><div style="display:flex;gap:4px"><select id="sched-start-hour"></select><select id="sched-start-min"></select><select id="sched-start-ampm"><option>AM</option><option>PM</option></select></div></div>
+<div class="half input-group"><label>End time</label><div style="display:flex;gap:4px"><select id="sched-end-hour"></select><select id="sched-end-min"></select><select id="sched-end-ampm"><option>AM</option><option>PM</option></select></div></div>
+</div>
+<div class="row" style="align-items:center;margin-top:4px">
+<button class="primary" onclick="addShiftToScheduleDraft()">Add to schedule</button>
+<button class="primary secondary" type="button" onclick="cancelScheduleBuild()">Cancel</button>
+<button class="primary" type="button" onclick="sendScheduleFromAdmin()">Send Schedule</button>
+</div>
+<p id="schedule-add-status" class="small"></p>
+<div class="input-group" style="margin-top:4px"><label>Proposed schedule</label><textarea id="schedule-proposed-list" rows="4" disabled></textarea></div>
+</div>
+<div class="actions"><button class="primary secondary" onclick="closeScheduleModal()">Close</button></div>
+<p id="schedule-modal-status" class="small"></p>
+</div>
+
+<script>
+const API_BASE="https://opsguard-api.onrender.com/api";
+let authToken=null,currentUserEmail=null,currentUserName=null,currentUserRole=null,myShiftsCache=[],allShiftsCache=[],adminFilteredShifts=[],scheduleDraft=[],currentGuardAvailability=[],adminUserMap={},apiWarmPromise=null;
+const FIXED_VENUES=["Baby G","Garrison","Get Well","Jean Darlene","St Anne's","Standard Time","Two Kats"];
+
+function showSection(id){
+  ["login","submit","availability","schedule","admin"].forEach(s=>{const el=document.getElementById("section-"+s);if(el)el.classList.add("hidden")});
+  const t=document.getElementById("section-"+id);if(t)t.classList.remove("hidden");
+  if(id==="schedule"&&authToken)loadMySchedule();
+  if(id==="admin"){
+    if(currentUserRole!=="admin"){const st=document.getElementById("admin-management-status");if(st)st.textContent="Admin access is required.";return;}
+    loadAdminUsers();refreshAdminGuardOptionsForCurrentRange();loadPasswordResetRequests();
+  }
+}
+function toggleUserDropdown(){const dd=document.getElementById("user-dropdown");dd.style.display=dd.style.display==="block"?"none":"block"}
+function closeUserDropdown(){document.getElementById("user-dropdown").style.display="none"}
+document.addEventListener("click",e=>{const w=document.getElementById("user-menu-wrap");if(w&&!w.contains(e.target))closeUserDropdown()});
+function decodeJwt(t){try{const p=t.split(".")[1];const j=atob(p.replace(/-/g,"+").replace(/_/g,"/"));return JSON.parse(j)}catch{return null}}
+function looksLikeEmail(v){return typeof v==="string"&&v.includes("@")&&v.includes(".")}
+function togglePasswordVisibility(inputId,btn){const el=document.getElementById(inputId);if(!el)return;el.type=el.type==="password"?"text":"password";if(btn)btn.textContent=el.type==="password"?"👁":"🙈";}
+function toggleOtherVenueInput(){const sel=document.getElementById("shift-venue-select"),other=document.getElementById("shift-venue-other");if(!sel||!other)return;const show=sel.value==="__other__";other.classList.toggle("hidden",!show);if(show)other.focus();}
+function getSelectedShiftVenue(){const sel=document.getElementById("shift-venue-select"),other=document.getElementById("shift-venue-other");if(!sel)return "";if(sel.value==="__other__")return (other&&other.value||"").trim();return sel.value;}
+function prewarmApi(){if(apiWarmPromise)return apiWarmPromise;apiWarmPromise=fetch(API_BASE+"/health",{method:"GET",cache:"no-store"}).catch(()=>null).finally(()=>{setTimeout(()=>{apiWarmPromise=null},30000)});return apiWarmPromise;}
+function saveSession(){try{sessionStorage.setItem("opsguard_session",JSON.stringify({token:authToken,email:currentUserEmail,name:currentUserName,role:currentUserRole}))}catch{}}
+function clearSession(){try{sessionStorage.removeItem("opsguard_session")}catch{}}
+async function restoreSession(){let saved=null;try{saved=JSON.parse(sessionStorage.getItem("opsguard_session")||"null")}catch{}if(!saved||!saved.token)return;authToken=saved.token;currentUserEmail=saved.email||null;currentUserName=saved.name||null;currentUserRole=saved.role||null;setLoggedInUI(currentUserEmail,currentUserName);try{const me=await rawApi("/auth/me",{method:"GET",silent:true});if(me){currentUserEmail=me.email||currentUserEmail;currentUserName=me.name||currentUserName;currentUserRole=me.role||currentUserRole;setLoggedInUI(currentUserEmail,currentUserName);saveSession();showSection("submit");loadMyShifts();}}catch{authToken=null;currentUserEmail=null;currentUserName=null;currentUserRole=null;clearSession();setLoggedInUI(null,null);}}
+
+async function rawApi(path,opts){
+  const o={...(opts||{})};o.headers={...(o.headers||{})};const silent=!!o.silent;delete o.silent;if(authToken)o.headers.Authorization="Bearer "+authToken;const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),30000);o.signal=controller.signal;o.cache=o.cache||"no-store";
+  try{const res=await fetch(API_BASE+path,o);const text=await res.text();if(!res.ok){const err=new Error(text||("HTTP "+res.status));err.status=res.status;if(!silent)console.warn("OpsGuard request failed",path,res.status,text);throw err;}try{return text?JSON.parse(text):null}catch{return text}}finally{clearTimeout(timer)}
+}
+
+async function deleteShiftAnyRole(shiftId){
+  if(!authToken)return alert("Login first.");if(!shiftId)return alert("Missing shift id.");if(!window.confirm("Delete this hours entry? This cannot be undone."))return;
+  const adminView=!document.getElementById("section-admin").classList.contains("hidden");const st=adminView?document.getElementById("admin-management-status"):document.getElementById("shift-status");if(st)st.textContent="Deleting shift...";
+  try{await rawApi("/shifts/"+encodeURIComponent(shiftId),{method:"DELETE"});myShiftsCache=(myShiftsCache||[]).filter(s=>s.id!==shiftId);allShiftsCache=(allShiftsCache||[]).filter(s=>s.id!==shiftId);adminFilteredShifts=(adminFilteredShifts||[]).filter(s=>s.id!==shiftId);if(adminView&&currentUserRole==="admin"){await refreshAdminGuardOptionsForCurrentRange();await loadAllShifts();}else{renderMyShifts();await loadMyShifts();}if(st)st.textContent="Hours entry deleted.";}catch(e){if(st)st.textContent="Delete failed: "+(e&&e.message?e.message:String(e));}
+}
+
+async function deleteAvailabilityAnyRole(availId){
+  if(!authToken)return alert("Login first.");if(!availId)return alert("Missing availability id.");if(!window.confirm("Delete this availability entry?"))return;const st=document.getElementById("avail-status");if(st)st.textContent="Deleting availability...";try{await rawApi("/availability/"+encodeURIComponent(availId),{method:"DELETE"});if(st)st.textContent="Availability deleted.";await loadMyAvailability();}catch(e){if(st)st.textContent="Delete failed: "+(e&&e.message?e.message:String(e));}
+}
+
+async function adminSetPaid(shiftId,paid){
+  if(!authToken)return alert("Login first.");
+  if(!shiftId)return alert("Missing shift id.");
+  const updated=await rawApi("/shifts/"+encodeURIComponent(shiftId)+"/paid",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({paid:!!paid})});
+  allShiftsCache=(allShiftsCache||[]).map(s=>s.id===updated.id?({...s,paid:updated.paid}):s);
+  renderAdminShifts();
+}
+
+function setLoggedInUI(email,name){
+  if(looksLikeEmail(email))currentUserEmail=email;
+  if(name)currentUserName=name;
+  const wrap=document.getElementById("user-menu-wrap"),avatar=document.getElementById("avatar-btn"),udName=document.getElementById("ud-name"),udEmail=document.getElementById("ud-email");
+  const display=currentUserName||(currentUserEmail?currentUserEmail.split("@")[0]:"User");
+  const initial=display?display.trim()[0].toUpperCase():"U";
+  avatar.textContent=initial;udName.textContent=display;udEmail.textContent=currentUserEmail||"";wrap.style.display=authToken?"block":"none";
+}
+function logout(){
+  authToken=null;currentUserEmail=null;currentUserName=null;currentUserRole=null;clearSession();
+  myShiftsCache=[];allShiftsCache=[];adminFilteredShifts=[];scheduleDraft=[];currentGuardAvailability=[];
+  setLoggedInUI(null,null);showSection("login");
+  document.getElementById("auth-status").textContent="Logged out.";
+  const tbody=document.querySelector("#admin-shifts tbody");if(tbody)tbody.innerHTML="";
+  document.getElementById("admin-total").textContent="";document.getElementById("csv-status").textContent="";document.getElementById("schedule-admin-status").textContent="";
+  const schedBody=document.querySelector("#my-schedule-table tbody");if(schedBody)schedBody.innerHTML="<tr><td colspan='5'>Login to see your schedule.</td></tr>";
+}
+
+function openProfileModal(){
+  if(!authToken)return;
+  document.getElementById("profile-current-email").value=currentUserEmail||"";
+  document.getElementById("profile-status").textContent="";
+  document.getElementById("modal-backdrop").style.display="block";
+  document.getElementById("profile-modal").style.display="block";
+  document.getElementById("schedule-modal").style.display="none";
+  document.getElementById("forgot-modal").style.display="none";
+  closeUserDropdown();
+}
+function closeProfileModal(){document.getElementById("modal-backdrop").style.display="none";document.getElementById("profile-modal").style.display="none"}
+
+function openForgotPasswordModal(){
+  document.getElementById("forgot-email").value=(document.getElementById("auth-email").value||"").trim();
+  document.getElementById("forgot-status").textContent="";
+  document.getElementById("modal-backdrop").style.display="block";
+  document.getElementById("forgot-modal").style.display="block";
+  document.getElementById("profile-modal").style.display="none";
+  document.getElementById("schedule-modal").style.display="none";
+}
+function closeForgotPasswordModal(){document.getElementById("forgot-modal").style.display="none";document.getElementById("modal-backdrop").style.display="none"}
+async function sendForgotPassword(){
+  const email=(document.getElementById("forgot-email").value||"").trim(),st=document.getElementById("forgot-status");if(!email){st.textContent="Enter your email.";return;}st.textContent="Sending request...";try{await rawApi("/auth/forgot-password",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email}),silent:true});st.textContent="Request sent. An OpsGuard administrator can now see it in Admin > Pending forgot-password requests and reset your password.";}catch(e){st.textContent="Could not send reset request. Please try again.";}
+}
+
+async function registerUser(){
+  const name=document.getElementById("auth-name").value.trim(),email=document.getElementById("auth-email").value.trim(),password=document.getElementById("auth-password").value.trim(),stat=document.getElementById("auth-status");
+  stat.textContent="Registering...";
+  try{const res=await fetch(API_BASE+"/auth/register",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name,email,password})});if(!res.ok)throw new Error(await res.text());stat.textContent="Registered. Now login."}
+  catch(e){stat.textContent="Error: "+e.message}
+}
+async function login(){
+  const email=document.getElementById("auth-email").value.trim(),password=document.getElementById("auth-password").value.trim(),stat=document.getElementById("auth-status"),btn=document.getElementById("login-btn");if(!email||!password){stat.textContent="Enter your email and password.";return;}stat.textContent="Logging in...";if(btn)btn.disabled=true;prewarmApi();
+  try{const body=new URLSearchParams();body.append("username",email);body.append("password",password);const res=await fetch(API_BASE+"/auth/login",{method:"POST",body,cache:"no-store"});if(!res.ok)throw new Error("Login failed");const data=await res.json();authToken=data.access_token;const u=data.user||{};currentUserEmail=u.email||email;currentUserName=u.name||null;currentUserRole=u.role||"guard";setLoggedInUI(currentUserEmail,currentUserName);saveSession();stat.textContent="Logged in.";showSection("submit");loadMyShifts();}catch(e){stat.textContent="Login failed. Check your email/password and try again.";}finally{if(btn)btn.disabled=false;}
+}
+
+function initShiftTimeDropdowns(){
+  const hrs=[...Array(12)].map((_,i)=>i+1),mins=["00","15","30","45"],sh=document.getElementById("start-hour"),eh=document.getElementById("end-hour"),sm=document.getElementById("start-min"),em=document.getElementById("end-min");
+  sh.innerHTML="";eh.innerHTML="";sm.innerHTML="";em.innerHTML="";
+  hrs.forEach(h=>{let o=document.createElement("option");o.value=h;o.textContent=h;sh.appendChild(o);let o2=document.createElement("option");o2.value=h;o2.textContent=h;eh.appendChild(o2)});
+  mins.forEach(m=>{let o=document.createElement("option");o.value=m;o.textContent=m;sm.appendChild(o);let o2=document.createElement("option");o2.value=m;o2.textContent=m;em.appendChild(o2)});
+  sh.value=9;eh.value=5;document.getElementById("start-ampm").value="PM";document.getElementById("end-ampm").value="AM";
+}
+function initAvailabilityTimeDropdowns(){
+  const startHours=[6,7,8,9,10,11,12],endHours=[12,5],mins=["00"],ash=document.getElementById("avail-start-hour"),aeh=document.getElementById("avail-end-hour"),asm=document.getElementById("avail-start-min"),aem=document.getElementById("avail-end-min");
+  ash.innerHTML="";aeh.innerHTML="";asm.innerHTML="";aem.innerHTML="";
+  startHours.forEach(h=>{let o=document.createElement("option");o.value=h;o.textContent=h;ash.appendChild(o)});
+  endHours.forEach(h=>{let o=document.createElement("option");o.value=h;o.textContent=h;aeh.appendChild(o)});
+  mins.forEach(m=>{let o=document.createElement("option");o.value=m;o.textContent=m;asm.appendChild(o);let o2=document.createElement("option");o2.value=m;o2.textContent=m;aem.appendChild(o2)});
+  ash.value=6;aeh.value=12;document.getElementById("avail-start-ampm").value="AM";document.getElementById("avail-end-ampm").value="PM";
+}
+function initBulkAvailabilitySelectors(){
+  const bm=document.getElementById("bulk-months"),bd=document.getElementById("bulk-days");if(!bm||!bd)return;
+  bm.innerHTML="";bd.innerHTML="";const now=new Date();
+  for(let i=0;i<12;i++){const d=new Date(now.getFullYear(),now.getMonth()+i,1),y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,"0"),v=y+"-"+m,opt=document.createElement("option");opt.value=v;opt.textContent=v;bm.appendChild(opt)}
+  for(let day=1;day<=31;day++){const opt=document.createElement("option");opt.value=String(day).padStart(2,"0");opt.textContent=day;bd.appendChild(opt)}
+}
+function initScheduleTimeDropdowns(){
+  const hrs=[...Array(12)].map((_,i)=>i+1),mins=["00","15","30","45"],sh=document.getElementById("sched-start-hour"),eh=document.getElementById("sched-end-hour"),sm=document.getElementById("sched-start-min"),em=document.getElementById("sched-end-min");
+  if(!sh||!eh||!sm||!em)return;
+  sh.innerHTML="";eh.innerHTML="";sm.innerHTML="";em.innerHTML="";
+  hrs.forEach(h=>{let o=document.createElement("option");o.value=h;o.textContent=h;sh.appendChild(o);let o2=document.createElement("option");o2.value=h;o2.textContent=h;eh.appendChild(o2)});
+  mins.forEach(m=>{let o=document.createElement("option");o.value=m;o.textContent=m;sm.appendChild(o);let o2=document.createElement("option");o2.value=m;o2.textContent=m;em.appendChild(o2)});
+  sh.value=9;eh.value=5;document.getElementById("sched-start-ampm").value="AM";document.getElementById("sched-end-ampm").value="PM";
+}
+
+function toMinutes(h,m,p){let hh=parseInt(h,10),mm=parseInt(m,10);if(p==="AM"){if(hh===12)hh=0}else{if(hh!==12)hh+=12}return hh*60+mm}
+function parseTimeToMinutes(str){if(!str)return 0;const parts=str.trim().split(" "),time=parts[0]||"0:00",ampm=parts[1]||"AM",bits=time.split(":"),h=bits[0]||"0",m=bits[1]||"0";return toMinutes(h,m,ampm)}
+function buildShiftKey(date,venue,start,end){return[date||"",String(venue||"").trim().toLowerCase(),start||"",end||""].join("|")}
+function parseShiftDateTime(s){
+  const date=s.date||"",start=s.start_time||"00:00 AM";if(!date)return 0;
+  const parts=start.split(" "),t=parts[0]||"00:00",a=parts[1]||"AM",hm=t.split(":"),h=hm[0]||"0",m=hm[1]||"0";
+  const mins=toMinutes(h,m,a);const dt=new Date(date+"T00:00:00Z");return dt.getTime()+mins*60000;
+}
+function parseScheduleRowDateTime(r){return parseShiftDateTime({date:r.date,start_time:r.start_time})}
+
+function renderMyShifts(){
+  const tbody=document.querySelector("#my-shifts-table tbody");if(!tbody)return;
+  const items=[...myShiftsCache].sort((a,b)=>parseShiftDateTime(b)-parseShiftDateTime(a));
+  tbody.innerHTML="";if(!items.length){tbody.innerHTML="<tr><td colspan='6'>No shifts yet.</td></tr>";return;}
+  items.forEach(s=>{
+    const tr=document.createElement("tr");
+    tr.innerHTML=`<td>${s.date||""}</td><td>${s.venue||""}</td><td>${s.start_time||""}</td><td>${s.end_time||""}</td><td>${s.total_hours??""}</td><td style="text-align:center;">${s.id?`<button type="button" class="icon-btn" onclick="deleteShiftAnyRole('${s.id}')">🗑</button>`:""}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+async function submitShift(){
+  if(!authToken){document.getElementById("shift-status").textContent="Login first.";return;}
+  const date=document.getElementById("shift-date").value,venue=getSelectedShiftVenue(),
+        sh=document.getElementById("start-hour").value,sm=document.getElementById("start-min").value,sap=document.getElementById("start-ampm").value,
+        eh=document.getElementById("end-hour").value,em=document.getElementById("end-min").value,eap=document.getElementById("end-ampm").value,
+        notes=document.getElementById("shift-notes").value;
+  if(!venue){document.getElementById("shift-status").textContent="Choose a venue, or enter the Other venue name.";return;}
+  const startStr=`${sh}:${sm} ${sap}`,endStr=`${eh}:${em} ${eap}`,newKey=buildShiftKey(date,venue,startStr,endStr);
+  if(myShiftsCache.some(s=>buildShiftKey(s.date,s.venue,s.start_time,s.end_time)===newKey)){document.getElementById("shift-status").textContent="That exact shift already exists.";return;}
+  const sM=toMinutes(sh,sm,sap);let eM=toMinutes(eh,em,eap);if(eM<=sM)eM+=1440;
+  const total=Number(((eM-sM)/60).toFixed(2));
+  const stat=document.getElementById("shift-status");stat.textContent="Saving...";
+  try{
+    const saved=await rawApi("/shifts",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({date,venue,start_time:startStr,end_time:endStr,total_hours:total,notes})});
+    if(saved&&saved.id)myShiftsCache.push(saved);else myShiftsCache.push({date,venue,start_time:startStr,end_time:endStr,total_hours:Number(total),notes});
+    stat.textContent="Shift saved.";renderMyShifts();
+  }catch(e){stat.textContent="Error: "+e.message;}
+}
+
+async function loadMyShifts(){
+  if(!authToken)return;
+  try{
+    const data=await rawApi("/shifts/me",{method:"GET"});
+    const items=Array.isArray(data)?data:(data.items||[]);
+    const seen=new Set(),ded=[];
+    for(const s of items){const k=buildShiftKey(s.date,s.venue,s.start_time,s.end_time);if(seen.has(k))continue;seen.add(k);ded.push(s)}
+    myShiftsCache=ded;renderMyShifts();
+  }catch{}
+}
+
+function buildAvailabilityTime(which){
+  const h=document.getElementById("avail-"+which+"-hour").value,m=document.getElementById("avail-"+which+"-min").value,ap=document.getElementById("avail-"+which+"-ampm").value;
+  return`${h}:${m} ${ap}`;
+}
+function isValidDateStr(d){
+  const p=d.split("-");if(p.length!==3)return false;
+  const y=+p[0],m=+p[1],day=+p[2],dt=new Date(y,m-1,day);
+  return dt.getFullYear()===y&&dt.getMonth()===m-1&&dt.getDate()===day;
+}
+function pickMonthForLoad(){
+  const d=document.getElementById("avail-date").value,bm=[...((document.getElementById("bulk-months").selectedOptions||[]))].map(o=>o.value);
+  if(d)return d.slice(0,7);if(bm.length)return bm[0];
+  const now=new Date(),y=now.getFullYear(),m=String(now.getMonth()+1).padStart(2,"0");return y+"-"+m;
+}
+
+async function saveAvailability(){
+  if(!authToken){document.getElementById("avail-status").textContent="Login first.";return;}
+  const single=document.getElementById("avail-date").value,isAvail=document.getElementById("avail-is").value==="true",
+        start=buildAvailabilityTime("start"),end=buildAvailabilityTime("end"),notes=document.getElementById("avail-notes").value,
+        bm=[...((document.getElementById("bulk-months").selectedOptions||[]))].map(o=>o.value),
+        bd=[...((document.getElementById("bulk-days").selectedOptions||[]))].map(o=>o.value);
+  const dates=[];
+  if(bm.length&&bd.length){for(const m of bm)for(const d of bd){const ds=m+"-"+d;if(isValidDateStr(ds))dates.push(ds)}}
+  else if(single)dates.push(single);
+  else{document.getElementById("avail-status").textContent="Pick a date or use bulk.";return;}
+  if(!dates.length){document.getElementById("avail-status").textContent="No valid dates.";return;}
+  const stat=document.getElementById("avail-status");stat.textContent="Saving "+dates.length+" day(s)...";
+  try{
+    for(const date of dates){await rawApi("/availability",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({date,is_available:isAvail,start_time:start,end_time:end,notes})});}
+    stat.textContent="Saved "+dates.length+" day(s).";loadMyAvailability();
+  }catch(e){stat.textContent="Error: "+e.message;}
+}
+
+async function loadMyAvailability(){
+  if(!authToken)return;
+  const month=pickMonthForLoad(),stat=document.getElementById("avail-status");stat.textContent="Loading...";
+  try{
+    const data=await rawApi("/availability/me?month="+encodeURIComponent(month||""),{method:"GET"});
+    const list=(data.items||data||[]),tbody=document.querySelector("#my-avail-table tbody");
+    tbody.innerHTML="";
+    if(!list.length){tbody.innerHTML="<tr><td colspan='6'>No availability records.</td></tr>";stat.textContent="Loaded.";return;}
+    list.forEach(a=>{
+      const tr=document.createElement("tr");
+      tr.innerHTML=`<td>${a.date||""}</td><td>${a.is_available?"Yes":"No"}</td><td>${a.start_time||""}</td><td>${a.end_time||""}</td><td>${a.notes||""}</td><td style="text-align:center;">${a.id?`<button type="button" class="icon-btn" onclick="deleteAvailabilityAnyRole('${a.id}')">🗑</button>`:""}</td>`;
+      tbody.appendChild(tr);
+    });
+    stat.textContent="Loaded.";
+  }catch(e){stat.textContent="Error: "+e.message;}
+}
+
+function getGuardLabel(s){return s.guard_name||s.user_name||s.username||s.user_id||s.email||"";}
+
+function buildAdminShiftQuery(){
+  const params=new URLSearchParams();
+  const rate=Number(document.getElementById("admin-rate").value)||20;
+  const guardSel=document.getElementById("admin-guard-filter");
+  const venueSel=document.getElementById("admin-venue-filter");
+  const fromDate=document.getElementById("admin-from-date-filter").value||"";
+  const toDate=document.getElementById("admin-to-date-filter").value||"";
+  const guard=guardSel?guardSel.value:"__all__";
+  const venue=venueSel?venueSel.value:"__all__";
+  params.set("hourly_rate", String(rate));
+  if(guard&&guard!=="__all__")params.set("guard", guard);
+  if(venue&&venue!=="__all__")params.set("venue", venue);
+  if(fromDate)params.set("from_date", fromDate);
+  if(toDate)params.set("to_date", toDate);
+  return params;
+}
+function preserveSelectedOptions(){const guardSel=document.getElementById("admin-guard-filter"),venueSel=document.getElementById("admin-venue-filter");return {guard:guardSel?guardSel.value:"__all__",venue:venueSel?venueSel.value:"__all__"};}
+function setSelectOptions(selectEl,values,allValue,allLabel,keepValue){if(!selectEl)return;const current=keepValue||selectEl.value||allValue;selectEl.innerHTML="";const allOpt=document.createElement("option");allOpt.value=allValue;allOpt.textContent=allLabel;selectEl.appendChild(allOpt);[...new Set(values.filter(Boolean))].sort((a,b)=>String(a).localeCompare(String(b))).forEach(v=>{const o=document.createElement("option");o.value=v;o.textContent=v;selectEl.appendChild(o);});selectEl.value=[...selectEl.options].some(o=>o.value===current)?current:allValue;}
+function ensureFixedAdminVenueOptions(){const sel=document.getElementById("admin-venue-filter");if(!sel)return;const keep=sel.value||"__all__";sel.innerHTML='<option value="__all__">All venues</option>';FIXED_VENUES.forEach(v=>{const o=document.createElement("option");o.value=v;o.textContent=v;sel.appendChild(o)});const other=document.createElement("option");other.value="__other__";other.textContent="Other...";sel.appendChild(other);if([...sel.options].some(o=>o.value===keep))sel.value=keep;}
+async function loadAdminUsers(){if(!authToken||currentUserRole!=="admin")return;try{const data=await rawApi("/auth/users?role=guard",{method:"GET",silent:true});adminUserMap={};const manage=document.getElementById("admin-user-manage");if(!manage)return;manage.innerHTML="<option value=''>Choose registered guard</option>";(data.items||[]).sort((a,b)=>String(a.name||a.email).localeCompare(String(b.name||b.email))).forEach(u=>{adminUserMap[u.id]=u;const o=document.createElement("option");o.value=u.id;o.textContent=(u.name||u.email)+(u.email?" ("+u.email+")":"");manage.appendChild(o);});}catch(e){const st=document.getElementById("admin-management-status");if(st)st.textContent="Could not load guard accounts.";}}
+function buildRangeOnlyQuery(){const params=new URLSearchParams();const rate=Number(document.getElementById("admin-rate").value)||20;const venue=document.getElementById("admin-venue-filter")?.value||"__all__";const fromDate=document.getElementById("admin-from-date-filter")?.value||"";const toDate=document.getElementById("admin-to-date-filter")?.value||"";params.set("hourly_rate",String(rate));if(venue!=="__all__")params.set("venue",venue);if(fromDate)params.set("from_date",fromDate);if(toDate)params.set("to_date",toDate);return params;}
+async function refreshAdminGuardOptionsForCurrentRange(){if(!authToken||currentUserRole!=="admin")return;ensureFixedAdminVenueOptions();const guardSel=document.getElementById("admin-guard-filter"),previous=guardSel?guardSel.value:"__all__";try{const data=await rawApi("/shifts?"+buildRangeOnlyQuery().toString(),{method:"GET",silent:true});const rows=Array.isArray(data.items)?data.items:[];const guards=[...new Set(rows.map(getGuardLabel).filter(Boolean))].sort((a,b)=>a.localeCompare(b));setSelectOptions(guardSel,guards,"__all__","All guards",previous);}catch(e){setSelectOptions(guardSel,[],"__all__","All guards","__all__");}}
+async function loadAdminFilterOptions(){await loadAdminUsers();await refreshAdminGuardOptionsForCurrentRange();}
+async function loadPasswordResetRequests(){if(!authToken||currentUserRole!=="admin")return;const sel=document.getElementById("admin-reset-request");if(!sel)return;sel.innerHTML="<option value=''>Loading...</option>";try{const data=await rawApi("/auth/admin/password-reset-requests",{method:"GET",silent:true});sel.innerHTML="<option value=''>No request selected</option>";(data.items||[]).forEach(r=>{const o=document.createElement("option");o.value=r.user_id||"";o.dataset.email=r.email||"";o.textContent=(r.email||"Unknown")+(r.created_at?" — "+String(r.created_at).replace("T"," ").slice(0,16):"");sel.appendChild(o)});if(!(data.items||[]).length)sel.options[0].textContent="No pending requests";}catch(e){sel.innerHTML="<option value=''>Could not load requests</option>";}}
+function useSelectedResetRequest(){const req=document.getElementById("admin-reset-request"),manage=document.getElementById("admin-user-manage"),st=document.getElementById("admin-management-status");if(!req||!req.value){if(st)st.textContent="Choose a pending reset request first.";return;}if(manage&&[...manage.options].some(o=>o.value===req.value)){manage.value=req.value;if(st)st.textContent="Guard selected. Enter a new password and click Reset guard password.";}else if(st)st.textContent="That account is not available in the guard list.";}
+
+
+function getAdminHourlyRate(){
+  return Number(document.getElementById("admin-rate").value)||20;
+}
+function getDisplayHours(s){
+  const n=Number(s&&s.total_hours);
+  return Number.isFinite(n)?n:0;
+}
+function getDisplayPay(s){
+  return getDisplayHours(s)*getAdminHourlyRate();
+}
+function renderAdminShifts(data){
+  const tbody=document.querySelector("#admin-shifts tbody"),totalEl=document.getElementById("admin-total");
+  document.getElementById("csv-status").textContent="";document.getElementById("schedule-admin-status").textContent="";
+  tbody.innerHTML="";adminFilteredShifts=[];
+  const payload=data||{};
+  const rows=Array.isArray(payload.items)?payload.items:(Array.isArray(allShiftsCache)?allShiftsCache:[]);
+  if(!rows.length){tbody.innerHTML="<tr><td colspan='9'>No matches.</td></tr>";totalEl.textContent="";return;}
+  rows.sort((a,b)=>{
+    const ga=String(getGuardLabel(a)||"").toLowerCase(),gb=String(getGuardLabel(b)||"").toLowerCase();
+    if(ga!==gb)return ga.localeCompare(gb);
+    return String(a.date||"").localeCompare(String(b.date||""));
+  });
+  adminFilteredShifts=rows;
+  let totalHours=0,totalPayroll=0,paidPayroll=0,unpaidPayroll=0;
+  rows.forEach(s=>{
+    const hours=getDisplayHours(s);
+    const pay=getDisplayPay(s);
+    totalHours+=hours;totalPayroll+=pay;
+    if(s.paid)paidPayroll+=pay;else unpaidPayroll+=pay;
+    const tr=document.createElement("tr");
+    tr.innerHTML=
+      `<td>${getGuardLabel(s)}</td><td>${s.date||""}</td><td>${s.venue||""}</td><td>${s.start_time||""}</td><td>${s.end_time||""}</td><td>${hours}</td><td>$${pay.toFixed(2)}</td>`+
+      `<td style="text-align:center;">${s.id?`<input type="checkbox" ${s.paid?"checked":""} onchange="adminSetPaid('${s.id}',this.checked)">`:""}</td>`+
+      `<td style="text-align:center;">${s.id?`<button type="button" class="icon-btn" onclick="deleteShiftAnyRole('${s.id}')">🗑</button>`:""}</td>`;
+    tbody.appendChild(tr);
+  });
+  totalEl.textContent=`Total shifts: ${rows.length} | Total hours: ${totalHours.toFixed(2)} | Total payout: $${totalPayroll.toFixed(2)} | Paid: $${paidPayroll.toFixed(2)} | Unpaid: $${unpaidPayroll.toFixed(2)}`;
+}
+
+async function loadAllShifts(){
+  if(!authToken||currentUserRole!=="admin")return;const tbody=document.querySelector("#admin-shifts tbody"),totalEl=document.getElementById("admin-total"),csvStatus=document.getElementById("csv-status");csvStatus.textContent="";document.getElementById("schedule-admin-status").textContent="";tbody.innerHTML="<tr><td colspan='9'>Loading...</td></tr>";totalEl.textContent="";try{const params=buildAdminShiftQuery();const data=await rawApi("/shifts?"+params.toString(),{method:"GET",silent:true});allShiftsCache=Array.isArray(data.items)?data.items:[];renderAdminShifts(data);}catch(e){tbody.innerHTML="<tr><td colspan='9'>Could not load shifts.</td></tr>";totalEl.textContent="Error loading shifts.";}
+}
+
+function csvEscape(value){
+  const s=String(value==null?"":value);
+  return /[",\n\r]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;
+}
+
+let lastCsvText="";
+let lastCsvFilename="OpsGuard_Shifts_Export.csv";
+
+async function saveCsvFile(csvText, filename){
+  const fullText="\uFEFF"+csvText;
+
+  // Best option in Chrome: opens a real Save As dialog, which works better inside GoDaddy/iframe pages than blob links.
+  if(window.showSaveFilePicker){
+    try{
+      const handle=await window.showSaveFilePicker({
+        suggestedName: filename,
+        types:[{description:"CSV file", accept:{"text/csv":[".csv"]}}]
+      });
+      const writable=await handle.createWritable();
+      await writable.write(new Blob([fullText],{type:"text/csv;charset=utf-8"}));
+      await writable.close();
+      return true;
+    }catch(e){
+      // User may cancel the file picker. Fall through to the older methods.
+      console.warn("Save picker unavailable or cancelled", e);
+    }
+  }
+
+  // Fallback: standard blob download.
+  try{
+    const blob=new Blob([fullText],{type:"text/csv;charset=utf-8"});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement("a");
+    a.href=url;
+    a.download=filename;
+    a.style.display="none";
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(()=>{URL.revokeObjectURL(url);a.remove();},1500);
+    return true;
+  }catch(e){
+    console.warn("Blob download failed", e);
+  }
+
+  // Last fallback: data URL.
+  try{
+    const a=document.createElement("a");
+    a.href="data:text/csv;charset=utf-8,"+encodeURIComponent(fullText);
+    a.download=filename;
+    a.style.display="none";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    return true;
+  }catch(e){
+    console.warn("Data URL download failed", e);
+    return false;
+  }
+}
+
+function openCsvInWritableTab(csvText){
+  const w=window.open("","_blank");
+  if(!w){
+    alert("Popup blocked. Please allow popups for this page, or use Show / Copy CSV.");
+    return false;
+  }
+  const safe=String(csvText).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  w.document.open();
+  w.document.write("<!doctype html><html><head><title>OpsGuard CSV</title><style>body{font-family:Arial,sans-serif;padding:16px}pre{white-space:pre;overflow:auto;border:1px solid #ddd;padding:12px;font-family:monospace;font-size:12px}</style></head><body><h2>OpsGuard CSV</h2><p>Select all, copy, and paste into Excel or Google Sheets.</p><pre>"+safe+"</pre></body></html>");
+  w.document.close();
+  return true;
+}
+
+function createCsvDownloadLinks(csvText, filename){
+  lastCsvText=csvText;
+  lastCsvFilename=filename;
+  let holder=document.getElementById("csv-download-holder");
+  if(!holder){
+    holder=document.createElement("div");
+    holder.id="csv-download-holder";
+    holder.className="small";
+    holder.style.marginTop="6px";
+    const status=document.getElementById("csv-status");
+    if(status&&status.parentNode)status.parentNode.insertBefore(holder,status.nextSibling);
+  }
+  holder.innerHTML="";
+
+  const saveBtn=document.createElement("button");
+  saveBtn.type="button";
+  saveBtn.className="icon-btn";
+  saveBtn.style.fontWeight="700";
+  saveBtn.textContent="Download CSV file";
+  saveBtn.onclick=async()=>{
+    const ok=await saveCsvFile(lastCsvText,lastCsvFilename);
+    const st=document.getElementById("csv-status");
+    if(st)st.textContent=ok?"CSV download/save was triggered. If nothing appears, use Show / Copy CSV.":"Download was blocked. Use Show / Copy CSV.";
+  };
+
+  const openBtn=document.createElement("button");
+  openBtn.type="button";
+  openBtn.className="icon-btn";
+  openBtn.textContent="Open CSV in new tab";
+  openBtn.onclick=()=>openCsvInWritableTab(lastCsvText);
+
+  const copyBtn=document.createElement("button");
+  copyBtn.type="button";
+  copyBtn.className="icon-btn";
+  copyBtn.textContent="Show / Copy CSV";
+  copyBtn.onclick=()=>{
+    let box=document.getElementById("csv-copy-box");
+    if(!box){
+      box=document.createElement("textarea");
+      box.id="csv-copy-box";
+      box.rows=8;
+      box.style.width="100%";
+      box.style.marginTop="8px";
+      box.style.fontSize="11px";
+      box.style.fontFamily="monospace";
+      holder.appendChild(box);
+    }
+    box.value=lastCsvText;
+    box.focus();box.select();
+    try{document.execCommand("copy");}catch{}
+  };
+
+  holder.appendChild(saveBtn);
+  holder.appendChild(document.createTextNode(" | "));
+  holder.appendChild(openBtn);
+  holder.appendChild(document.createTextNode(" | "));
+  holder.appendChild(copyBtn);
+
+  // Try automatic save once, but keep the buttons visible if the browser blocks it.
+  saveCsvFile(csvText,filename).catch(e=>console.warn("Auto CSV save failed",e));
+  return holder;
+}
+
+function buildCsvFromLoadedRows(){
+  const rows=adminFilteredShifts&&adminFilteredShifts.length?adminFilteredShifts:allShiftsCache;
+  if(!rows||!rows.length)throw new Error("No loaded shift rows to export. Click Load shifts first.");
+  const header=["Guard","Date","Venue","Start","End","Hours","Pay","Paid"];
+  const lines=[header.map(csvEscape).join(",")];
+  let totalHours=0,totalPay=0,paidPay=0,unpaidPay=0;
+  const guardTotals={};
+  rows.forEach(s=>{
+    const guard=getGuardLabel(s)||"Unknown Guard";
+    const hours=getDisplayHours(s);
+    const pay=getDisplayPay(s);
+    totalHours+=hours;totalPay+=pay;
+    if(s.paid)paidPay+=pay;else unpaidPay+=pay;
+    if(!guardTotals[guard])guardTotals[guard]={shift_count:0,hours:0,pay:0,paid:0,unpaid:0};
+    guardTotals[guard].shift_count+=1;
+    guardTotals[guard].hours+=hours;
+    guardTotals[guard].pay+=pay;
+    if(s.paid)guardTotals[guard].paid+=pay;else guardTotals[guard].unpaid+=pay;
+    lines.push([guard,s.date||"",s.venue||"",s.start_time||"",s.end_time||"",hours.toFixed(2),pay.toFixed(2),s.paid?"Yes":"No"].map(csvEscape).join(","));
+  });
+  lines.push("");
+  lines.push(["Guard Totals"].map(csvEscape).join(","));
+  lines.push(["Guard","ShiftCount","TotalHours","TotalPayout","PaidPayout","UnpaidPayout"].map(csvEscape).join(","));
+  Object.keys(guardTotals).sort((a,b)=>a.localeCompare(b)).forEach(g=>{
+    const t=guardTotals[g];
+    lines.push([g,t.shift_count,t.hours.toFixed(2),t.pay.toFixed(2),t.paid.toFixed(2),t.unpaid.toFixed(2)].map(csvEscape).join(","));
+  });
+  lines.push("");
+  lines.push(["Grand Total",rows.length,totalHours.toFixed(2),totalPay.toFixed(2),paidPay.toFixed(2),unpaidPay.toFixed(2)].map(csvEscape).join(","));
+  return lines.join("\r\n");
+}
+
+async function exportAdminCsvDownload(){
+  const csvStatus=document.getElementById("csv-status");
+  console.log("OpsGuard export clicked");
+  if(!authToken){alert("Login first.");return;}
+  if(csvStatus)csvStatus.textContent="Preparing export...";
+  try{
+    if(!adminFilteredShifts || !adminFilteredShifts.length){
+      await loadAllShifts();
+    }
+    const csvText=buildCsvFromLoadedRows();
+    const today=new Date().toISOString().slice(0,10);
+    createCsvDownloadLinks(csvText,"OpsGuard_Shifts_Export_"+today+".csv");
+    if(csvStatus)csvStatus.textContent="CSV is ready. If it did not download automatically, click the Download CSV file link below.";
+  }catch(e){
+    const message=e&&e.message?e.message:String(e);
+    if(csvStatus)csvStatus.textContent="Export failed: "+message;
+    alert("Export failed: "+message);
+  }
+}
+
+
+
+
+
+async function adminResetSelectedGuardPassword(){
+  const st=document.getElementById("admin-management-status");
+  const userId=(document.getElementById("admin-user-manage")||{}).value||"";
+  const pw=(document.getElementById("admin-new-password")||{}).value||"";
+  if(!authToken)return alert("Login first.");
+  if(!userId){st.textContent="Choose a registered guard first.";return;}
+  if(!pw||pw.length<6){st.textContent="Enter a new password with at least 6 characters.";return;}
+  if(!confirm("Reset this guard's password?"))return;
+  st.textContent="Resetting password...";
+  try{
+    await rawApi("/auth/admin/reset-password",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({user_id:userId,new_password:pw})});
+    document.getElementById("admin-new-password").value="";
+    st.textContent="Password reset. Give the guard the new password securely.";await loadPasswordResetRequests();
+  }catch(e){st.textContent="Password reset failed: "+(e&&e.message?e.message:String(e));}
+}
+async function adminDeleteSelectedGuard(){
+  const st=document.getElementById("admin-management-status");
+  const userId=(document.getElementById("admin-user-manage")||{}).value||"";
+  const u=adminUserMap[userId]||{};
+  if(!authToken)return alert("Login first.");
+  if(!userId){st.textContent="Choose a registered guard first.";return;}
+  if(!confirm("Delete guard account for "+(u.label||u.name||u.email||userId)+"? Historical shifts will be preserved under the guard name."))return;
+  st.textContent="Deleting guard account...";
+  try{
+    await rawApi("/auth/users/"+encodeURIComponent(userId),{method:"DELETE"});
+    st.textContent="Guard account deleted. Historical shifts were preserved.";
+    await loadAdminUsers();
+    await refreshAdminGuardOptionsForCurrentRange();
+    await loadAllShifts();
+  }catch(e){st.textContent="Delete guard failed: "+(e&&e.message?e.message:String(e));}
+}
+/* Admin availability + schedule builder */
+function selectedScheduleGuard(){
+  const manage=document.getElementById("admin-user-manage");
+  const userId=manage?manage.value:"";
+  const u=userId?(adminUserMap[userId]||{}):{};
+  if(userId){
+    return {id:userId,name:u.name||u.label||u.email||userId,email:u.email||""};
+  }
+  const guardSel=document.getElementById("admin-guard-filter");
+  const guard=guardSel&&guardSel.value!=="__all__"?guardSel.value:"";
+  return guard?{id:"",name:guard,email:guard.includes("@")?guard:""}:null;
+}
+function scheduleMonth(){
+  const d=(document.getElementById("admin-from-date-filter")||{}).value||"";
+  if(d&&/^\d{4}-\d{2}-\d{2}$/.test(d))return d.slice(0,7);
+  const now=new Date();
+  return now.getFullYear()+"-"+String(now.getMonth()+1).padStart(2,"0");
+}
+function setScheduleTime(which,value){
+  if(!value)return;
+  const m=String(value).trim().match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+  if(!m)return;
+  const h=document.getElementById("sched-"+which+"-hour"),min=document.getElementById("sched-"+which+"-min"),ampm=document.getElementById("sched-"+which+"-ampm");
+  if(h)h.value=String(parseInt(m[1],10));
+  if(min)min.value=m[2];
+  if(ampm)ampm.value=m[3].toUpperCase();
+}
+function useAvailabilityRow(index){
+  const a=currentGuardAvailability[index];if(!a)return;
+  const date=document.getElementById("sched-date");if(date)date.value=a.date||"";
+  if(a.start_time)setScheduleTime("start",a.start_time);
+  if(a.end_time)setScheduleTime("end",a.end_time);
+  const st=document.getElementById("schedule-add-status");if(st)st.textContent="Availability copied into the schedule form.";
+}
+function renderScheduleAvailability(){
+  const holder=document.getElementById("schedule-summary-preview");if(!holder)return;
+  holder.innerHTML="";
+  if(!currentGuardAvailability.length){holder.textContent="No availability records found for this guard/month.";return;}
+  currentGuardAvailability.sort((a,b)=>String(a.date||"").localeCompare(String(b.date||"")));
+  currentGuardAvailability.forEach((a,i)=>{
+    const row=document.createElement("button");
+    row.type="button";row.className="icon-btn";row.style.display="block";row.style.width="100%";row.style.textAlign="left";row.style.margin="2px 0";
+    row.textContent=(a.date||"")+" — "+(a.is_available?"Available":"Unavailable")+(a.is_available&&a.start_time?" "+a.start_time+" to "+(a.end_time||""):"")+(a.notes?" — "+a.notes:"");
+    row.disabled=!a.is_available;
+    if(a.is_available)row.onclick=()=>useAvailabilityRow(i);
+    holder.appendChild(row);
+  });
+}
+function renderScheduleDraft(){
+  const box=document.getElementById("schedule-proposed-list");if(!box)return;
+  box.value=scheduleDraft.map((s,i)=>(i+1)+". "+s.date+" | "+s.start_time+" - "+s.end_time).join("\n");
+}
+async function openCheckAvailabilityModal(){
+  const adminSt=document.getElementById("schedule-admin-status");if(adminSt)adminSt.textContent="";
+  if(!authToken)return alert("Login first.");
+  let g=selectedScheduleGuard();
+  if(!g){
+    await loadAdminFilterOptions();
+    g=selectedScheduleGuard();
+  }
+  if(!g){if(adminSt)adminSt.textContent="Choose a registered guard or select a Guard filter first.";return;}
+  scheduleDraft=[];currentGuardAvailability=[];
+  const display=document.getElementById("schedule-guard-display");if(display)display.value=g.name||g.email||"";
+  const note=document.getElementById("schedule-note");if(note)note.value="";
+  const modalSt=document.getElementById("schedule-modal-status");if(modalSt)modalSt.textContent="Loading availability...";
+  const addSt=document.getElementById("schedule-add-status");if(addSt)addSt.textContent="";
+  renderScheduleDraft();renderScheduleAvailability();
+  document.getElementById("modal-backdrop").style.display="block";
+  document.getElementById("schedule-modal").style.display="block";
+  document.getElementById("profile-modal").style.display="none";
+  document.getElementById("forgot-modal").style.display="none";
+  try{
+    const guardQuery=g.email||g.name;
+    const data=await rawApi("/availability/admin?guard="+encodeURIComponent(guardQuery)+"&month="+encodeURIComponent(scheduleMonth()),{method:"GET"});
+    currentGuardAvailability=Array.isArray(data)?data:(data&&data.items)||[];
+    renderScheduleAvailability();
+    if(modalSt)modalSt.textContent="Availability loaded for "+scheduleMonth()+". Click an available line to prefill a shift.";
+  }catch(e){
+    currentGuardAvailability=[];renderScheduleAvailability();
+    if(modalSt)modalSt.textContent="Could not load availability: "+(e&&e.message?e.message:String(e));
+  }
+}
+function closeScheduleModal(){document.getElementById("schedule-modal").style.display="none";document.getElementById("modal-backdrop").style.display="none";}
+function addShiftToScheduleDraft(){
+  const date=(document.getElementById("sched-date")||{}).value||"";
+  const sh=(document.getElementById("sched-start-hour")||{}).value||"",sm=(document.getElementById("sched-start-min")||{}).value||"00",sap=(document.getElementById("sched-start-ampm")||{}).value||"AM";
+  const eh=(document.getElementById("sched-end-hour")||{}).value||"",em=(document.getElementById("sched-end-min")||{}).value||"00",eap=(document.getElementById("sched-end-ampm")||{}).value||"PM";
+  const st=document.getElementById("schedule-add-status");
+  if(!date){if(st)st.textContent="Choose a date first.";return;}
+  const startStr=sh+":"+sm+" "+sap,endStr=eh+":"+em+" "+eap;
+  if(scheduleDraft.some(s=>s.date===date&&s.start_time===startStr&&s.end_time===endStr)){if(st)st.textContent="That shift is already in the proposed schedule.";return;}
+  scheduleDraft.push({date,start_time:startStr,end_time:endStr});
+  scheduleDraft.sort((a,b)=>parseScheduleRowDateTime(a)-parseScheduleRowDateTime(b));
+  renderScheduleDraft();if(st)st.textContent="Added to proposed schedule.";
+}
+function cancelScheduleBuild(){scheduleDraft=[];renderScheduleDraft();closeScheduleModal();}
+async function sendScheduleFromAdmin(){
+  if(!authToken)return alert("Login first.");
+  const g=selectedScheduleGuard();
+  const st=document.getElementById("schedule-modal-status");
+  if(!g){if(st)st.textContent="Choose a guard first.";return;}
+  if(!scheduleDraft.length){if(st)st.textContent="Add at least one working day before sending.";return;}
+  const note=(document.getElementById("schedule-note")||{}).value||"";
+  if(st)st.textContent="Sending schedule...";
+  try{
+    const payload={guard:g.name||g.email,note,shifts:scheduleDraft.map(s=>({guard:g.name||g.email,date:s.date,start_time:s.start_time,end_time:s.end_time}))};
+    await rawApi("/schedules",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
+    if(st)st.textContent="Schedule saved and is now available in the guard's Schedule tab.";
+    const adminSt=document.getElementById("schedule-admin-status");if(adminSt)adminSt.textContent="Schedule sent to "+(g.name||g.email)+".";
+    scheduleDraft=[];renderScheduleDraft();
+  }catch(e){if(st)st.textContent="Schedule send failed: "+(e&&e.message?e.message:String(e));}
+}
+async function loadMySchedule(){
+  const tbody=document.querySelector("#my-schedule-table tbody");
+  if(!tbody)return;
+  if(!authToken){tbody.innerHTML="<tr><td colspan='5'>Login to see your schedule.</td></tr>";return;}
+  tbody.innerHTML="<tr><td colspan='5'>Loading...</td></tr>";
+  try{
+    const res=await fetch(API_BASE+"/schedules/me",{headers:{Authorization:"Bearer "+authToken}});
+    if(!res.ok)throw 0;
+    const data=await res.json();const rows=[];
+    (data||[]).forEach(sch=>{const guard=sch.guard||"",note=sch.note||"";(sch.shifts||[]).forEach(sh=>rows.push({date:sh.date,start_time:sh.start_time,end_time:sh.end_time,guard,note}));});
+    rows.sort((a,b)=>parseScheduleRowDateTime(b)-parseScheduleRowDateTime(a));
+    tbody.innerHTML="";
+    if(!rows.length){tbody.innerHTML="<tr><td colspan='5'>No schedule yet.</td></tr>";return;}
+    rows.forEach(r=>{const tr=document.createElement("tr");tr.innerHTML=`<td>${r.date||""}</td><td>${r.start_time||""}</td><td>${r.end_time||""}</td><td>${r.guard||""}</td><td>${r.note||""}</td>`;tbody.appendChild(tr);});
+  }catch{tbody.innerHTML="<tr><td colspan='5'>Error loading schedule.</td></tr>";}
+}
+
+function wireAuthButtons(){
+  const loginBtn=document.getElementById("login-btn"),registerBtn=document.getElementById("register-btn");
+  if(loginBtn)loginBtn.addEventListener("click",e=>{e.preventDefault();login();});
+  if(registerBtn)registerBtn.addEventListener("click",e=>{e.preventDefault();registerUser();});
+}
+function wireAdminFilters(){
+  const guardSel=document.getElementById("admin-guard-filter"),venueSel=document.getElementById("admin-venue-filter"),fromInput=document.getElementById("admin-from-date-filter"),toInput=document.getElementById("admin-to-date-filter"),rateInput=document.getElementById("admin-rate");if(guardSel)guardSel.addEventListener("change",()=>loadAllShifts());[venueSel,fromInput,toInput].forEach(el=>{if(el)el.addEventListener("change",async()=>{if(guardSel)guardSel.value="__all__";await refreshAdminGuardOptionsForCurrentRange();await loadAllShifts();});});if(rateInput)rateInput.addEventListener("change",()=>loadAllShifts());
+}
+initShiftTimeDropdowns();initAvailabilityTimeDropdowns();initBulkAvailabilitySelectors();initScheduleTimeDropdowns();
+wireAuthButtons();wireAdminFilters();ensureFixedAdminVenueOptions();toggleOtherVenueInput();prewarmApi();restoreSession();
+</script>
+</body></html>

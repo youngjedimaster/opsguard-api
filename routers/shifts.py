@@ -18,6 +18,8 @@ from models import ShiftCreate
 router = APIRouter(prefix="/api/shifts", tags=["shifts"])
 
 DEFAULT_HOURLY_RATE = 20.00
+FIXED_VENUES = ["Baby G", "Garrison", "Get Well", "Jean Darlene", "St Anne's", "Standard Time", "Two Kats"]
+FIXED_VENUE_ALIASES = FIXED_VENUES + ["St Annes", "St. Anne's", "St. Annes"]
 
 
 class PaidUpdate(BaseModel):
@@ -168,7 +170,13 @@ def _build_shift_query(
             query["date"]["$lte"] = to_date.strip()
 
     if venue:
-        query["venue"] = {"$regex": re.escape(venue.strip()), "$options": "i"}
+        venue_text = venue.strip()
+        if venue_text == "__other__":
+            query["venue"] = {"$nin": FIXED_VENUE_ALIASES + ["", None]}
+        elif venue_text == "St Anne's":
+            query["venue"] = {"$regex": r"^St\.?\s*Anne'?s$", "$options": "i"}
+        else:
+            query["venue"] = {"$regex": "^" + re.escape(venue_text) + "$", "$options": "i"}
 
     if guard:
         guard_text = guard.strip()
@@ -290,7 +298,7 @@ async def create_shift(
         "user_id": str(user["_id"]),
         "guard_name": user.get("name") or user.get("full_name") or user.get("email"),
         "date": shift.date.isoformat(),
-        "venue": shift.venue,
+        "venue": _clean_text(shift.venue),
         "start_time": shift.start_time,
         "end_time": shift.end_time,
         "total_hours": recalculated_hours,
@@ -466,5 +474,7 @@ async def delete_shift(
     if not is_admin and str(doc.get("user_id")) != str(user.get("_id")):
         raise HTTPException(status_code=403, detail="Not allowed")
 
-    await db.shifts.delete_one({"_id": ObjectId(shift_id)})
+    result = await db.shifts.delete_one({"_id": ObjectId(shift_id)})
+    if result.deleted_count != 1:
+        raise HTTPException(status_code=409, detail="Shift could not be deleted")
     return {"status": "deleted", "id": shift_id}
