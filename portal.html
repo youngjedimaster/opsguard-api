@@ -59,8 +59,9 @@
 
 <div id="section-schedule" class="card hidden">
 <h2 style="margin:0 0 4px">My Schedule</h2><p class="small">Schedules sent from the Admin tab will appear here for the logged in guard.</p>
-<div class="table-scroll"><table id="my-schedule-table"><thead><tr><th>Date</th><th>Start</th><th>End</th><th>Guard</th><th>Note</th></tr></thead>
-<tbody><tr><td colspan="5">Login to see your schedule.</td></tr></tbody></table></div>
+<div class="table-scroll"><table id="my-schedule-table"><thead><tr><th>Date</th><th>Start</th><th>End</th><th>Guard</th><th>Note</th><th>Status</th><th>Action</th></tr></thead>
+<tbody><tr><td colspan="7">Login to see your schedule.</td></tr></tbody></table></div>
+<p id="my-schedule-status" class="small"></p>
 </div>
 
 <div id="section-admin" class="card hidden">
@@ -89,6 +90,13 @@
 <div class="half input-group" style="display:flex;align-items:end;gap:6px"><button type="button" class="primary" style="background:#0B1F3B" onclick="loadPasswordResetRequests()">Refresh requests</button><button type="button" class="primary secondary" onclick="useSelectedResetRequest()">Use request</button></div>
 </div>
 <p id="admin-management-status" class="small"></p>
+</div>
+<div class="card" style="padding:8px;margin:4px 0 8px;background:#f9fafb">
+<h3 style="margin:0 0 4px;font-size:.86rem">Schedule confirmations</h3>
+<p class="small" style="margin:0 0 6px">A guard confirms the complete schedule you sent. Confirmed schedules are locked so they cannot be deleted.</p>
+<div class="row"><button type="button" class="primary" style="background:#0B1F3B" onclick="loadAdminScheduleConfirmations()">Refresh confirmations</button></div>
+<p id="admin-schedule-confirmation-summary" class="small"></p>
+<div class="table-scroll"><table id="admin-schedule-confirmations"><thead><tr><th>Guard</th><th>Shifts</th><th>Sent</th><th>Status</th><th>Confirmed</th></tr></thead><tbody><tr><td colspan="5">No confirmation data loaded.</td></tr></tbody></table></div>
 </div>
 <p class="small" style="margin:2px 0 8px">For a range, choose a Start date and End date, for example 2026-06-15 to 2026-06-30, then click Load shifts or Export CSV.</p>
 <div class="row">
@@ -157,7 +165,7 @@ function showSection(id){
   if(id==="schedule"&&authToken)loadMySchedule();
   if(id==="admin"){
     if(currentUserRole!=="admin"){const st=document.getElementById("admin-management-status");if(st)st.textContent="Admin access is required.";return;}
-    loadAdminUsers();refreshAdminGuardOptionsForCurrentRange();loadPasswordResetRequests();
+    loadAdminUsers();refreshAdminGuardOptionsForCurrentRange();loadPasswordResetRequests();loadAdminScheduleConfirmations();
   }
 }
 function toggleUserDropdown(){const dd=document.getElementById("user-dropdown");dd.style.display=dd.style.display==="block"?"none":"block"}
@@ -169,7 +177,7 @@ function togglePasswordVisibility(inputId,btn){const el=document.getElementById(
 function toggleOtherVenueInput(){const sel=document.getElementById("shift-venue-select"),other=document.getElementById("shift-venue-other");if(!sel||!other)return;const show=sel.value==="__other__";other.classList.toggle("hidden",!show);if(show)other.focus();}
 function getSelectedShiftVenue(){const sel=document.getElementById("shift-venue-select"),other=document.getElementById("shift-venue-other");if(!sel)return "";if(sel.value==="__other__")return (other&&other.value||"").trim();return sel.value;}
 
-function confirmAction(message){
+function confirmAction(message,okLabel="Delete"){
   return new Promise(resolve=>{
     let overlay=document.getElementById("opsguard-confirm-overlay");
     if(!overlay){
@@ -181,6 +189,7 @@ function confirmAction(message){
     }
     const msg=overlay.querySelector("#opsguard-confirm-message"),ok=overlay.querySelector("#opsguard-confirm-ok"),cancel=overlay.querySelector("#opsguard-confirm-cancel");
     msg.textContent=message;
+    ok.textContent=okLabel||"Confirm";
     overlay.style.display="flex";
     const finish=(value)=>{overlay.style.display="none";ok.onclick=null;cancel.onclick=null;resolve(value);};
     ok.onclick=()=>finish(true);
@@ -231,7 +240,8 @@ function logout(){
   document.getElementById("auth-status").textContent="Logged out.";
   const tbody=document.querySelector("#admin-shifts tbody");if(tbody)tbody.innerHTML="";
   document.getElementById("admin-total").textContent="";document.getElementById("csv-status").textContent="";document.getElementById("schedule-admin-status").textContent="";
-  const schedBody=document.querySelector("#my-schedule-table tbody");if(schedBody)schedBody.innerHTML="<tr><td colspan='5'>Login to see your schedule.</td></tr>";
+  const schedBody=document.querySelector("#my-schedule-table tbody");if(schedBody)schedBody.innerHTML="<tr><td colspan='7'>Login to see your schedule.</td></tr>";
+  const schedStatus=document.getElementById("my-schedule-status");if(schedStatus)schedStatus.textContent="";
 }
 
 function openProfileModal(){
@@ -819,26 +829,77 @@ async function sendScheduleFromAdmin(){
   try{
     const payload={guard:g.name||g.email,note,shifts:scheduleDraft.map(s=>({guard:g.name||g.email,date:s.date,start_time:s.start_time,end_time:s.end_time}))};
     await rawApi("/schedules",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
-    if(st)st.textContent="Schedule saved and is now available in the guard's Schedule tab.";
-    const adminSt=document.getElementById("schedule-admin-status");if(adminSt)adminSt.textContent="Schedule sent to "+(g.name||g.email)+".";
-    scheduleDraft=[];renderScheduleDraft();
+    if(st)st.textContent="Schedule sent. It is awaiting the guard's confirmation.";
+    const adminSt=document.getElementById("schedule-admin-status");if(adminSt)adminSt.textContent="Schedule sent to "+(g.name||g.email)+" — awaiting confirmation.";
+    scheduleDraft=[];renderScheduleDraft();loadAdminScheduleConfirmations();
   }catch(e){if(st)st.textContent="Schedule send failed: "+(e&&e.message?e.message:String(e));}
 }
-async function loadMySchedule(){
-  const tbody=document.querySelector("#my-schedule-table tbody");
-  if(!tbody)return;
-  if(!authToken){tbody.innerHTML="<tr><td colspan='5'>Login to see your schedule.</td></tr>";return;}
-  tbody.innerHTML="<tr><td colspan='5'>Loading...</td></tr>";
+async function confirmSchedule(scheduleId){
+  const st=document.getElementById("my-schedule-status");
+  if(!authToken){if(st)st.textContent="Login first.";return;}
+  if(!scheduleId){if(st)st.textContent="Missing schedule id.";return;}
+  if(!(await confirmAction("Confirm that you received this complete schedule and are committed to these shifts? Once confirmed, the schedule is locked.","Confirm shifts")))return;
+  if(st)st.textContent="Confirming schedule...";
   try{
-    const res=await fetch(API_BASE+"/schedules/me",{headers:{Authorization:"Bearer "+authToken}});
+    await rawApi("/schedules/"+encodeURIComponent(scheduleId)+"/confirm",{method:"POST",silent:true});
+    if(st)st.textContent="Schedule confirmed. You are set for these shifts.";
+    await loadMySchedule();
+  }catch(e){if(st)st.textContent="Could not confirm schedule: "+(e&&e.message?e.message:String(e));}
+}
+function formatScheduleTimestamp(v){
+  if(!v)return "";
+  try{const d=new Date(v);return Number.isNaN(d.getTime())?String(v):d.toLocaleString();}catch{return String(v);}
+}
+async function loadMySchedule(){
+  const tbody=document.querySelector("#my-schedule-table tbody"),st=document.getElementById("my-schedule-status");
+  if(!tbody)return;
+  if(!authToken){tbody.innerHTML="<tr><td colspan='7'>Login to see your schedule.</td></tr>";return;}
+  tbody.innerHTML="<tr><td colspan='7'>Loading...</td></tr>";
+  try{
+    const res=await fetch(API_BASE+"/schedules/me",{headers:{Authorization:"Bearer "+authToken},cache:"no-store"});
     if(!res.ok)throw 0;
     const data=await res.json();const rows=[];
-    (data||[]).forEach(sch=>{const guard=sch.guard||"",note=sch.note||"";(sch.shifts||[]).forEach(sh=>rows.push({date:sh.date,start_time:sh.start_time,end_time:sh.end_time,guard,note}));});
-    rows.sort((a,b)=>parseScheduleRowDateTime(b)-parseScheduleRowDateTime(a));
+    (data||[]).forEach(function(sch){
+      const guard=sch.guard||"",note=sch.note||"",status=sch.status||"pending",scheduleId=sch.id||"",confirmedAt=sch.confirmed_at||"";
+      (sch.shifts||[]).forEach(function(sh,index){rows.push({date:sh.date,start_time:sh.start_time,end_time:sh.end_time,guard:guard,note:note,status:status,scheduleId:scheduleId,confirmedAt:confirmedAt,isFirst:index===0});});
+    });
+    rows.sort(function(a,b){return parseScheduleRowDateTime(b)-parseScheduleRowDateTime(a);});
     tbody.innerHTML="";
-    if(!rows.length){tbody.innerHTML="<tr><td colspan='5'>No schedule yet.</td></tr>";return;}
-    rows.forEach(r=>{const tr=document.createElement("tr");tr.innerHTML=`<td>${r.date||""}</td><td>${r.start_time||""}</td><td>${r.end_time||""}</td><td>${r.guard||""}</td><td>${r.note||""}</td>`;tbody.appendChild(tr);});
-  }catch{tbody.innerHTML="<tr><td colspan='5'>Error loading schedule.</td></tr>";}
+    if(!rows.length){tbody.innerHTML="<tr><td colspan='7'>No schedule yet.</td></tr>";if(st)st.textContent="";return;}
+    rows.forEach(function(r){
+      const confirmed=r.status==="confirmed";
+      const statusText=confirmed?"Confirmed ✓":"Awaiting your confirmation";
+      let action="";
+      if(confirmed&&r.isFirst)action='<span style="font-weight:700;color:#166534">Locked</span>';
+      else if(!confirmed&&r.isFirst&&r.scheduleId)action='<button type="button" class="primary" onclick="confirmSchedule(\''+r.scheduleId+'\')">Confirm shifts</button>';
+      const confirmedDetail=(confirmed&&r.confirmedAt)?'<div class="small">'+formatScheduleTimestamp(r.confirmedAt)+'</div>':"";
+      const tr=document.createElement("tr");
+      tr.innerHTML="<td>"+(r.date||"")+"</td><td>"+(r.start_time||"")+"</td><td>"+(r.end_time||"")+"</td><td>"+(r.guard||"")+"</td><td>"+(r.note||"")+"</td><td>"+statusText+confirmedDetail+"</td><td>"+action+"</td>";
+      tbody.appendChild(tr);
+    });
+  }catch{tbody.innerHTML="<tr><td colspan='7'>Error loading schedule.</td></tr>";}
+}
+async function loadAdminScheduleConfirmations(){
+  if(!authToken||currentUserRole!=="admin")return;
+  const tbody=document.querySelector("#admin-schedule-confirmations tbody"),summary=document.getElementById("admin-schedule-confirmation-summary");
+  if(!tbody)return;
+  tbody.innerHTML="<tr><td colspan='5'>Loading...</td></tr>";
+  try{
+    const data=await rawApi("/schedules",{method:"GET",silent:true});
+    const items=Array.isArray(data)?data:[];
+    let confirmed=0,pending=0;
+    tbody.innerHTML="";
+    if(!items.length){tbody.innerHTML="<tr><td colspan='5'>No schedules have been sent yet.</td></tr>";if(summary)summary.textContent="";return;}
+    items.slice(0,100).forEach(function(sch){
+      const isConfirmed=(sch.status||"pending")==="confirmed";if(isConfirmed)confirmed++;else pending++;
+      const tr=document.createElement("tr");
+      if(isConfirmed)tr.style.background="#ecfdf5";
+      const status=isConfirmed?"CONFIRMED ✓ — LOCKED":"Awaiting guard";
+      tr.innerHTML="<td>"+(sch.guard||"")+"</td><td>"+((sch.shifts||[]).length)+"</td><td>"+formatScheduleTimestamp(sch.created_at)+"</td><td style=\"font-weight:700\">"+status+"</td><td>"+(isConfirmed?formatScheduleTimestamp(sch.confirmed_at):"")+"</td>";
+      tbody.appendChild(tr);
+    });
+    if(summary)summary.textContent="Confirmed: "+confirmed+" | Awaiting confirmation: "+pending+". This list refreshes automatically while the Admin tab is open.";
+  }catch(e){tbody.innerHTML="<tr><td colspan='5'>Could not load schedule confirmations.</td></tr>";if(summary)summary.textContent="";}
 }
 
 function wireAuthButtons(){
@@ -851,5 +912,6 @@ function wireAdminFilters(){
 }
 initShiftTimeDropdowns();initAvailabilityTimeDropdowns();initBulkAvailabilitySelectors();initScheduleTimeDropdowns();
 wireAuthButtons();wireAdminFilters();ensureFixedAdminVenueOptions();toggleOtherVenueInput();prewarmApi();restoreSession();
+setInterval(function(){const a=document.getElementById("section-admin");if(authToken&&currentUserRole==="admin"&&a&&!a.classList.contains("hidden"))loadAdminScheduleConfirmations();},30000);
 </script>
 </body></html>

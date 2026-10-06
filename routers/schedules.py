@@ -23,6 +23,9 @@ def serialize_schedule(doc: dict) -> dict:
         "shifts": doc.get("shifts") or [],
         "created_at": doc.get("created_at"),
         "created_by_admin_id": str(doc.get("created_by_admin_id")) if doc.get("created_by_admin_id") else None,
+        "status": doc.get("status") or "pending",
+        "confirmed_at": doc.get("confirmed_at"),
+        "confirmed_by_guard_id": str(doc.get("confirmed_by_guard_id")) if doc.get("confirmed_by_guard_id") else None,
     }
 
 
@@ -86,6 +89,9 @@ async def create_schedule(
         "shifts": clean_shifts,
         "created_at": datetime.utcnow(),
         "created_by_admin_id": str(admin["_id"]),
+        "status": "pending",
+        "confirmed_at": None,
+        "confirmed_by_guard_id": None,
     }
 
     res = await db.schedules.insert_one(doc)
@@ -99,6 +105,9 @@ async def create_schedule(
             "shifts": clean_shifts,
             "created_at": doc["created_at"],
             "created_by_admin_id": doc["created_by_admin_id"],
+            "status": doc["status"],
+            "confirmed_at": doc["confirmed_at"],
+            "confirmed_by_guard_id": doc["confirmed_by_guard_id"],
         }
     )
 
@@ -123,10 +132,57 @@ async def admin_delete_schedule(
 ):
     if not ObjectId.is_valid(schedule_id):
         raise HTTPException(status_code=400, detail="Invalid schedule id")
+    schedule = await db.schedules.find_one({"_id": ObjectId(schedule_id)})
+    if not schedule:
+        raise HTTPException(status_code=404, detail="Schedule not found")
+    if (schedule.get("status") or "pending") == "confirmed":
+        raise HTTPException(status_code=409, detail="Confirmed schedules are locked and cannot be deleted")
     result = await db.schedules.delete_one({"_id": ObjectId(schedule_id)})
     if result.deleted_count != 1:
         raise HTTPException(status_code=404, detail="Schedule not found")
     return {"status": "deleted", "id": schedule_id}
+
+
+@router.post("/{schedule_id}/confirm")
+async def confirm_schedule(
+    schedule_id: str,
+    current_user=Depends(get_current_user),
+    db=Depends(get_db),
+):
+    if not ObjectId.is_valid(schedule_id):
+        raise HTTPException(status_code=400, detail="Invalid schedule id")
+
+    user_id = str(current_user["_id"])
+    name = (current_user.get("name") or current_user.get("full_name") or "").strip()
+    email = (current_user.get("email") or "").lower().strip()
+
+    or_clauses = [{"guard_id": user_id}]
+    if name:
+        or_clauses.append({"guard": name})
+    if email:
+        or_clauses.append({"guard": email})
+
+    schedule = await db.schedules.find_one({"_id": ObjectId(schedule_id), "$or": or_clauses})
+    if not schedule:
+        raise HTTPException(status_code=404, detail="Schedule not found for this guard")
+
+    if (schedule.get("status") or "pending") == "confirmed":
+        return serialize_schedule(schedule)
+
+    now = datetime.utcnow()
+    await db.schedules.update_one(
+        {"_id": schedule["_id"]},
+        {"$set": {
+            "status": "confirmed",
+            "confirmed_at": now,
+            "confirmed_by_guard_id": user_id,
+            "updated_at": now,
+        }},
+    )
+    schedule["status"] = "confirmed"
+    schedule["confirmed_at"] = now
+    schedule["confirmed_by_guard_id"] = user_id
+    return serialize_schedule(schedule)
 
 
 @router.get("/me")
