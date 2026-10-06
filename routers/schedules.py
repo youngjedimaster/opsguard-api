@@ -2,6 +2,7 @@ from datetime import datetime
 from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException
+from bson import ObjectId
 
 from database import get_db
 from deps import get_admin_user, get_current_user
@@ -100,6 +101,32 @@ async def create_schedule(
             "created_by_admin_id": doc["created_by_admin_id"],
         }
     )
+
+
+@router.get("")
+async def admin_get_schedules(
+    admin=Depends(get_admin_user),
+    db=Depends(get_db),
+):
+    items: List[dict] = []
+    cursor = db.schedules.find({}).sort("created_at", -1)
+    async for doc in cursor:
+        items.append(serialize_schedule(doc))
+    return items
+
+
+@router.delete("/{schedule_id}")
+async def admin_delete_schedule(
+    schedule_id: str,
+    admin=Depends(get_admin_user),
+    db=Depends(get_db),
+):
+    if not ObjectId.is_valid(schedule_id):
+        raise HTTPException(status_code=400, detail="Invalid schedule id")
+    result = await db.schedules.delete_one({"_id": ObjectId(schedule_id)})
+    if result.deleted_count != 1:
+        raise HTTPException(status_code=404, detail="Schedule not found")
+    return {"status": "deleted", "id": schedule_id}
 
 
 @router.get("/me")
