@@ -56,4 +56,12 @@ async def opsguard_portal():
     portal_path = Path(__file__).resolve().parent / "portal.html"
     if not portal_path.exists():
         return HTMLResponse("portal.html is missing from the deployed app.", status_code=500)
-    return FileResponse(portal_path, media_type="text/html")
+    return FileResponse(
+        portal_path,
+        media_type="text/html",
+        headers={
+            "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+            "Pragma": "no-cache",
+            "Expires": "0",
+        },
+    )
