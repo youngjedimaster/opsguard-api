@@ -59,7 +59,7 @@
 
 <div id="section-schedule" class="card hidden">
 <h2 style="margin:0 0 4px">My Schedule</h2><p class="small">Schedules sent from the Admin tab appear here. Tap Confirm on each shift you accept. Once confirmed, that shift is locked.</p>
-<div class="table-scroll"><table id="my-schedule-table"><thead><tr><th>Date</th><th>Start</th><th>End</th><th>Guard</th><th>Note</th><th>Status</th><th>Action</th></tr></thead>
+<div class="table-scroll"><table id="my-schedule-table"><thead><tr><th>Confirm</th><th>Date</th><th>Start</th><th>End</th><th>Guard</th><th>Note</th><th>Status</th></tr></thead>
 <tbody><tr><td colspan="7">Login to see your schedule.</td></tr></tbody></table></div>
 <p id="my-schedule-status" class="small"></p>
 </div>
@@ -849,7 +849,7 @@ async function confirmScheduleShift(scheduleId, shiftIndex){
 }
 function formatScheduleTimestamp(v){
   if(!v)return "";
-  try{const d=new Date(v);return Number.isNaN(d.getTime())?String(v):d.toLocaleString();}catch{return String(v);}
+  try{const stamp=String(v);const normalized=/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?$/.test(stamp)?stamp+"Z":stamp;const d=new Date(normalized);return Number.isNaN(d.getTime())?stamp:d.toLocaleString();}catch{return String(v);}
 }
 async function loadMySchedule(){
   const tbody=document.querySelector("#my-schedule-table tbody"),st=document.getElementById("my-schedule-status");
@@ -874,8 +874,8 @@ async function loadMySchedule(){
       const statusText=r.confirmed?"CONFIRMED ✓ — LOCKED":"Awaiting your confirmation";
       let action=r.confirmed?'<span style="font-weight:700;color:#166534">Confirmed</span>':"<button type='button' class='primary'>Confirm shift</button>";
       const tr=document.createElement("tr");
-      tr.innerHTML="<td>"+(r.date||"")+"</td><td>"+(r.start_time||"")+"</td><td>"+(r.end_time||"")+"</td><td>"+(r.guard||"")+"</td><td>"+(r.note||"")+"</td><td>"+statusText+(r.confirmed&&r.confirmedAt?"<div class='small'>"+formatScheduleTimestamp(r.confirmedAt)+"</div>":"")+"</td><td>"+action+"</td>";
-      if(!r.confirmed){const btn=tr.querySelector("td:last-child button");if(btn)btn.addEventListener("click",()=>confirmScheduleShift(r.scheduleId,r.shiftIndex));}
+      tr.innerHTML="<td>"+action+"</td><td>"+(r.date||"")+"</td><td>"+(r.start_time||"")+"</td><td>"+(r.end_time||"")+"</td><td>"+(r.guard||"")+"</td><td>"+(r.note||"")+"</td><td>"+statusText+(r.confirmed&&r.confirmedAt?"<div class='small'>"+formatScheduleTimestamp(r.confirmedAt)+"</div>":"")+"</td>";
+      if(!r.confirmed){const btn=tr.querySelector("td:first-child button");if(btn)btn.addEventListener("click",()=>confirmScheduleShift(r.scheduleId,r.shiftIndex));}
       tbody.appendChild(tr);
     });
   }catch(e){tbody.innerHTML="<tr><td colspan='7'>Error loading schedule.</td></tr>";if(st)st.textContent="Could not load your assigned shifts.";}
