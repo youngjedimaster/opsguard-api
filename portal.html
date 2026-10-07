@@ -58,7 +58,7 @@
 </div>
 
 <div id="section-schedule" class="card hidden">
-<h2 style="margin:0 0 4px">My Schedule</h2><p class="small">Schedules sent from the Admin tab will appear here for the logged in guard.</p>
+<h2 style="margin:0 0 4px">My Schedule</h2><p class="small">Schedules sent from the Admin tab appear here. Tap Confirm on each shift you accept. Once confirmed, that shift is locked.</p>
 <div class="table-scroll"><table id="my-schedule-table"><thead><tr><th>Date</th><th>Start</th><th>End</th><th>Guard</th><th>Note</th><th>Status</th><th>Action</th></tr></thead>
 <tbody><tr><td colspan="7">Login to see your schedule.</td></tr></tbody></table></div>
 <p id="my-schedule-status" class="small"></p>
@@ -96,7 +96,8 @@
 <p class="small" style="margin:0 0 6px">A guard confirms the complete schedule you sent. Confirmed schedules are locked so they cannot be deleted.</p>
 <div class="row"><button type="button" class="primary" style="background:#0B1F3B" onclick="loadAdminScheduleConfirmations()">Refresh confirmations</button></div>
 <p id="admin-schedule-confirmation-summary" class="small"></p>
-<div class="table-scroll"><table id="admin-schedule-confirmations"><thead><tr><th>Guard</th><th>Shifts</th><th>Sent</th><th>Status</th><th>Confirmed</th></tr></thead><tbody><tr><td colspan="5">No confirmation data loaded.</td></tr></tbody></table></div>
+<p id="admin-confirmation-alert" role="status" style="display:none;font-weight:700;padding:10px;margin:6px 0;background:#dcfce7;color:#14532d;border-radius:8px"></p>
+<div class="table-scroll"><table id="admin-schedule-confirmations"><thead><tr><th>Guard</th><th>Date</th><th>Time</th><th>Status</th><th>Confirmed</th></tr></thead><tbody><tr><td colspan="5">No confirmation data loaded.</td></tr></tbody></table></div>
 </div>
 <p class="small" style="margin:2px 0 8px">For a range, choose a Start date and End date, for example 2026-06-15 to 2026-06-30, then click Load shifts or Export CSV.</p>
 <div class="row">
@@ -156,7 +157,7 @@
 
 <script>
 const API_BASE="https://opsguard-api.onrender.com/api";
-let authToken=null,currentUserEmail=null,currentUserName=null,currentUserRole=null,myShiftsCache=[],allShiftsCache=[],adminFilteredShifts=[],scheduleDraft=[],currentGuardAvailability=[],adminUserMap={},apiWarmPromise=null;
+let authToken=null,currentUserEmail=null,currentUserName=null,currentUserRole=null,myShiftsCache=[],allShiftsCache=[],adminFilteredShifts=[],scheduleDraft=[],currentGuardAvailability=[],adminUserMap={},apiWarmPromise=null,adminConfirmationsInitialized=false,adminSeenConfirmedShifts=new Set();
 const FIXED_VENUES=["Baby G","Garrison","Get Well","Jean Darlene","St Anne's","Standard Time","Two Kats"];
 
 function showSection(id){
@@ -822,29 +823,29 @@ async function sendScheduleFromAdmin(){
   if(!authToken)return alert("Login first.");
   const g=selectedScheduleGuard();
   const st=document.getElementById("schedule-modal-status");
-  if(!g){if(st)st.textContent="Choose a guard first.";return;}
+  if(!g||!g.id){if(st)st.textContent="Choose a registered guard in Selected guard account before sending.";return;}
   if(!scheduleDraft.length){if(st)st.textContent="Add at least one working day before sending.";return;}
   const note=(document.getElementById("schedule-note")||{}).value||"";
   if(st)st.textContent="Sending schedule...";
   try{
-    const payload={guard:g.name||g.email,note,shifts:scheduleDraft.map(s=>({guard:g.name||g.email,date:s.date,start_time:s.start_time,end_time:s.end_time}))};
+    const payload={guard:g.name||g.email,guard_id:g.id||null,note,shifts:scheduleDraft.map(s=>({guard:g.name||g.email,date:s.date,start_time:s.start_time,end_time:s.end_time}))};
     await rawApi("/schedules",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
     if(st)st.textContent="Schedule sent. It is awaiting the guard's confirmation.";
     const adminSt=document.getElementById("schedule-admin-status");if(adminSt)adminSt.textContent="Schedule sent to "+(g.name||g.email)+" — awaiting confirmation.";
     scheduleDraft=[];renderScheduleDraft();loadAdminScheduleConfirmations();
   }catch(e){if(st)st.textContent="Schedule send failed: "+(e&&e.message?e.message:String(e));}
 }
-async function confirmSchedule(scheduleId){
+async function confirmScheduleShift(scheduleId, shiftIndex){
   const st=document.getElementById("my-schedule-status");
   if(!authToken){if(st)st.textContent="Login first.";return;}
   if(!scheduleId){if(st)st.textContent="Missing schedule id.";return;}
-  if(!(await confirmAction("Confirm that you received this complete schedule and are committed to these shifts? Once confirmed, the schedule is locked.","Confirm shifts")))return;
-  if(st)st.textContent="Confirming schedule...";
+  if(!(await confirmAction("Confirm that you received this shift and will attend? Once confirmed, it is locked.","Confirm shift")))return;
+  if(st)st.textContent="Confirming shift...";
   try{
-    await rawApi("/schedules/"+encodeURIComponent(scheduleId)+"/confirm",{method:"POST",silent:true});
-    if(st)st.textContent="Schedule confirmed. You are set for these shifts.";
+    await rawApi("/schedules/"+encodeURIComponent(scheduleId)+"/shifts/"+shiftIndex+"/confirm",{method:"POST",silent:true});
+    if(st)st.textContent="Shift confirmed. You are committed to this shift.";
     await loadMySchedule();
-  }catch(e){if(st)st.textContent="Could not confirm schedule: "+(e&&e.message?e.message:String(e));}
+  }catch(e){if(st)st.textContent="Could not confirm shift: "+(e&&e.message?e.message:String(e));}
 }
 function formatScheduleTimestamp(v){
   if(!v)return "";
@@ -857,51 +858,60 @@ async function loadMySchedule(){
   tbody.innerHTML="<tr><td colspan='7'>Loading...</td></tr>";
   try{
     const res=await fetch(API_BASE+"/schedules/me",{headers:{Authorization:"Bearer "+authToken},cache:"no-store"});
-    if(!res.ok)throw 0;
-    const data=await res.json();const rows=[];
+    if(!res.ok)throw new Error("Could not load schedules");
+    const data=await res.json(),rows=[];
     (data||[]).forEach(function(sch){
-      const guard=sch.guard||"",note=sch.note||"",status=sch.status||"pending",scheduleId=sch.id||"",confirmedAt=sch.confirmed_at||"";
-      (sch.shifts||[]).forEach(function(sh,index){rows.push({date:sh.date,start_time:sh.start_time,end_time:sh.end_time,guard:guard,note:note,status:status,scheduleId:scheduleId,confirmedAt:confirmedAt,isFirst:index===0});});
+      const guard=sch.guard||"",note=sch.note||"",scheduleId=sch.id||"";
+      (sch.shifts||[]).forEach(function(sh,index){
+        const confirmed=(sch.status==="confirmed"||sh.status==="confirmed");
+        rows.push({date:sh.date,start_time:sh.start_time,end_time:sh.end_time,guard:guard,note:note,confirmed:confirmed,scheduleId:scheduleId,shiftIndex:index,confirmedAt:sh.confirmed_at||sch.confirmed_at||""});
+      });
     });
     rows.sort(function(a,b){return parseScheduleRowDateTime(b)-parseScheduleRowDateTime(a);});
     tbody.innerHTML="";
     if(!rows.length){tbody.innerHTML="<tr><td colspan='7'>No schedule yet.</td></tr>";if(st)st.textContent="";return;}
     rows.forEach(function(r){
-      const confirmed=r.status==="confirmed";
-      const statusText=confirmed?"Confirmed ✓":"Awaiting your confirmation";
-      let action="";
-      if(confirmed&&r.isFirst)action='<span style="font-weight:700;color:#166534">Locked</span>';
-      else if(!confirmed&&r.isFirst&&r.scheduleId)action='<button type="button" class="primary" onclick="confirmSchedule(\''+r.scheduleId+'\')">Confirm shifts</button>';
-      const confirmedDetail=(confirmed&&r.confirmedAt)?'<div class="small">'+formatScheduleTimestamp(r.confirmedAt)+'</div>':"";
+      const statusText=r.confirmed?"CONFIRMED ✓ — LOCKED":"Awaiting your confirmation";
+      let action=r.confirmed?'<span style="font-weight:700;color:#166534">Confirmed</span>':"<button type='button' class='primary'>Confirm shift</button>";
       const tr=document.createElement("tr");
-      tr.innerHTML="<td>"+(r.date||"")+"</td><td>"+(r.start_time||"")+"</td><td>"+(r.end_time||"")+"</td><td>"+(r.guard||"")+"</td><td>"+(r.note||"")+"</td><td>"+statusText+confirmedDetail+"</td><td>"+action+"</td>";
+      tr.innerHTML="<td>"+(r.date||"")+"</td><td>"+(r.start_time||"")+"</td><td>"+(r.end_time||"")+"</td><td>"+(r.guard||"")+"</td><td>"+(r.note||"")+"</td><td>"+statusText+(r.confirmed&&r.confirmedAt?"<div class='small'>"+formatScheduleTimestamp(r.confirmedAt)+"</div>":"")+"</td><td>"+action+"</td>";
+      if(!r.confirmed){const btn=tr.querySelector("td:last-child button");if(btn)btn.addEventListener("click",()=>confirmScheduleShift(r.scheduleId,r.shiftIndex));}
       tbody.appendChild(tr);
     });
-  }catch{tbody.innerHTML="<tr><td colspan='7'>Error loading schedule.</td></tr>";}
+  }catch(e){tbody.innerHTML="<tr><td colspan='7'>Error loading schedule.</td></tr>";if(st)st.textContent="Could not load your assigned shifts.";}
 }
 async function loadAdminScheduleConfirmations(){
   if(!authToken||currentUserRole!=="admin")return;
-  const tbody=document.querySelector("#admin-schedule-confirmations tbody"),summary=document.getElementById("admin-schedule-confirmation-summary");
+  const tbody=document.querySelector("#admin-schedule-confirmations tbody"),summary=document.getElementById("admin-schedule-confirmation-summary"),banner=document.getElementById("admin-confirmation-alert");
   if(!tbody)return;
-  tbody.innerHTML="<tr><td colspan='5'>Loading...</td></tr>";
   try{
     const data=await rawApi("/schedules",{method:"GET",silent:true});
     const items=Array.isArray(data)?data:[];
     let confirmed=0,pending=0;
+    const confirmedKeys=new Set(),newEvents=[];
     tbody.innerHTML="";
     if(!items.length){tbody.innerHTML="<tr><td colspan='5'>No schedules have been sent yet.</td></tr>";if(summary)summary.textContent="";return;}
     items.slice(0,100).forEach(function(sch){
-      const isConfirmed=(sch.status||"pending")==="confirmed";if(isConfirmed)confirmed++;else pending++;
-      const tr=document.createElement("tr");
-      if(isConfirmed)tr.style.background="#ecfdf5";
-      const status=isConfirmed?"CONFIRMED ✓ — LOCKED":"Awaiting guard";
-      tr.innerHTML="<td>"+(sch.guard||"")+"</td><td>"+((sch.shifts||[]).length)+"</td><td>"+formatScheduleTimestamp(sch.created_at)+"</td><td style=\"font-weight:700\">"+status+"</td><td>"+(isConfirmed?formatScheduleTimestamp(sch.confirmed_at):"")+"</td>";
-      tbody.appendChild(tr);
+      (sch.shifts||[]).forEach(function(sh,index){
+        const isConfirmed=(sch.status==="confirmed"||sh.status==="confirmed");
+        const key=String(sch.id)+"-"+index;
+        if(isConfirmed){confirmed++;confirmedKeys.add(key);if(adminConfirmationsInitialized&&!adminSeenConfirmedShifts.has(key))newEvents.push((sch.guard||"Guard")+" confirmed "+(sh.date||"their shift")+" ("+(sh.start_time||"")+"-"+(sh.end_time||"")+")");}
+        else pending++;
+        const tr=document.createElement("tr");
+        if(isConfirmed)tr.style.background="#ecfdf5";
+        tr.innerHTML="<td>"+(sch.guard||"")+"</td><td>"+(sh.date||"")+"</td><td>"+(sh.start_time||"")+" – "+(sh.end_time||"")+"</td><td style='font-weight:700'>"+(isConfirmed?"CONFIRMED ✓ — LOCKED":"Awaiting guard")+"</td><td>"+(isConfirmed?formatScheduleTimestamp(sh.confirmed_at||sch.confirmed_at):"")+"</td>";
+        tbody.appendChild(tr);
+      });
     });
-    if(summary)summary.textContent="Confirmed: "+confirmed+" | Awaiting confirmation: "+pending+". This list refreshes automatically while the Admin tab is open.";
-  }catch(e){tbody.innerHTML="<tr><td colspan='5'>Could not load schedule confirmations.</td></tr>";if(summary)summary.textContent="";}
+    if(!tbody.children.length)tbody.innerHTML="<tr><td colspan='5'>No assigned shifts.</td></tr>";
+    if(summary)summary.textContent="Confirmed shifts: "+confirmed+" | Awaiting confirmation: "+pending+". Updated every 30 seconds while this tab is open.";
+    adminSeenConfirmedShifts=confirmedKeys;adminConfirmationsInitialized=true;
+    if(newEvents.length&&banner){
+      banner.style.display="block";
+      banner.textContent="NEW SHIFT CONFIRMATION: "+newEvents.slice(0,4).join(" | ")+(newEvents.length>4?" | +"+(newEvents.length-4)+" more":"");
+    }
+  }catch(e){tbody.innerHTML="<tr><td colspan='5'>Could not load shift confirmations.</td></tr>";if(summary)summary.textContent="";}
 }
-
 function wireAuthButtons(){
   const loginBtn=document.getElementById("login-btn"),registerBtn=document.getElementById("register-btn");
   if(loginBtn)loginBtn.addEventListener("click",e=>{e.preventDefault();login();});
