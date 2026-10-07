@@ -171,6 +171,57 @@ async def admin_delete_schedule(
     return {"status": "deleted", "id": schedule_id}
 
 
+@router.delete("/{schedule_id}/shifts/{shift_index}")
+async def admin_delete_schedule_shift(
+    schedule_id: str,
+    shift_index: int,
+    admin=Depends(get_admin_user),
+    db=Depends(get_db),
+):
+    """Admin override: delete one scheduled shift even if the guard confirmed it."""
+    if not ObjectId.is_valid(schedule_id):
+        raise HTTPException(status_code=400, detail="Invalid schedule id")
+    doc = await db.schedules.find_one({"_id": ObjectId(schedule_id)})
+    if not doc:
+        raise HTTPException(status_code=404, detail="Schedule not found")
+    shifts = list(doc.get("shifts") or [])
+    if not 0 <= shift_index < len(shifts):
+        raise HTTPException(status_code=404, detail="Shift not found in schedule")
+
+    removed = shifts.pop(shift_index)
+    if not shifts:
+        await db.schedules.delete_one({"_id": doc["_id"]})
+        return {"status": "deleted", "schedule_deleted": True, "removed_shift": removed}
+
+    confirmed_count = sum(1 for sh in shifts if sh.get("status") == "confirmed")
+    if confirmed_count == len(shifts):
+        parent_status = "confirmed"
+        confirmed_at = doc.get("confirmed_at")
+        confirmed_by_guard_id = doc.get("confirmed_by_guard_id")
+    elif confirmed_count:
+        parent_status = "partial"
+        confirmed_at = None
+        confirmed_by_guard_id = None
+    else:
+        parent_status = "pending"
+        confirmed_at = None
+        confirmed_by_guard_id = None
+
+    now = datetime.utcnow()
+    await db.schedules.update_one(
+        {"_id": doc["_id"]},
+        {"$set": {
+            "shifts": shifts,
+            "status": parent_status,
+            "confirmed_at": confirmed_at,
+            "confirmed_by_guard_id": confirmed_by_guard_id,
+            "updated_at": now,
+        }},
+    )
+    updated = await db.schedules.find_one({"_id": doc["_id"]})
+    return serialize_schedule(updated)
+
+
 @router.post("/{schedule_id}/confirm")
 async def confirm_schedule(
     schedule_id: str,
@@ -301,6 +352,35 @@ async def mark_calendar_exported(
     await db.schedules.update_one({"_id": doc["_id"]}, {"$set": update})
     doc = await db.schedules.find_one({"_id": doc["_id"]})
     return serialize_schedule(doc)
+
+
+@router.delete("/{schedule_id}/shifts/{shift_index}/calendar-exported")
+async def clear_calendar_exported(
+    schedule_id: str,
+    shift_index: int,
+    admin=Depends(get_admin_user),
+    db=Depends(get_db),
+):
+    """Clear OpsGuard's calendar export marker so a shift can be exported again."""
+    if not ObjectId.is_valid(schedule_id):
+        raise HTTPException(status_code=400, detail="Invalid schedule id")
+    doc = await db.schedules.find_one({"_id": ObjectId(schedule_id)})
+    if not doc:
+        raise HTTPException(status_code=404, detail="Schedule not found")
+    shifts = doc.get("shifts") or []
+    if not 0 <= shift_index < len(shifts):
+        raise HTTPException(status_code=404, detail="Shift not found in schedule")
+    now = datetime.utcnow()
+    await db.schedules.update_one(
+        {"_id": doc["_id"]},
+        {"$set": {
+            f"shifts.{shift_index}.calendar_exported_at": None,
+            f"shifts.{shift_index}.calendar_export_method": None,
+            "updated_at": now,
+        }},
+    )
+    updated = await db.schedules.find_one({"_id": doc["_id"]})
+    return serialize_schedule(updated)
 
 
 @router.get("/me")

@@ -93,12 +93,12 @@
 </div>
 <div class="card" style="padding:8px;margin:4px 0 8px;background:#f9fafb">
 <h3 style="margin:0 0 4px;font-size:.86rem">Schedule confirmations</h3>
-<p class="small" style="margin:0 0 6px">A guard confirms the complete schedule you sent. Confirmed schedules are locked so they cannot be deleted.</p>
+<p class="small" style="margin:0 0 6px">Confirmed shifts are locked for guards. Admin can delete a confirmed shift or clear its calendar export status.</p>
 <div class="row"><button type="button" class="primary" style="background:#0B1F3B" onclick="loadAdminScheduleConfirmations()">Refresh confirmations</button><button type="button" class="primary" style="background:#166534" onclick="exportAllConfirmedCalendar()">Export All Confirmed (.ics)</button></div>
 <p class="small" style="margin:4px 0">Open one confirmed shift in Google Calendar, or download all confirmed/unexported shifts as one calendar file. Exported shifts are remembered so Export All will not duplicate them.</p>
 <p id="admin-schedule-confirmation-summary" class="small"></p>
 <p id="admin-confirmation-alert" role="status" style="display:none;font-weight:700;padding:10px;margin:6px 0;background:#dcfce7;color:#14532d;border-radius:8px"></p>
-<div class="table-scroll"><table id="admin-schedule-confirmations"><thead><tr><th>Guard</th><th>Venue</th><th>Shift</th><th>Date</th><th>Time</th><th>Status</th><th>Confirmed</th><th>Calendar</th></tr></thead><tbody><tr><td colspan="8">No confirmation data loaded.</td></tr></tbody></table></div>
+<div class="table-scroll"><table id="admin-schedule-confirmations"><thead><tr><th>Guard</th><th>Venue</th><th>Shift</th><th>Date</th><th>Time</th><th>Status</th><th>Confirmed</th><th>Calendar</th><th>Admin</th></tr></thead><tbody><tr><td colspan="9">No confirmation data loaded.</td></tr></tbody></table></div>
 </div>
 <p class="small" style="margin:2px 0 8px">For a range, choose a Start date and End date, for example 2026-06-15 to 2026-06-30, then click Load shifts or Export CSV.</p>
 <div class="row">
@@ -940,6 +940,25 @@ async function exportAllConfirmedCalendar(){
   await loadAdminScheduleConfirmations();
 }
 
+
+async function clearCalendarExportStatus(scheduleId,shiftIndex){
+  if(!(await confirmAction("Clear this shift's exported status? This lets it be exported again. It will not remove an event already saved in Google Calendar.","Clear export")))return;
+  try{
+    await rawApi("/schedules/"+encodeURIComponent(scheduleId)+"/shifts/"+shiftIndex+"/calendar-exported",{method:"DELETE",silent:true});
+    await loadAdminScheduleConfirmations();
+  }catch(e){alert("Could not clear export status: "+(e&&e.message?e.message:String(e)));}
+}
+async function adminDeleteScheduledShift(scheduleId,shiftIndex,guard,sh){
+  const label=(guard||"Guard")+" — "+((sh&&sh.venue)||"")+" "+((sh&&sh.shift_code)||"")+" "+((sh&&sh.date)||"");
+  let warning="Delete this scheduled shift from OpsGuard?\n\n"+label+"\n\nThis works even after the guard confirmed it.";
+  if(sh&&sh.calendar_exported_at)warning+="\n\nThis also removes the OpsGuard export record, but it cannot remove an event already saved/imported into Google Calendar.";
+  if(!(await confirmAction(warning,"Delete shift")))return;
+  try{
+    await rawApi("/schedules/"+encodeURIComponent(scheduleId)+"/shifts/"+shiftIndex,{method:"DELETE",silent:true});
+    await loadAdminScheduleConfirmations();
+  }catch(e){alert("Could not delete shift: "+(e&&e.message?e.message:String(e)));}
+}
+
 async function loadAdminScheduleConfirmations(){
   if(!authToken||currentUserRole!=="admin")return;
   const tbody=document.querySelector("#admin-schedule-confirmations tbody"),summary=document.getElementById("admin-schedule-confirmation-summary"),banner=document.getElementById("admin-confirmation-alert");
@@ -951,7 +970,7 @@ async function loadAdminScheduleConfirmations(){
     let confirmed=0,pending=0,exported=0;
     const confirmedKeys=new Set(),newEvents=[];
     tbody.innerHTML="";
-    if(!items.length){tbody.innerHTML="<tr><td colspan='8'>No schedules have been sent yet.</td></tr>";if(summary)summary.textContent="";return;}
+    if(!items.length){tbody.innerHTML="<tr><td colspan='9'>No schedules have been sent yet.</td></tr>";if(summary)summary.textContent="";return;}
     items.slice(0,100).forEach(function(sch){
       (sch.shifts||[]).forEach(function(sh,index){
         const isConfirmed=(sch.status==="confirmed"||sh.status==="confirmed");
@@ -960,20 +979,25 @@ async function loadAdminScheduleConfirmations(){
         else pending++;
         const tr=document.createElement("tr");
         if(isConfirmed)tr.style.background="#ecfdf5";
-        const calStatus=!isConfirmed?"—":(sh.calendar_exported_at?"<span style='font-weight:700;color:#166534'>EXPORTED ✓</span><div class='small'>"+formatScheduleTimestamp(sh.calendar_exported_at)+"</div>":"<button type='button' class='primary' style='white-space:nowrap'>Open in Google Calendar</button>");
-        tr.innerHTML="<td>"+(sch.guard||"")+"</td><td>"+(sh.venue||"—")+"</td><td>"+(sh.shift_code||"—")+"</td><td>"+(sh.date||"")+"</td><td>"+(sh.start_time||"")+" – "+(sh.end_time||"")+"</td><td style='font-weight:700'>"+(isConfirmed?"CONFIRMED ✓ — LOCKED":"Awaiting guard")+"</td><td>"+(isConfirmed?formatScheduleTimestamp(sh.confirmed_at||sch.confirmed_at):"")+"</td><td>"+calStatus+"</td>";
-        if(isConfirmed&&!sh.calendar_exported_at){const btn=tr.querySelector("td:last-child button");if(btn)btn.addEventListener("click",()=>exportConfirmedShiftToGoogle(sch.id,index));}
+        let calStatus="—";
+        if(isConfirmed&&!sh.calendar_exported_at)calStatus="<button type='button' class='primary calendar-open' style='white-space:nowrap'>Open in Google Calendar</button>";
+        if(isConfirmed&&sh.calendar_exported_at)calStatus="<span style='font-weight:700;color:#166534'>EXPORTED ✓</span><div class='small'>"+formatScheduleTimestamp(sh.calendar_exported_at)+"</div><button type='button' class='primary secondary calendar-clear' style='margin-top:4px;white-space:nowrap'>Clear Export</button>";
+        const adminAction="<button type='button' class='primary admin-delete-shift' style='background:#991b1b;white-space:nowrap'>Delete Shift</button>";
+        tr.innerHTML="<td>"+(sch.guard||"")+"</td><td>"+(sh.venue||"—")+"</td><td>"+(sh.shift_code||"—")+"</td><td>"+(sh.date||"")+"</td><td>"+(sh.start_time||"")+" – "+(sh.end_time||"")+"</td><td style='font-weight:700'>"+(isConfirmed?"CONFIRMED ✓ — LOCKED FOR GUARD":"Awaiting guard")+"</td><td>"+(isConfirmed?formatScheduleTimestamp(sh.confirmed_at||sch.confirmed_at):"")+"</td><td>"+calStatus+"</td><td>"+adminAction+"</td>";
+        const openBtn=tr.querySelector(".calendar-open");if(openBtn)openBtn.addEventListener("click",()=>exportConfirmedShiftToGoogle(sch.id,index));
+        const clearBtn=tr.querySelector(".calendar-clear");if(clearBtn)clearBtn.addEventListener("click",()=>clearCalendarExportStatus(sch.id,index));
+        const deleteBtn=tr.querySelector(".admin-delete-shift");if(deleteBtn)deleteBtn.addEventListener("click",()=>adminDeleteScheduledShift(sch.id,index,sch.guard,sh));
         tbody.appendChild(tr);
       });
     });
-    if(!tbody.children.length)tbody.innerHTML="<tr><td colspan='8'>No assigned shifts.</td></tr>";
-    if(summary)summary.textContent="Confirmed shifts: "+confirmed+" | Awaiting confirmation: "+pending+" | Calendar exported: "+exported+". Updated every 30 seconds while this tab is open.";
+    if(!tbody.children.length)tbody.innerHTML="<tr><td colspan='9'>No assigned shifts.</td></tr>";
+    if(summary)summary.textContent="Confirmed shifts: "+confirmed+" | Awaiting confirmation: "+pending+" | Calendar exported: "+exported+". Admin can delete any shift or clear an export record.";
     adminSeenConfirmedShifts=confirmedKeys;adminConfirmationsInitialized=true;
     if(newEvents.length&&banner){
       banner.style.display="block";
       banner.textContent="NEW SHIFT CONFIRMATION: "+newEvents.slice(0,4).join(" | ")+(newEvents.length>4?" | +"+(newEvents.length-4)+" more":"");
     }
-  }catch(e){tbody.innerHTML="<tr><td colspan='8'>Could not load shift confirmations.</td></tr>";if(summary)summary.textContent="";}
+  }catch(e){tbody.innerHTML="<tr><td colspan='9'>Could not load shift confirmations.</td></tr>";if(summary)summary.textContent="";}
 }
 function wireAuthButtons(){
   const loginBtn=document.getElementById("login-btn"),registerBtn=document.getElementById("register-btn");
