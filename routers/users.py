@@ -1,6 +1,13 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Optional, List
+import asyncio
+import hashlib
+import os
 import secrets
+import smtplib
+import ssl
+from email.message import EmailMessage
+from urllib.parse import quote
 
 from bson import ObjectId
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -30,10 +37,66 @@ class ResetPasswordIn(BaseModel):
     new_password: str
 
 
-class AdminResetPasswordIn(BaseModel):
-    user_id: Optional[str] = None
-    email: Optional[EmailStr] = None
-    new_password: str
+
+
+
+RESET_TTL_MINUTES = int(os.getenv("PASSWORD_RESET_TTL_MINUTES", "30"))
+RESET_BASE_URL = os.getenv("PASSWORD_RESET_BASE_URL", "https://opsguard-api.onrender.com/portal")
+
+
+def _smtp_configured() -> bool:
+    return bool(
+        os.getenv("SMTP_HOST")
+        and os.getenv("SMTP_USERNAME")
+        and os.getenv("SMTP_PASSWORD")
+        and (os.getenv("SMTP_FROM") or os.getenv("SMTP_USERNAME"))
+    )
+
+
+def _send_password_reset_email(to_email: str, reset_link: str) -> None:
+    host = os.getenv("SMTP_HOST", "").strip()
+    port = int(os.getenv("SMTP_PORT", "587"))
+    username = os.getenv("SMTP_USERNAME", "").strip()
+    password = os.getenv("SMTP_PASSWORD", "")
+    from_email = (os.getenv("SMTP_FROM") or username).strip()
+    use_tls = os.getenv("SMTP_USE_TLS", "true").lower() not in {"0", "false", "no"}
+
+    if not host or not username or not password or not from_email:
+        raise RuntimeError("SMTP is not configured")
+
+    msg = EmailMessage()
+    msg["Subject"] = "Reset your OpsGuard password"
+    msg["From"] = from_email
+    msg["To"] = to_email
+    msg.set_content(
+        "A password reset was requested for your OpsGuard account.\n\n"
+        f"Reset your password here:\n{reset_link}\n\n"
+        f"This link expires in {RESET_TTL_MINUTES} minutes and can be used only once.\n"
+        "If you did not request this reset, you can ignore this email."
+    )
+
+    context = ssl.create_default_context()
+    if port == 465:
+        with smtplib.SMTP_SSL(host, port, context=context, timeout=20) as server:
+            server.login(username, password)
+            server.send_message(msg)
+    else:
+        with smtplib.SMTP(host, port, timeout=20) as server:
+            server.ehlo()
+            if use_tls:
+                server.starttls(context=context)
+                server.ehlo()
+            server.login(username, password)
+            server.send_message(msg)
+
+
+def _reset_link(raw_token: str) -> str:
+    sep = "&" if "?" in RESET_BASE_URL else "?"
+    return f"{RESET_BASE_URL}{sep}reset_token={quote(raw_token)}"
+
+
+def _token_hash(raw_token: str) -> str:
+    return hashlib.sha256(raw_token.encode("utf-8")).hexdigest()
 
 
 def serialize_user(user: dict) -> dict:
@@ -89,81 +152,123 @@ async def update_profile(
     db=Depends(get_db),
 ):
     user_doc = dict(user)
+    current_email = (user_doc.get("email") or "").lower().strip()
+    requested_email = payload.email.lower().strip() if payload.email else current_email
+    email_changed = requested_email != current_email
+    password_changed = bool(payload.new_password)
 
-    if payload.new_password:
-        if not payload.current_password:
-            raise HTTPException(status_code=400, detail="current_password is required to change password")
-        if not verify_password(payload.current_password, user_doc["password_hash"]):
-            raise HTTPException(status_code=401, detail="Current password is incorrect")
-        await db.users.update_one(
-            {"_id": user_doc["_id"]},
-            {"$set": {"password_hash": hash_password(payload.new_password), "updated_at": datetime.utcnow()}},
-        )
+    if not email_changed and not password_changed:
+        return {"status": "unchanged", "user": serialize_user(user_doc)}
 
-    if payload.email and payload.email.lower() != user_doc.get("email"):
-        new_email = payload.email.lower().strip()
-        existing = await db.users.find_one({"email": new_email, "_id": {"$ne": user_doc["_id"]}})
+    if not payload.current_password:
+        raise HTTPException(status_code=400, detail="Current password is required")
+    if not verify_password(payload.current_password, user_doc["password_hash"]):
+        raise HTTPException(status_code=401, detail="Current password is incorrect")
+
+    updates = {"updated_at": datetime.utcnow()}
+
+    if email_changed:
+        existing = await db.users.find_one({"email": requested_email, "_id": {"$ne": user_doc["_id"]}})
         if existing:
             raise HTTPException(status_code=409, detail="Email already in use")
-        await db.users.update_one(
-            {"_id": user_doc["_id"]},
-            {"$set": {"email": new_email, "updated_at": datetime.utcnow()}},
-        )
-        user_doc["email"] = new_email
+        updates["email"] = requested_email
+        user_doc["email"] = requested_email
 
+    if password_changed:
+        if len(payload.new_password) < 8:
+            raise HTTPException(status_code=400, detail="New password must be at least 8 characters")
+        updates["password_hash"] = hash_password(payload.new_password)
+
+    await db.users.update_one({"_id": user_doc["_id"]}, {"$set": updates})
     return {"status": "updated", "user": serialize_user(user_doc)}
 
 
 @router.post("/forgot-password")
 async def forgot_password(payload: ForgotPasswordIn, db=Depends(get_db)):
-    """
-    Records a password-reset request. This app does not have SMTP/email configured, so the
-    secure reset action is completed by an admin in the Admin tab.
-    """
+    if not _smtp_configured():
+        raise HTTPException(status_code=503, detail="Password reset email service is not configured yet")
+
     email = payload.email.lower().strip()
     user = await db.users.find_one({"email": email})
 
+    # Always return the same public result for an unknown email.
+    if not user:
+        return {
+            "status": "accepted",
+            "message": "If that account exists, a password reset link has been emailed.",
+        }
+
     now = datetime.utcnow()
-    request_doc = {
+    user_id = str(user["_id"])
+
+    # Invalidate any older unused links before issuing a new one.
+    await db.password_reset_tokens.update_many(
+        {"user_id": user_id, "used_at": None},
+        {"$set": {"used_at": now, "invalidated_reason": "superseded"}},
+    )
+
+    raw_token = secrets.token_urlsafe(32)
+    expires_at = now + timedelta(minutes=RESET_TTL_MINUTES)
+    token_doc = {
+        "token_hash": _token_hash(raw_token),
+        "user_id": user_id,
         "email": email,
-        "user_id": str(user["_id"]) if user else None,
-        "status": "open" if user else "unknown_email",
         "created_at": now,
-        "updated_at": now,
+        "expires_at": expires_at,
+        "used_at": None,
     }
-    if user:
-        await db.password_reset_requests.update_one(
-            {"email": email, "status": "open"},
-            {"$set": request_doc, "$setOnInsert": {"first_created_at": now}},
-            upsert=True,
+    inserted = await db.password_reset_tokens.insert_one(token_doc)
+
+    try:
+        await asyncio.to_thread(_send_password_reset_email, email, _reset_link(raw_token))
+    except Exception:
+        await db.password_reset_tokens.update_one(
+            {"_id": inserted.inserted_id},
+            {"$set": {"used_at": datetime.utcnow(), "invalidated_reason": "email_delivery_failed"}},
         )
-    else:
-        # Keep the public response generic so this endpoint does not reveal whether an email exists.
-        await db.password_reset_requests.insert_one(request_doc)
+        raise HTTPException(status_code=503, detail="Password reset email could not be sent. Please try again later.")
 
     return {
-        "status": "recorded",
-        "message": "If that account exists, a password reset request has been sent to an OpsGuard administrator.",
+        "status": "accepted",
+        "message": "If that account exists, a password reset link has been emailed.",
     }
 
 
 @router.post("/reset-password")
 async def reset_password(payload: ResetPasswordIn, db=Depends(get_db)):
-    token_doc = await db.password_reset_tokens.find_one({"token": payload.token, "used_at": None})
+    if not payload.new_password or len(payload.new_password) < 8:
+        raise HTTPException(status_code=400, detail="New password must be at least 8 characters")
+
+    now = datetime.utcnow()
+    token_doc = await db.password_reset_tokens.find_one(
+        {"token_hash": _token_hash(payload.token), "used_at": None}
+    )
     if not token_doc:
-        raise HTTPException(status_code=400, detail="Invalid or expired reset token")
+        raise HTTPException(status_code=400, detail="Invalid or expired reset link")
+
+    expires_at = token_doc.get("expires_at")
+    if not expires_at or expires_at <= now:
+        await db.password_reset_tokens.update_one(
+            {"_id": token_doc["_id"]},
+            {"$set": {"used_at": now, "invalidated_reason": "expired"}},
+        )
+        raise HTTPException(status_code=400, detail="Invalid or expired reset link")
 
     user_id = token_doc.get("user_id")
     if not ObjectId.is_valid(user_id):
-        raise HTTPException(status_code=400, detail="Invalid reset token")
+        raise HTTPException(status_code=400, detail="Invalid reset link")
+
+    user = await db.users.find_one({"_id": ObjectId(user_id)})
+    if not user:
+        raise HTTPException(status_code=400, detail="Invalid reset link")
 
     await db.users.update_one(
-        {"_id": ObjectId(user_id)},
-        {"$set": {"password_hash": hash_password(payload.new_password), "updated_at": datetime.utcnow()}},
+        {"_id": user["_id"]},
+        {"$set": {"password_hash": hash_password(payload.new_password), "updated_at": now}},
     )
-    await db.password_reset_tokens.update_one(
-        {"_id": token_doc["_id"]},
-        {"$set": {"used_at": datetime.utcnow()}},
+    await db.password_reset_tokens.update_many(
+        {"user_id": user_id, "used_at": None},
+        {"$set": {"used_at": now}},
     )
     return {"status": "password_reset"}
 
@@ -184,87 +289,6 @@ async def admin_list_users(
     return {"items": items}
 
 
-
-
-@router.get("/admin/password-reset-requests")
-async def admin_password_reset_requests(
-    admin=Depends(get_admin_user),
-    db=Depends(get_db),
-):
-    items = []
-    cursor = db.password_reset_requests.find({"status": "open"}).sort("created_at", -1).limit(100)
-    async for doc in cursor:
-        items.append({
-            "id": str(doc.get("_id")),
-            "email": doc.get("email"),
-            "user_id": doc.get("user_id"),
-            "created_at": doc.get("created_at"),
-            "status": doc.get("status"),
-        })
-    return {"items": items}
-
-@router.post("/admin/reset-password")
-async def admin_reset_password(
-    payload: AdminResetPasswordIn,
-    admin=Depends(get_admin_user),
-    db=Depends(get_db),
-):
-    if not payload.new_password or len(payload.new_password) < 6:
-        raise HTTPException(status_code=400, detail="New password must be at least 6 characters")
-
-    query = None
-    if payload.user_id and ObjectId.is_valid(payload.user_id):
-        query = {"_id": ObjectId(payload.user_id)}
-    elif payload.email:
-        query = {"email": payload.email.lower().strip()}
-
-    if not query:
-        raise HTTPException(status_code=400, detail="user_id or email is required")
-
-    user = await db.users.find_one(query)
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-
-    await db.users.update_one(
-        {"_id": user["_id"]},
-        {"$set": {"password_hash": hash_password(payload.new_password), "updated_at": datetime.utcnow()}},
-    )
-    await db.password_reset_requests.update_many(
-        {"$or": [{"user_id": str(user["_id"])}, {"email": user.get("email")}], "status": "open"},
-        {"$set": {"status": "completed", "completed_at": datetime.utcnow(), "completed_by": str(admin["_id"])}},
-    )
-
-    return {"status": "password_reset", "user": serialize_user(user)}
-
-
-@router.post("/admin/create-reset-token")
-async def admin_create_reset_token(
-    payload: AdminResetPasswordIn,
-    admin=Depends(get_admin_user),
-    db=Depends(get_db),
-):
-    query = None
-    if payload.user_id and ObjectId.is_valid(payload.user_id):
-        query = {"_id": ObjectId(payload.user_id)}
-    elif payload.email:
-        query = {"email": payload.email.lower().strip()}
-
-    if not query:
-        raise HTTPException(status_code=400, detail="user_id or email is required")
-
-    user = await db.users.find_one(query)
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-
-    token = secrets.token_urlsafe(32)
-    await db.password_reset_tokens.insert_one({
-        "token": token,
-        "user_id": str(user["_id"]),
-        "created_at": datetime.utcnow(),
-        "created_by": str(admin["_id"]),
-        "used_at": None,
-    })
-    return {"status": "token_created", "token": token, "user": serialize_user(user)}
 
 
 @router.delete("/users/{user_id}")

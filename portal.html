@@ -76,18 +76,13 @@
 <div class="third input-group"><label>End date / To</label><input id="admin-to-date-filter" type="date" title="Example: 2026-06-30"></div>
 </div>
 <div class="card" style="padding:8px;margin:4px 0 8px;background:#f9fafb">
-<h3 style="margin:0 0 4px;font-size:.86rem">Admin management</h3>
+<h3 style="margin:0 0 4px;font-size:.86rem">Guard account management</h3>
+<p class="small" style="margin:0 0 6px">Passwords are no longer reset by an admin. Each user changes their password in Profile or uses Forgot password for an emailed reset link.</p>
 <div class="row">
-<div class="third input-group"><label>Selected guard account</label><select id="admin-user-manage"><option value="">Choose registered guard</option></select></div>
-<div class="third input-group"><label>New password</label><div class="password-wrap"><input id="admin-new-password" type="password" placeholder="New password"><button type="button" class="eye-btn" onclick="togglePasswordVisibility('admin-new-password', this)" title="Show password">Show</button></div></div>
+<div class="half input-group"><label>Selected guard account</label><select id="admin-user-manage"><option value="">Choose registered guard</option></select></div>
 </div>
 <div class="row">
-<button type="button" class="primary" style="background:#0B1F3B" onclick="adminResetSelectedGuardPassword()">Reset guard password</button>
 <button type="button" class="primary" style="background:#991b1b" onclick="adminDeleteSelectedGuard()">Delete selected guard</button>
-</div>
-<div class="row" style="margin-top:6px">
-<div class="half input-group"><label>Pending forgot-password requests</label><select id="admin-reset-request"><option value="">No request selected</option></select></div>
-<div class="half input-group" style="display:flex;align-items:end;gap:6px"><button type="button" class="primary" style="background:#0B1F3B" onclick="loadPasswordResetRequests()">Refresh requests</button><button type="button" class="primary secondary" onclick="useSelectedResetRequest()">Use request</button></div>
 </div>
 <p id="admin-management-status" class="small"></p>
 </div>
@@ -116,17 +111,29 @@
 <div id="modal-backdrop" class="modal-backdrop"></div>
 
 <div id="profile-modal" class="modal">
-<h3>Profile</h3><small>Basic profile view. Backend update is not wired yet.</small>
+<h3>Profile</h3><small>Change your email address or password. Enter your current password before saving any change.</small>
 <div class="input-group" style="margin-top:8px"><label>Current email</label><input id="profile-current-email" type="email" disabled></div>
-<div class="actions"><button class="primary secondary" onclick="closeProfileModal()">Close</button></div>
+<div class="input-group"><label>New email (optional)</label><input id="profile-new-email" type="email" placeholder="Leave blank to keep current email"></div>
+<div class="input-group"><label>Current password</label><div class="password-wrap"><input id="profile-current-password" type="password" placeholder="Current password"><button type="button" class="eye-btn" onclick="togglePasswordVisibility('profile-current-password', this)">Show</button></div></div>
+<div class="input-group"><label>New password (optional)</label><div class="password-wrap"><input id="profile-new-password" type="password" placeholder="At least 8 characters"><button type="button" class="eye-btn" onclick="togglePasswordVisibility('profile-new-password', this)">Show</button></div></div>
+<div class="input-group"><label>Confirm new password</label><div class="password-wrap"><input id="profile-confirm-password" type="password" placeholder="Re-enter new password"><button type="button" class="eye-btn" onclick="togglePasswordVisibility('profile-confirm-password', this)">Show</button></div></div>
+<div class="actions"><button class="primary" onclick="saveProfileChanges()">Save changes</button><button class="primary secondary" onclick="closeProfileModal()">Close</button></div>
 <p id="profile-status" class="small"></p>
 </div>
 
 <div id="forgot-modal" class="modal">
-<h3>Forgot password</h3><small>Enter your email to send a password-reset request to the OpsGuard Admin tab. No email reset link is sent by the current system.</small>
+<h3>Forgot password</h3><small>Enter your OpsGuard email. We will email you a secure one-time password-reset link.</small>
 <div class="input-group" style="margin-top:8px"><label>Email</label><input id="forgot-email" type="email" placeholder="guard@example.com"></div>
-<div class="actions"><button class="primary" onclick="sendForgotPassword()">Send reset request</button><button class="primary secondary" onclick="closeForgotPasswordModal()">Close</button></div>
+<div class="actions"><button class="primary" onclick="sendForgotPassword()">Email reset link</button><button class="primary secondary" onclick="closeForgotPasswordModal()">Close</button></div>
 <p id="forgot-status" class="small"></p>
+</div>
+
+<div id="reset-password-modal" class="modal">
+<h3>Choose a new password</h3><small>This reset link is one-time use and expires automatically.</small>
+<div class="input-group" style="margin-top:8px"><label>New password</label><div class="password-wrap"><input id="reset-new-password" type="password" placeholder="At least 8 characters"><button type="button" class="eye-btn" onclick="togglePasswordVisibility('reset-new-password', this)">Show</button></div></div>
+<div class="input-group"><label>Confirm new password</label><div class="password-wrap"><input id="reset-confirm-password" type="password" placeholder="Re-enter new password"><button type="button" class="eye-btn" onclick="togglePasswordVisibility('reset-confirm-password', this)">Show</button></div></div>
+<div class="actions"><button class="primary" onclick="submitPasswordReset()">Reset password</button><button class="primary secondary" onclick="closeResetPasswordModal()">Close</button></div>
+<p id="reset-password-status" class="small"></p>
 </div>
 
 <div id="schedule-modal" class="modal">
@@ -169,7 +176,7 @@ function showSection(id){
   if(id==="schedule"&&authToken)loadMySchedule();
   if(id==="admin"){
     if(currentUserRole!=="admin"){const st=document.getElementById("admin-management-status");if(st)st.textContent="Admin access is required.";return;}
-    loadAdminUsers();refreshAdminGuardOptionsForCurrentRange();loadPasswordResetRequests();loadAdminScheduleConfirmations();
+    loadAdminUsers();refreshAdminGuardOptionsForCurrentRange();loadAdminScheduleConfirmations();
   }
 }
 function toggleUserDropdown(){const dd=document.getElementById("user-dropdown");dd.style.display=dd.style.display==="block"?"none":"block"}
@@ -251,14 +258,54 @@ function logout(){
 function openProfileModal(){
   if(!authToken)return;
   document.getElementById("profile-current-email").value=currentUserEmail||"";
+  document.getElementById("profile-new-email").value="";
+  document.getElementById("profile-current-password").value="";
+  document.getElementById("profile-new-password").value="";
+  document.getElementById("profile-confirm-password").value="";
   document.getElementById("profile-status").textContent="";
   document.getElementById("modal-backdrop").style.display="block";
   document.getElementById("profile-modal").style.display="block";
-  document.getElementById("schedule-modal").style.display="none";
   document.getElementById("forgot-modal").style.display="none";
+  const rm=document.getElementById("reset-password-modal");if(rm)rm.style.display="none";
+  document.getElementById("schedule-modal").style.display="none";
   closeUserDropdown();
 }
 function closeProfileModal(){document.getElementById("modal-backdrop").style.display="none";document.getElementById("profile-modal").style.display="none"}
+async function saveProfileChanges(){
+  const st=document.getElementById("profile-status");
+  const newEmail=(document.getElementById("profile-new-email").value||"").trim();
+  const currentPassword=document.getElementById("profile-current-password").value||"";
+  const newPassword=document.getElementById("profile-new-password").value||"";
+  const confirmPassword=document.getElementById("profile-confirm-password").value||"";
+  const emailChanged=!!newEmail&&newEmail.toLowerCase()!==String(currentUserEmail||"").toLowerCase();
+  if(!emailChanged&&!newPassword){st.textContent="Nothing to change.";return;}
+  if(!currentPassword){st.textContent="Enter your current password.";return;}
+  if(newPassword){
+    if(newPassword.length<8){st.textContent="New password must be at least 8 characters.";return;}
+    if(newPassword!==confirmPassword){st.textContent="New passwords do not match.";return;}
+  }
+  st.textContent="Saving...";
+  const payload={current_password:currentPassword};
+  if(emailChanged)payload.email=newEmail;
+  if(newPassword)payload.new_password=newPassword;
+  try{
+    const data=await rawApi("/auth/profile",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload),silent:true});
+    const u=data&&data.user?data.user:{};
+    if(u.email)currentUserEmail=u.email;
+    setLoggedInUI(currentUserEmail,currentUserName);
+    saveSession();
+    document.getElementById("profile-current-email").value=currentUserEmail||"";
+    document.getElementById("profile-new-email").value="";
+    document.getElementById("profile-current-password").value="";
+    document.getElementById("profile-new-password").value="";
+    document.getElementById("profile-confirm-password").value="";
+    st.textContent="Profile updated.";
+  }catch(e){
+    let m=e&&e.message?e.message:String(e);
+    try{const parsed=JSON.parse(m);m=parsed.detail||m}catch{}
+    st.textContent="Could not update profile: "+m;
+  }
+}
 
 function openForgotPasswordModal(){
   document.getElementById("forgot-email").value=(document.getElementById("auth-email").value||"").trim();
@@ -266,12 +313,53 @@ function openForgotPasswordModal(){
   document.getElementById("modal-backdrop").style.display="block";
   document.getElementById("forgot-modal").style.display="block";
   document.getElementById("profile-modal").style.display="none";
+  const rm=document.getElementById("reset-password-modal");if(rm)rm.style.display="none";
   document.getElementById("schedule-modal").style.display="none";
 }
 function closeForgotPasswordModal(){document.getElementById("forgot-modal").style.display="none";document.getElementById("modal-backdrop").style.display="none"}
 async function sendForgotPassword(){
-  const email=(document.getElementById("forgot-email").value||"").trim(),st=document.getElementById("forgot-status");if(!email){st.textContent="Enter your email.";return;}st.textContent="Sending request...";try{await rawApi("/auth/forgot-password",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email}),silent:true});st.textContent="Request sent. An OpsGuard administrator can now see it in Admin > Pending forgot-password requests and reset your password.";}catch(e){st.textContent="Could not send reset request. Please try again.";}
+  const email=(document.getElementById("forgot-email").value||"").trim(),st=document.getElementById("forgot-status");
+  if(!email){st.textContent="Enter your email.";return;}
+  st.textContent="Sending reset email...";
+  try{
+    const data=await rawApi("/auth/forgot-password",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email}),silent:true});
+    st.textContent=(data&&data.message)||"If that account exists, a reset link has been emailed.";
+  }catch(e){
+    let m=e&&e.message?e.message:String(e);
+    try{const parsed=JSON.parse(m);m=parsed.detail||m}catch{}
+    st.textContent="Could not send reset email: "+m;
+  }
 }
+function openResetPasswordModal(){
+  const st=document.getElementById("reset-password-status");if(st)st.textContent="";
+  document.getElementById("reset-new-password").value="";
+  document.getElementById("reset-confirm-password").value="";
+  document.getElementById("modal-backdrop").style.display="block";
+  document.getElementById("reset-password-modal").style.display="block";
+  document.getElementById("forgot-modal").style.display="none";
+  document.getElementById("profile-modal").style.display="none";
+  document.getElementById("schedule-modal").style.display="none";
+}
+function closeResetPasswordModal(){document.getElementById("reset-password-modal").style.display="none";document.getElementById("modal-backdrop").style.display="none"}
+function passwordResetTokenFromUrl(){return new URLSearchParams(window.location.search).get("reset_token")||"";}
+async function submitPasswordReset(){
+  const token=passwordResetTokenFromUrl(),pw=document.getElementById("reset-new-password").value||"",confirmPw=document.getElementById("reset-confirm-password").value||"",st=document.getElementById("reset-password-status");
+  if(!token){st.textContent="This reset link is missing or invalid.";return;}
+  if(pw.length<8){st.textContent="New password must be at least 8 characters.";return;}
+  if(pw!==confirmPw){st.textContent="Passwords do not match.";return;}
+  st.textContent="Resetting password...";
+  try{
+    await rawApi("/auth/reset-password",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({token:token,new_password:pw}),silent:true});
+    st.textContent="Password reset. You can now log in with your new password.";
+    if(window.history&&window.history.replaceState)window.history.replaceState({},"",window.location.pathname);
+    setTimeout(function(){closeResetPasswordModal();showSection("login");},1200);
+  }catch(e){
+    let m=e&&e.message?e.message:String(e);
+    try{const parsed=JSON.parse(m);m=parsed.detail||m}catch{}
+    st.textContent="Could not reset password: "+m;
+  }
+}
+function initPasswordResetLink(){if(passwordResetTokenFromUrl())openResetPasswordModal();}
 
 async function registerUser(){
   const name=document.getElementById("auth-name").value.trim(),email=document.getElementById("auth-email").value.trim(),password=document.getElementById("auth-password").value.trim(),stat=document.getElementById("auth-status");
@@ -456,8 +544,6 @@ async function loadAdminUsers(){if(!authToken||currentUserRole!=="admin")return;
 function buildRangeOnlyQuery(){const params=new URLSearchParams();const rate=Number(document.getElementById("admin-rate").value)||20;const venue=document.getElementById("admin-venue-filter")?.value||"__all__";const fromDate=document.getElementById("admin-from-date-filter")?.value||"";const toDate=document.getElementById("admin-to-date-filter")?.value||"";params.set("hourly_rate",String(rate));if(venue!=="__all__")params.set("venue",venue);if(fromDate)params.set("from_date",fromDate);if(toDate)params.set("to_date",toDate);return params;}
 async function refreshAdminGuardOptionsForCurrentRange(){if(!authToken||currentUserRole!=="admin")return;ensureFixedAdminVenueOptions();const guardSel=document.getElementById("admin-guard-filter"),previous=guardSel?guardSel.value:"__all__";try{const data=await rawApi("/shifts?"+buildRangeOnlyQuery().toString(),{method:"GET",silent:true});const rows=Array.isArray(data.items)?data.items:[];const guards=[...new Set(rows.map(getGuardLabel).filter(Boolean))].sort((a,b)=>a.localeCompare(b));setSelectOptions(guardSel,guards,"__all__","All guards",previous);}catch(e){setSelectOptions(guardSel,[],"__all__","All guards","__all__");}}
 async function loadAdminFilterOptions(){await loadAdminUsers();await refreshAdminGuardOptionsForCurrentRange();}
-async function loadPasswordResetRequests(){if(!authToken||currentUserRole!=="admin")return;const sel=document.getElementById("admin-reset-request");if(!sel)return;sel.innerHTML="<option value=''>Loading...</option>";try{const data=await rawApi("/auth/admin/password-reset-requests",{method:"GET",silent:true});sel.innerHTML="<option value=''>No request selected</option>";(data.items||[]).forEach(r=>{const o=document.createElement("option");o.value=r.user_id||"";o.dataset.email=r.email||"";o.textContent=(r.email||"Unknown")+(r.created_at?" — "+String(r.created_at).replace("T"," ").slice(0,16):"");sel.appendChild(o)});if(!(data.items||[]).length)sel.options[0].textContent="No pending requests";}catch(e){sel.innerHTML="<option value=''>Could not load requests</option>";}}
-function useSelectedResetRequest(){const req=document.getElementById("admin-reset-request"),manage=document.getElementById("admin-user-manage"),st=document.getElementById("admin-management-status");if(!req||!req.value){if(st)st.textContent="Choose a pending reset request first.";return;}if(manage&&[...manage.options].some(o=>o.value===req.value)){manage.value=req.value;if(st)st.textContent="Guard selected. Enter a new password and click Reset guard password.";}else if(st)st.textContent="That account is not available in the guard list.";}
 
 
 function getAdminHourlyRate(){
@@ -695,21 +781,6 @@ async function exportAdminCsvDownload(){
 
 
 
-async function adminResetSelectedGuardPassword(){
-  const st=document.getElementById("admin-management-status");
-  const userId=(document.getElementById("admin-user-manage")||{}).value||"";
-  const pw=(document.getElementById("admin-new-password")||{}).value||"";
-  if(!authToken)return alert("Login first.");
-  if(!userId){st.textContent="Choose a registered guard first.";return;}
-  if(!pw||pw.length<6){st.textContent="Enter a new password with at least 6 characters.";return;}
-  if(!(await confirmAction("Reset this guard's password?")))return;
-  st.textContent="Resetting password...";
-  try{
-    await rawApi("/auth/admin/reset-password",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({user_id:userId,new_password:pw})});
-    document.getElementById("admin-new-password").value="";
-    st.textContent="Password reset. Give the guard the new password securely.";await loadPasswordResetRequests();
-  }catch(e){st.textContent="Password reset failed: "+(e&&e.message?e.message:String(e));}
-}
 async function adminDeleteSelectedGuard(){
   const st=document.getElementById("admin-management-status");
   const userId=(document.getElementById("admin-user-manage")||{}).value||"";
@@ -1008,7 +1079,7 @@ function wireAdminFilters(){
   const guardSel=document.getElementById("admin-guard-filter"),venueSel=document.getElementById("admin-venue-filter"),fromInput=document.getElementById("admin-from-date-filter"),toInput=document.getElementById("admin-to-date-filter"),rateInput=document.getElementById("admin-rate");if(guardSel)guardSel.addEventListener("change",()=>loadAllShifts());[venueSel,fromInput,toInput].forEach(el=>{if(el)el.addEventListener("change",async()=>{if(guardSel)guardSel.value="__all__";await refreshAdminGuardOptionsForCurrentRange();await loadAllShifts();});});if(rateInput)rateInput.addEventListener("change",()=>loadAllShifts());
 }
 initShiftTimeDropdowns();initAvailabilityTimeDropdowns();initBulkAvailabilitySelectors();initScheduleTimeDropdowns();
-wireAuthButtons();wireAdminFilters();ensureFixedAdminVenueOptions();toggleOtherVenueInput();prewarmApi();restoreSession();
+wireAuthButtons();wireAdminFilters();ensureFixedAdminVenueOptions();toggleOtherVenueInput();prewarmApi();restoreSession();initPasswordResetLink();
 setInterval(function(){const a=document.getElementById("section-admin");if(authToken&&currentUserRole==="admin"&&a&&!a.classList.contains("hidden"))loadAdminScheduleConfirmations();},30000);
 </script>
 </body></html>
