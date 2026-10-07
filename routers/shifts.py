@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import csv
+import hashlib
 import io
 import re
+import secrets
 from datetime import datetime, timedelta
 from typing import Any, Optional
 
@@ -361,37 +363,15 @@ async def admin_list_shifts(
     return {"items": items, "totals": totals}
 
 
-@router.get("/export.csv")
-async def admin_export_shifts_csv(
-    guard: Optional[str] = Query(None, description="Optional guard name filter"),
-    venue: Optional[str] = Query(None, description="Optional venue filter"),
-    date: Optional[str] = Query(None, description="Exact date in YYYY-MM-DD format"),
-    from_date: Optional[str] = Query(None, description="Start date in YYYY-MM-DD format"),
-    to_date: Optional[str] = Query(None, description="End date in YYYY-MM-DD format"),
-    hourly_rate: float = Query(DEFAULT_HOURLY_RATE, gt=0),
-    admin=Depends(get_admin_user),
-    db=Depends(get_db),
-):
-    items = await _load_filtered_shifts(db, guard, venue, date, from_date, to_date, hourly_rate)
+def _build_csv_bytes(items: list[dict], hourly_rate: float) -> bytes:
     totals = _build_totals(items)
-
     output = io.StringIO()
     writer = csv.writer(output)
 
     writer.writerow([
-        "Guard",
-        "Date",
-        "Venue",
-        "Start",
-        "End",
-        "StoredHours",
-        "RecalculatedHours",
-        "HourlyRate",
-        "Payout",
-        "Paid",
-        "Notes",
+        "Guard","Date","Venue","Start","End","StoredHours","RecalculatedHours",
+        "HourlyRate","Payout","Paid","Notes",
     ])
-
     for item in items:
         writer.writerow([
             item.get("guard_name") or "",
@@ -409,30 +389,119 @@ async def admin_export_shifts_csv(
 
     writer.writerow([])
     writer.writerow(["Guard Totals"])
-    writer.writerow(["Guard", "ShiftCount", "TotalHours", "TotalPayout", "PaidPayout", "UnpaidPayout"])
+    writer.writerow(["Guard","ShiftCount","TotalHours","TotalPayout","PaidPayout","UnpaidPayout"])
     for total in totals["by_guard"]:
         writer.writerow([
-            total["guard_name"],
-            total["shift_count"],
-            total["total_hours"],
-            total["total_payout"],
-            total["paid_payout"],
-            total["unpaid_payout"],
+            total["guard_name"], total["shift_count"], total["total_hours"],
+            total["total_payout"], total["paid_payout"], total["unpaid_payout"],
         ])
 
     writer.writerow([])
     grand = totals["grand_total"]
-    writer.writerow(["Grand Total", grand["shift_count"], grand["total_hours"], grand["total_payout"], grand["paid_payout"], grand["unpaid_payout"]])
+    writer.writerow([
+        "Grand Total", grand["shift_count"], grand["total_hours"],
+        grand["total_payout"], grand["paid_payout"], grand["unpaid_payout"],
+    ])
+    return ("\ufeff" + output.getvalue()).encode("utf-8")
 
-    csv_bytes = ("\ufeff" + output.getvalue()).encode("utf-8")
+
+def _csv_response(csv_bytes: bytes) -> StreamingResponse:
     filename_date = datetime.utcnow().strftime("%Y-%m-%d")
-    headers = {"Content-Disposition": f'attachment; filename="OpsGuard_Shifts_Export_{filename_date}.csv"'}
-
+    headers = {
+        "Content-Disposition": f'attachment; filename="OpsGuard_Shifts_Export_{filename_date}.csv"',
+        "Cache-Control": "no-store",
+    }
     return StreamingResponse(
         io.BytesIO(csv_bytes),
         media_type="text/csv; charset=utf-8",
         headers=headers,
     )
+
+
+@router.get("/export.csv")
+async def admin_export_shifts_csv(
+    guard: Optional[str] = Query(None, description="Optional guard name filter"),
+    venue: Optional[str] = Query(None, description="Optional venue filter"),
+    date: Optional[str] = Query(None, description="Exact date in YYYY-MM-DD format"),
+    from_date: Optional[str] = Query(None, description="Start date in YYYY-MM-DD format"),
+    to_date: Optional[str] = Query(None, description="End date in YYYY-MM-DD format"),
+    hourly_rate: float = Query(DEFAULT_HOURLY_RATE, gt=0),
+    admin=Depends(get_admin_user),
+    db=Depends(get_db),
+):
+    items = await _load_filtered_shifts(db, guard, venue, date, from_date, to_date, hourly_rate)
+    return _csv_response(_build_csv_bytes(items, hourly_rate))
+
+
+@router.post("/export-token")
+async def create_csv_export_token(
+    guard: Optional[str] = Query(None),
+    venue: Optional[str] = Query(None),
+    date: Optional[str] = Query(None),
+    from_date: Optional[str] = Query(None),
+    to_date: Optional[str] = Query(None),
+    hourly_rate: float = Query(DEFAULT_HOURLY_RATE, gt=0),
+    admin=Depends(get_admin_user),
+    db=Depends(get_db),
+):
+    raw_token = secrets.token_urlsafe(32)
+    token_hash = hashlib.sha256(raw_token.encode("utf-8")).hexdigest()
+    now = datetime.utcnow()
+    await db.csv_export_tokens.insert_one({
+        "token_hash": token_hash,
+        "created_at": now,
+        "expires_at": now + timedelta(minutes=3),
+        "used_at": None,
+        "filters": {
+            "guard": guard,
+            "venue": venue,
+            "date": date,
+            "from_date": from_date,
+            "to_date": to_date,
+            "hourly_rate": hourly_rate,
+        },
+        "created_by_admin_id": str(admin["_id"]),
+    })
+    return {
+        "download_path": f"/api/shifts/export-download/{raw_token}",
+        "expires_in_seconds": 180,
+    }
+
+
+@router.get("/export-download/{token}")
+async def download_csv_export_token(
+    token: str,
+    db=Depends(get_db),
+):
+    now = datetime.utcnow()
+    token_hash = hashlib.sha256(token.encode("utf-8")).hexdigest()
+    doc = await db.csv_export_tokens.find_one({
+        "token_hash": token_hash,
+        "used_at": None,
+        "expires_at": {"$gt": now},
+    })
+    if not doc:
+        raise HTTPException(status_code=404, detail="Download link is invalid or expired")
+
+    claimed = await db.csv_export_tokens.update_one(
+        {"_id": doc["_id"], "used_at": None},
+        {"$set": {"used_at": now}},
+    )
+    if claimed.modified_count != 1:
+        raise HTTPException(status_code=404, detail="Download link is invalid or expired")
+
+    f = doc.get("filters") or {}
+    hourly_rate = float(f.get("hourly_rate") or DEFAULT_HOURLY_RATE)
+    items = await _load_filtered_shifts(
+        db,
+        f.get("guard"),
+        f.get("venue"),
+        f.get("date"),
+        f.get("from_date"),
+        f.get("to_date"),
+        hourly_rate,
+    )
+    return _csv_response(_build_csv_bytes(items, hourly_rate))
 
 
 @router.post("/{shift_id}/paid")

@@ -662,7 +662,7 @@ function openCsvInWritableTab(csvText){
   return true;
 }
 
-function createCsvDownloadLinks(csvText, filename){
+function createCsvDownloadLinks(csvText, filename, autoSave=true){
   lastCsvText=csvText;
   lastCsvFilename=filename;
   let holder=document.getElementById("csv-download-holder");
@@ -721,7 +721,7 @@ function createCsvDownloadLinks(csvText, filename){
   holder.appendChild(copyBtn);
 
   // Try automatic save once, but keep the buttons visible if the browser blocks it.
-  saveCsvFile(csvText,filename).catch(e=>console.warn("Auto CSV save failed",e));
+  if(autoSave)saveCsvFile(csvText,filename).catch(e=>console.warn("Auto CSV save failed",e));
   return holder;
 }
 
@@ -759,24 +759,52 @@ function buildCsvFromLoadedRows(){
 
 async function exportAdminCsvDownload(){
   const csvStatus=document.getElementById("csv-status");
-  console.log("OpsGuard export clicked");
   if(!authToken){alert("Login first.");return;}
-  if(csvStatus)csvStatus.textContent="Preparing export...";
+
+  // Open a top-level tab immediately while this click still counts as a user gesture.
+  // GoDaddy's embedded iframe can block direct downloads, but a real Render download
+  // in a new top-level tab is allowed.
+  let downloadWindow=null;
   try{
-    if(!adminFilteredShifts || !adminFilteredShifts.length){
-      await loadAllShifts();
+    downloadWindow=window.open("about:blank","_blank");
+    if(downloadWindow){
+      downloadWindow.document.open();
+      downloadWindow.document.write("<!doctype html><title>Preparing OpsGuard CSV</title><p style='font-family:Arial;padding:20px'>Preparing your OpsGuard CSV download...</p>");
+      downloadWindow.document.close();
     }
+  }catch(e){downloadWindow=null;}
+
+  if(csvStatus)csvStatus.textContent="Preparing CSV download...";
+  try{
+    const params=buildAdminShiftQuery();
+    const tokenData=await rawApi("/shifts/export-token?"+params.toString(),{method:"POST",silent:true});
+    if(!tokenData||!tokenData.download_path)throw new Error("Could not create CSV download link.");
+    const downloadUrl="https://opsguard-api.onrender.com"+tokenData.download_path;
+
+    if(downloadWindow){
+      downloadWindow.location.replace(downloadUrl);
+    }else{
+      const a=document.createElement("a");
+      a.href=downloadUrl;
+      a.target="_blank";
+      a.rel="noopener";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    }
+
+    // Keep the working Show / Copy and Open in new tab fallbacks available too.
+    if(!adminFilteredShifts || !adminFilteredShifts.length)await loadAllShifts();
     const csvText=buildCsvFromLoadedRows();
     const today=new Date().toISOString().slice(0,10);
-    createCsvDownloadLinks(csvText,"OpsGuard_Shifts_Export_"+today+".csv");
-    if(csvStatus)csvStatus.textContent="CSV is ready. If it did not download automatically, click the Download CSV file link below.";
+    createCsvDownloadLinks(csvText,"OpsGuard_Shifts_Export_"+today+".csv",false);
+    if(csvStatus)csvStatus.textContent="CSV download started in a new tab. Show / Copy CSV and Open CSV in new tab are also available below.";
   }catch(e){
+    if(downloadWindow)try{downloadWindow.close();}catch{}
     const message=e&&e.message?e.message:String(e);
     if(csvStatus)csvStatus.textContent="Export failed: "+message;
-    alert("Export failed: "+message);
   }
 }
-
 
 
 
