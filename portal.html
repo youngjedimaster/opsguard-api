@@ -59,8 +59,8 @@
 
 <div id="section-schedule" class="card hidden">
 <h2 style="margin:0 0 4px">My Schedule</h2><p class="small">Schedules sent from the Admin tab appear here. Tap Confirm on each shift you accept. Once confirmed, that shift is locked.</p>
-<div class="table-scroll"><table id="my-schedule-table"><thead><tr><th>Confirm</th><th>Date</th><th>Start</th><th>End</th><th>Guard</th><th>Note</th><th>Status</th></tr></thead>
-<tbody><tr><td colspan="7">Login to see your schedule.</td></tr></tbody></table></div>
+<div class="table-scroll"><table id="my-schedule-table"><thead><tr><th>Confirm</th><th>Date</th><th>Venue</th><th>Shift</th><th>Start</th><th>End</th><th>Guard</th><th>Note</th><th>Status</th></tr></thead>
+<tbody><tr><td colspan="9">Login to see your schedule.</td></tr></tbody></table></div>
 <p id="my-schedule-status" class="small"></p>
 </div>
 
@@ -94,10 +94,11 @@
 <div class="card" style="padding:8px;margin:4px 0 8px;background:#f9fafb">
 <h3 style="margin:0 0 4px;font-size:.86rem">Schedule confirmations</h3>
 <p class="small" style="margin:0 0 6px">A guard confirms the complete schedule you sent. Confirmed schedules are locked so they cannot be deleted.</p>
-<div class="row"><button type="button" class="primary" style="background:#0B1F3B" onclick="loadAdminScheduleConfirmations()">Refresh confirmations</button></div>
+<div class="row"><button type="button" class="primary" style="background:#0B1F3B" onclick="loadAdminScheduleConfirmations()">Refresh confirmations</button><button type="button" class="primary" style="background:#166534" onclick="exportAllConfirmedCalendar()">Export All Confirmed (.ics)</button></div>
+<p class="small" style="margin:4px 0">Open one confirmed shift in Google Calendar, or download all confirmed/unexported shifts as one calendar file. Exported shifts are remembered so Export All will not duplicate them.</p>
 <p id="admin-schedule-confirmation-summary" class="small"></p>
 <p id="admin-confirmation-alert" role="status" style="display:none;font-weight:700;padding:10px;margin:6px 0;background:#dcfce7;color:#14532d;border-radius:8px"></p>
-<div class="table-scroll"><table id="admin-schedule-confirmations"><thead><tr><th>Guard</th><th>Date</th><th>Time</th><th>Status</th><th>Confirmed</th></tr></thead><tbody><tr><td colspan="5">No confirmation data loaded.</td></tr></tbody></table></div>
+<div class="table-scroll"><table id="admin-schedule-confirmations"><thead><tr><th>Guard</th><th>Venue</th><th>Shift</th><th>Date</th><th>Time</th><th>Status</th><th>Confirmed</th><th>Calendar</th></tr></thead><tbody><tr><td colspan="8">No confirmation data loaded.</td></tr></tbody></table></div>
 </div>
 <p class="small" style="margin:2px 0 8px">For a range, choose a Start date and End date, for example 2026-06-15 to 2026-06-30, then click Load shifts or Export CSV.</p>
 <div class="row">
@@ -138,7 +139,8 @@
 <div class="card" style="margin-top:6px;padding:8px">
 <h3 style="margin:0 0 3px;font-size:.86rem">Add working days for this guard</h3>
 <p class="small" style="margin:0 0 4px">Each added row becomes part of the schedule.</p>
-<div class="row"><div class="half input-group"><label>Date</label><input id="sched-date" type="date"></div></div>
+<div class="row"><div class="half input-group"><label>Date</label><input id="sched-date" type="date"></div><div class="half input-group"><label>Venue</label><select id="sched-venue"><option value="">Choose venue</option><option>Baby G</option><option>Garrison</option><option>Get Well</option><option>Jean Darlene</option><option>St Anne's</option><option>Standard Time</option><option>Two Kats</option></select></div></div>
+<div class="row"><div class="half input-group"><label>Shift</label><select id="sched-shift-code"><option value="">Choose S1/S2/S3</option><option>S1</option><option>S2</option><option>S3</option></select></div></div>
 <div class="row">
 <div class="half input-group"><label>Start time</label><div style="display:flex;gap:4px"><select id="sched-start-hour"></select><select id="sched-start-min"></select><select id="sched-start-ampm"><option>AM</option><option>PM</option></select></div></div>
 <div class="half input-group"><label>End time</label><div style="display:flex;gap:4px"><select id="sched-end-hour"></select><select id="sched-end-min"></select><select id="sched-end-ampm"><option>AM</option><option>PM</option></select></div></div>
@@ -157,8 +159,9 @@
 
 <script>
 const API_BASE="https://opsguard-api.onrender.com/api";
-let authToken=null,currentUserEmail=null,currentUserName=null,currentUserRole=null,myShiftsCache=[],allShiftsCache=[],adminFilteredShifts=[],scheduleDraft=[],currentGuardAvailability=[],adminUserMap={},apiWarmPromise=null,adminConfirmationsInitialized=false,adminSeenConfirmedShifts=new Set();
+let authToken=null,currentUserEmail=null,currentUserName=null,currentUserRole=null,myShiftsCache=[],allShiftsCache=[],adminFilteredShifts=[],scheduleDraft=[],currentGuardAvailability=[],adminUserMap={},apiWarmPromise=null,adminConfirmationsInitialized=false,adminSeenConfirmedShifts=new Set(),adminScheduleConfirmationsCache=[];
 const FIXED_VENUES=["Baby G","Garrison","Get Well","Jean Darlene","St Anne's","Standard Time","Two Kats"];
+const VENUE_CALENDAR_IDS={"Baby G":"s374q7mjj2hoc77f71oml6n5uc@group.calendar.google.com","Garrison":"garrisonstaff@gmail.com","Jean Darlene":"78f673188cd9e7f1c76014eee634b0b5578f9da7f0657796fcb45e05080f45c3@group.calendar.google.com","St Anne's":"78f673188cd9e7f1c76014eee634b0b5578f9da7f0657796fcb45e05080f45c3@group.calendar.google.com"};
 
 function showSection(id){
   ["login","submit","availability","schedule","admin"].forEach(s=>{const el=document.getElementById("section-"+s);if(el)el.classList.add("hidden")});
@@ -773,7 +776,7 @@ function renderScheduleAvailability(){
 }
 function renderScheduleDraft(){
   const box=document.getElementById("schedule-proposed-list");if(!box)return;
-  box.value=scheduleDraft.map((s,i)=>(i+1)+". "+s.date+" | "+s.start_time+" - "+s.end_time).join("\n");
+  box.value=scheduleDraft.map((s,i)=>(i+1)+". "+(s.venue||"Venue?")+" "+(s.shift_code||"")+" | "+s.date+" | "+s.start_time+" - "+s.end_time).join("\n");
 }
 async function openCheckAvailabilityModal(){
   const adminSt=document.getElementById("schedule-admin-status");if(adminSt)adminSt.textContent="";
@@ -811,10 +814,14 @@ function addShiftToScheduleDraft(){
   const sh=(document.getElementById("sched-start-hour")||{}).value||"",sm=(document.getElementById("sched-start-min")||{}).value||"00",sap=(document.getElementById("sched-start-ampm")||{}).value||"AM";
   const eh=(document.getElementById("sched-end-hour")||{}).value||"",em=(document.getElementById("sched-end-min")||{}).value||"00",eap=(document.getElementById("sched-end-ampm")||{}).value||"PM";
   const st=document.getElementById("schedule-add-status");
+  const venue=(document.getElementById("sched-venue")||{}).value||"";
+  const shiftCode=(document.getElementById("sched-shift-code")||{}).value||"";
   if(!date){if(st)st.textContent="Choose a date first.";return;}
+  if(!venue){if(st)st.textContent="Choose the venue.";return;}
+  if(!shiftCode){if(st)st.textContent="Choose S1, S2 or S3.";return;}
   const startStr=sh+":"+sm+" "+sap,endStr=eh+":"+em+" "+eap;
-  if(scheduleDraft.some(s=>s.date===date&&s.start_time===startStr&&s.end_time===endStr)){if(st)st.textContent="That shift is already in the proposed schedule.";return;}
-  scheduleDraft.push({date,start_time:startStr,end_time:endStr});
+  if(scheduleDraft.some(s=>s.date===date&&s.start_time===startStr&&s.end_time===endStr&&s.venue===venue&&s.shift_code===shiftCode)){if(st)st.textContent="That shift is already in the proposed schedule.";return;}
+  scheduleDraft.push({date,start_time:startStr,end_time:endStr,venue:venue,shift_code:shiftCode,calendar_id:VENUE_CALENDAR_IDS[venue]||""});
   scheduleDraft.sort((a,b)=>parseScheduleRowDateTime(a)-parseScheduleRowDateTime(b));
   renderScheduleDraft();if(st)st.textContent="Added to proposed schedule.";
 }
@@ -828,7 +835,7 @@ async function sendScheduleFromAdmin(){
   const note=(document.getElementById("schedule-note")||{}).value||"";
   if(st)st.textContent="Sending schedule...";
   try{
-    const payload={guard:g.name||g.email,guard_id:g.id||null,note,shifts:scheduleDraft.map(s=>({guard:g.name||g.email,date:s.date,start_time:s.start_time,end_time:s.end_time}))};
+    const payload={guard:g.name||g.email,guard_id:g.id||null,note,shifts:scheduleDraft.map(s=>({guard:g.name||g.email,date:s.date,start_time:s.start_time,end_time:s.end_time,venue:s.venue||"",shift_code:s.shift_code||"",calendar_id:s.calendar_id||"",google_event_id:s.google_event_id||null,calendar_start_time:s.calendar_start_time||null,calendar_end_time:s.calendar_end_time||null}))};
     await rawApi("/schedules",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
     if(st)st.textContent="Schedule sent. It is awaiting the guard's confirmation.";
     const adminSt=document.getElementById("schedule-admin-status");if(adminSt)adminSt.textContent="Schedule sent to "+(g.name||g.email)+" — awaiting confirmation.";
@@ -854,7 +861,7 @@ function formatScheduleTimestamp(v){
 async function loadMySchedule(){
   const tbody=document.querySelector("#my-schedule-table tbody"),st=document.getElementById("my-schedule-status");
   if(!tbody)return;
-  if(!authToken){tbody.innerHTML="<tr><td colspan='7'>Login to see your schedule.</td></tr>";return;}
+  if(!authToken){tbody.innerHTML="<tr><td colspan='9'>Login to see your schedule.</td></tr>";return;}
   tbody.innerHTML="<tr><td colspan='7'>Loading...</td></tr>";
   try{
     const res=await fetch(API_BASE+"/schedules/me",{headers:{Authorization:"Bearer "+authToken},cache:"no-store"});
@@ -864,22 +871,75 @@ async function loadMySchedule(){
       const guard=sch.guard||"",note=sch.note||"",scheduleId=sch.id||"";
       (sch.shifts||[]).forEach(function(sh,index){
         const confirmed=(sch.status==="confirmed"||sh.status==="confirmed");
-        rows.push({date:sh.date,start_time:sh.start_time,end_time:sh.end_time,guard:guard,note:note,confirmed:confirmed,scheduleId:scheduleId,shiftIndex:index,confirmedAt:sh.confirmed_at||sch.confirmed_at||""});
+        rows.push({date:sh.date,venue:sh.venue||"",shift_code:sh.shift_code||"",start_time:sh.start_time,end_time:sh.end_time,guard:guard,note:note,confirmed:confirmed,scheduleId:scheduleId,shiftIndex:index,confirmedAt:sh.confirmed_at||sch.confirmed_at||""});
       });
     });
     rows.sort(function(a,b){return parseScheduleRowDateTime(b)-parseScheduleRowDateTime(a);});
     tbody.innerHTML="";
-    if(!rows.length){tbody.innerHTML="<tr><td colspan='7'>No schedule yet.</td></tr>";if(st)st.textContent="";return;}
+    if(!rows.length){tbody.innerHTML="<tr><td colspan='9'>No schedule yet.</td></tr>";if(st)st.textContent="";return;}
     rows.forEach(function(r){
       const statusText=r.confirmed?"CONFIRMED ✓ — LOCKED":"Awaiting your confirmation";
       let action=r.confirmed?'<span style="font-weight:700;color:#166534">Confirmed</span>':"<button type='button' class='primary'>Confirm shift</button>";
       const tr=document.createElement("tr");
-      tr.innerHTML="<td>"+action+"</td><td>"+(r.date||"")+"</td><td>"+(r.start_time||"")+"</td><td>"+(r.end_time||"")+"</td><td>"+(r.guard||"")+"</td><td>"+(r.note||"")+"</td><td>"+statusText+(r.confirmed&&r.confirmedAt?"<div class='small'>"+formatScheduleTimestamp(r.confirmedAt)+"</div>":"")+"</td>";
+      tr.innerHTML="<td>"+action+"</td><td>"+(r.date||"")+"</td><td>"+(r.venue||"—")+"</td><td>"+(r.shift_code||"—")+"</td><td>"+(r.start_time||"")+"</td><td>"+(r.end_time||"")+"</td><td>"+(r.guard||"")+"</td><td>"+(r.note||"")+"</td><td>"+statusText+(r.confirmed&&r.confirmedAt?"<div class='small'>"+formatScheduleTimestamp(r.confirmedAt)+"</div>":"")+"</td>";
       if(!r.confirmed){const btn=tr.querySelector("td:first-child button");if(btn)btn.addEventListener("click",()=>confirmScheduleShift(r.scheduleId,r.shiftIndex));}
       tbody.appendChild(tr);
     });
-  }catch(e){tbody.innerHTML="<tr><td colspan='7'>Error loading schedule.</td></tr>";if(st)st.textContent="Could not load your assigned shifts.";}
+  }catch(e){tbody.innerHTML="<tr><td colspan='9'>Error loading schedule.</td></tr>";if(st)st.textContent="Could not load your assigned shifts.";}
 }
+
+function parseScheduleClock(timeText){
+  const m=String(timeText||"").trim().match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+  if(!m)return null;
+  let h=Number(m[1])%12;if(m[3].toUpperCase()==="PM")h+=12;
+  return {h:h,m:Number(m[2])};
+}
+function calendarLocalStamp(dateText,timeText,rollDays){
+  const p=parseScheduleClock(timeText);if(!p||!dateText)return "";
+  const d=new Date(dateText+"T12:00:00");d.setDate(d.getDate()+(rollDays||0));
+  const y=d.getFullYear(),mo=String(d.getMonth()+1).padStart(2,"0"),da=String(d.getDate()).padStart(2,"0");
+  return ""+y+mo+da+"T"+String(p.h).padStart(2,"0")+String(p.m).padStart(2,"0")+"00";
+}
+function calendarShiftStamps(sh){
+  const sp=parseScheduleClock(sh.start_time),ep=parseScheduleClock(sh.end_time);
+  if(!sp||!ep)return null;
+  const sm=sp.h*60+sp.m,em=ep.h*60+ep.m;
+  return {start:calendarLocalStamp(sh.date,sh.start_time,0),end:calendarLocalStamp(sh.date,sh.end_time,em<=sm?1:0)};
+}
+function confirmedShiftTitle(guard,sh){return (sh.shift_code?sh.shift_code+":":"")+(guard||"Guard");}
+function googleCalendarUrl(guard,sh){
+  const stamps=calendarShiftStamps(sh);if(!stamps)return "";
+  const p=new URLSearchParams({action:"TEMPLATE",text:confirmedShiftTitle(guard,sh),dates:stamps.start+"/"+stamps.end,ctz:"America/Toronto",details:"Confirmed OpsGuard shift"+(sh.venue?" — "+sh.venue:""),location:sh.venue||""});
+  return "https://calendar.google.com/calendar/render?"+p.toString();
+}
+async function markCalendarExported(scheduleId,shiftIndex,method){
+  return rawApi("/schedules/"+encodeURIComponent(scheduleId)+"/shifts/"+shiftIndex+"/calendar-exported",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({method:method||"google",exported_at:new Date().toISOString()}) ,silent:true});
+}
+async function exportConfirmedShiftToGoogle(scheduleId,shiftIndex){
+  const sch=adminScheduleConfirmationsCache.find(x=>String(x.id)===String(scheduleId));if(!sch)return alert("Schedule not found. Refresh confirmations.");
+  const sh=(sch.shifts||[])[shiftIndex];if(!sh)return alert("Shift not found.");
+  if(!(sch.status==="confirmed"||sh.status==="confirmed"))return alert("Only confirmed shifts can be exported.");
+  const url=googleCalendarUrl(sch.guard||"",sh);if(!url)return alert("This shift has an invalid date/time.");
+  const w=window.open(url,"_blank");if(!w)return alert("Your browser blocked the Google Calendar window. Allow pop-ups and try again.");try{w.opener=null;}catch{}
+  try{await markCalendarExported(scheduleId,shiftIndex,"google-template");await loadAdminScheduleConfirmations();}catch(e){console.warn("Could not save calendar export status",e);}
+}
+function icsEscape(v){return String(v||"").replace(/\\/g,"\\\\").replace(/\n/g,"\\n").replace(/,/g,"\\,").replace(/;/g,"\\;");}
+function confirmedUnexportedRows(){
+  const out=[];(adminScheduleConfirmationsCache||[]).forEach(sch=>(sch.shifts||[]).forEach((sh,index)=>{
+    if((sch.status==="confirmed"||sh.status==="confirmed")&&!sh.calendar_exported_at)out.push({sch,sh,index});
+  }));return out;
+}
+async function exportAllConfirmedCalendar(){
+  const rows=confirmedUnexportedRows();if(!rows.length)return alert("There are no confirmed, unexported shifts.");
+  const lines=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Titan Global//OpsGuard//EN","CALSCALE:GREGORIAN","METHOD:PUBLISH"];
+  rows.forEach(r=>{const stamps=calendarShiftStamps(r.sh);if(!stamps)return;lines.push("BEGIN:VEVENT","UID:opsguard-"+r.sch.id+"-"+r.index+"@titannglobal.com","DTSTAMP:"+new Date().toISOString().replace(/[-:]/g,"").replace(/\.\d{3}Z$/,"Z"),"DTSTART;TZID=America/Toronto:"+stamps.start,"DTEND;TZID=America/Toronto:"+stamps.end,"SUMMARY:"+icsEscape(confirmedShiftTitle(r.sch.guard||"",r.sh)),"LOCATION:"+icsEscape(r.sh.venue||""),"DESCRIPTION:"+icsEscape("Confirmed OpsGuard shift"+(r.sh.venue?" — "+r.sh.venue:"")),"END:VEVENT");});
+  lines.push("END:VCALENDAR");
+  const blob=new Blob([lines.join("\r\n")+"\r\n"],{type:"text/calendar;charset=utf-8"});
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="TGS-confirmed-shifts.ics";document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},1000);
+  await Promise.all(rows.map(r=>markCalendarExported(r.sch.id,r.index,"ics").catch(()=>null)));
+  await loadAdminScheduleConfirmations();
+}
+
 async function loadAdminScheduleConfirmations(){
   if(!authToken||currentUserRole!=="admin")return;
   const tbody=document.querySelector("#admin-schedule-confirmations tbody"),summary=document.getElementById("admin-schedule-confirmation-summary"),banner=document.getElementById("admin-confirmation-alert");
@@ -887,30 +947,33 @@ async function loadAdminScheduleConfirmations(){
   try{
     const data=await rawApi("/schedules",{method:"GET",silent:true});
     const items=Array.isArray(data)?data:[];
-    let confirmed=0,pending=0;
+    adminScheduleConfirmationsCache=items;
+    let confirmed=0,pending=0,exported=0;
     const confirmedKeys=new Set(),newEvents=[];
     tbody.innerHTML="";
-    if(!items.length){tbody.innerHTML="<tr><td colspan='5'>No schedules have been sent yet.</td></tr>";if(summary)summary.textContent="";return;}
+    if(!items.length){tbody.innerHTML="<tr><td colspan='8'>No schedules have been sent yet.</td></tr>";if(summary)summary.textContent="";return;}
     items.slice(0,100).forEach(function(sch){
       (sch.shifts||[]).forEach(function(sh,index){
         const isConfirmed=(sch.status==="confirmed"||sh.status==="confirmed");
         const key=String(sch.id)+"-"+index;
-        if(isConfirmed){confirmed++;confirmedKeys.add(key);if(adminConfirmationsInitialized&&!adminSeenConfirmedShifts.has(key))newEvents.push((sch.guard||"Guard")+" confirmed "+(sh.date||"their shift")+" ("+(sh.start_time||"")+"-"+(sh.end_time||"")+")");}
+        if(isConfirmed){confirmed++;confirmedKeys.add(key);if(sh.calendar_exported_at)exported++;if(adminConfirmationsInitialized&&!adminSeenConfirmedShifts.has(key))newEvents.push((sch.guard||"Guard")+" confirmed "+(sh.date||"their shift")+" ("+(sh.start_time||"")+"-"+(sh.end_time||"")+")");}
         else pending++;
         const tr=document.createElement("tr");
         if(isConfirmed)tr.style.background="#ecfdf5";
-        tr.innerHTML="<td>"+(sch.guard||"")+"</td><td>"+(sh.date||"")+"</td><td>"+(sh.start_time||"")+" – "+(sh.end_time||"")+"</td><td style='font-weight:700'>"+(isConfirmed?"CONFIRMED ✓ — LOCKED":"Awaiting guard")+"</td><td>"+(isConfirmed?formatScheduleTimestamp(sh.confirmed_at||sch.confirmed_at):"")+"</td>";
+        const calStatus=!isConfirmed?"—":(sh.calendar_exported_at?"<span style='font-weight:700;color:#166534'>EXPORTED ✓</span><div class='small'>"+formatScheduleTimestamp(sh.calendar_exported_at)+"</div>":"<button type='button' class='primary' style='white-space:nowrap'>Open in Google Calendar</button>");
+        tr.innerHTML="<td>"+(sch.guard||"")+"</td><td>"+(sh.venue||"—")+"</td><td>"+(sh.shift_code||"—")+"</td><td>"+(sh.date||"")+"</td><td>"+(sh.start_time||"")+" – "+(sh.end_time||"")+"</td><td style='font-weight:700'>"+(isConfirmed?"CONFIRMED ✓ — LOCKED":"Awaiting guard")+"</td><td>"+(isConfirmed?formatScheduleTimestamp(sh.confirmed_at||sch.confirmed_at):"")+"</td><td>"+calStatus+"</td>";
+        if(isConfirmed&&!sh.calendar_exported_at){const btn=tr.querySelector("td:last-child button");if(btn)btn.addEventListener("click",()=>exportConfirmedShiftToGoogle(sch.id,index));}
         tbody.appendChild(tr);
       });
     });
-    if(!tbody.children.length)tbody.innerHTML="<tr><td colspan='5'>No assigned shifts.</td></tr>";
-    if(summary)summary.textContent="Confirmed shifts: "+confirmed+" | Awaiting confirmation: "+pending+". Updated every 30 seconds while this tab is open.";
+    if(!tbody.children.length)tbody.innerHTML="<tr><td colspan='8'>No assigned shifts.</td></tr>";
+    if(summary)summary.textContent="Confirmed shifts: "+confirmed+" | Awaiting confirmation: "+pending+" | Calendar exported: "+exported+". Updated every 30 seconds while this tab is open.";
     adminSeenConfirmedShifts=confirmedKeys;adminConfirmationsInitialized=true;
     if(newEvents.length&&banner){
       banner.style.display="block";
       banner.textContent="NEW SHIFT CONFIRMATION: "+newEvents.slice(0,4).join(" | ")+(newEvents.length>4?" | +"+(newEvents.length-4)+" more":"");
     }
-  }catch(e){tbody.innerHTML="<tr><td colspan='5'>Could not load shift confirmations.</td></tr>";if(summary)summary.textContent="";}
+  }catch(e){tbody.innerHTML="<tr><td colspan='8'>Could not load shift confirmations.</td></tr>";if(summary)summary.textContent="";}
 }
 function wireAuthButtons(){
   const loginBtn=document.getElementById("login-btn"),registerBtn=document.getElementById("register-btn");

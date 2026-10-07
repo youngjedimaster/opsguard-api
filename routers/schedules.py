@@ -82,11 +82,22 @@ async def create_schedule(
 
     clean_shifts = []
     for s in shifts:
+        shift_code = str(s.get("shift_code") or "").strip().upper()
+        if shift_code not in {"", "S1", "S2", "S3"}:
+            raise HTTPException(status_code=400, detail="Shift code must be S1, S2 or S3")
         clean_shifts.append(
             {
                 "date": s.get("date"),
+                "venue": str(s.get("venue") or "").strip(),
+                "shift_code": shift_code,
                 "start_time": s.get("start_time"),
                 "end_time": s.get("end_time"),
+                "calendar_id": str(s.get("calendar_id") or "").strip() or None,
+                "google_event_id": str(s.get("google_event_id") or "").strip() or None,
+                "calendar_start_time": s.get("calendar_start_time"),
+                "calendar_end_time": s.get("calendar_end_time"),
+                "calendar_exported_at": None,
+                "calendar_export_method": None,
                 "status": "pending",
                 "confirmed_at": None,
             }
@@ -255,6 +266,40 @@ async def confirm_one_shift(
     doc["status"] = parent_status
     doc["confirmed_at"] = now if all_confirmed else None
     doc["confirmed_by_guard_id"] = uid if all_confirmed else None
+    return serialize_schedule(doc)
+
+
+@router.post("/{schedule_id}/shifts/{shift_index}/calendar-exported")
+async def mark_calendar_exported(
+    schedule_id: str,
+    shift_index: int,
+    payload: dict,
+    admin=Depends(get_admin_user),
+    db=Depends(get_db),
+):
+    """Mark a confirmed shift as exported from OpsGuard so bulk export does not duplicate it."""
+    if not ObjectId.is_valid(schedule_id):
+        raise HTTPException(status_code=400, detail="Invalid schedule id")
+    doc = await db.schedules.find_one({"_id": ObjectId(schedule_id)})
+    if not doc:
+        raise HTTPException(status_code=404, detail="Schedule not found")
+    shifts = doc.get("shifts") or []
+    if not 0 <= shift_index < len(shifts):
+        raise HTTPException(status_code=404, detail="Shift not found in schedule")
+    shift = shifts[shift_index]
+    if not ((doc.get("status") or "pending") == "confirmed" or shift.get("status") == "confirmed"):
+        raise HTTPException(status_code=409, detail="Only confirmed shifts can be exported")
+    if shift.get("calendar_exported_at"):
+        return serialize_schedule(doc)
+    now = datetime.utcnow()
+    method = str(payload.get("method") or "calendar").strip()[:64]
+    update = {
+        f"shifts.{shift_index}.calendar_exported_at": now,
+        f"shifts.{shift_index}.calendar_export_method": method,
+        "updated_at": now,
+    }
+    await db.schedules.update_one({"_id": doc["_id"]}, {"$set": update})
+    doc = await db.schedules.find_one({"_id": doc["_id"]})
     return serialize_schedule(doc)
 
 
