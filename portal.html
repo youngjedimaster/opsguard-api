@@ -597,56 +597,63 @@ function csvEscape(value){
 let lastCsvText="";
 let lastCsvFilename="OpsGuard_Shifts_Export.csv";
 
-async function saveCsvFile(csvText, filename){
-  const fullText="\uFEFF"+csvText;
+function createCsvDownloadWindow(){
+  let w=null;
+  try{w=window.open("about:blank","_blank");}catch(e){w=null;}
+  if(!w){
+    alert("Popup blocked. Please allow popups for this page and try Download CSV again.");
+    return null;
+  }
+  try{
+    w.document.open();
+    w.document.write("<!doctype html><html><head><meta charset='utf-8'><title>OpsGuard CSV Download</title><style>body{font-family:Arial,sans-serif;padding:22px;line-height:1.45}button{background:#0B1F3B;color:white;border:0;border-radius:8px;padding:12px 18px;font-weight:700;font-size:16px}button:disabled{opacity:.55}p{max-width:680px}</style></head><body><h2>OpsGuard CSV Download</h2><p id='csv-download-status'>Preparing your CSV...</p><button id='csv-download-button' type='button' disabled>Download CSV</button><p style='font-size:13px;color:#555'>If the download does not start automatically, tap the Download CSV button above.</p></body></html>");
+    w.document.close();
+  }catch(e){
+    try{w.close();}catch{}
+    return null;
+  }
+  return w;
+}
 
-  // Best option in Chrome: opens a real Save As dialog, which works better inside GoDaddy/iframe pages than blob links.
-  if(window.showSaveFilePicker){
+function triggerCsvDownloadInWindow(w,csvText,filename){
+  if(!w||w.closed)return false;
+  const status=w.document.getElementById("csv-download-status");
+  const button=w.document.getElementById("csv-download-button");
+  const fullText="\uFEFF"+String(csvText||"");
+  const safeName=filename||"OpsGuard_Shifts_Export.csv";
+
+  const runDownload=()=>{
     try{
-      const handle=await window.showSaveFilePicker({
-        suggestedName: filename,
-        types:[{description:"CSV file", accept:{"text/csv":[".csv"]}}]
-      });
-      const writable=await handle.createWritable();
-      await writable.write(new Blob([fullText],{type:"text/csv;charset=utf-8"}));
-      await writable.close();
+      const blob=new Blob([fullText],{type:"text/csv;charset=utf-8"});
+      const url=URL.createObjectURL(blob);
+      const a=w.document.createElement("a");
+      a.href=url;
+      a.download=safeName;
+      a.style.display="none";
+      w.document.body.appendChild(a);
+      a.click();
+      if(status)status.textContent="Your CSV is ready. The download should have started. If it did not, tap Download CSV again.";
+      setTimeout(()=>{try{URL.revokeObjectURL(url);a.remove();}catch{}},5000);
       return true;
     }catch(e){
-      // User may cancel the file picker. Fall through to the older methods.
-      console.warn("Save picker unavailable or cancelled", e);
+      if(status)status.textContent="The browser blocked the automatic download. Tap Download CSV to try again.";
+      return false;
     }
-  }
+  };
 
-  // Fallback: standard blob download.
-  try{
-    const blob=new Blob([fullText],{type:"text/csv;charset=utf-8"});
-    const url=URL.createObjectURL(blob);
-    const a=document.createElement("a");
-    a.href=url;
-    a.download=filename;
-    a.style.display="none";
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(()=>{URL.revokeObjectURL(url);a.remove();},1500);
-    return true;
-  }catch(e){
-    console.warn("Blob download failed", e);
+  if(button){
+    button.disabled=false;
+    button.onclick=runDownload;
   }
+  if(status)status.textContent="CSV ready. Starting download...";
+  setTimeout(runDownload,100);
+  return true;
+}
 
-  // Last fallback: data URL.
-  try{
-    const a=document.createElement("a");
-    a.href="data:text/csv;charset=utf-8,"+encodeURIComponent(fullText);
-    a.download=filename;
-    a.style.display="none";
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    return true;
-  }catch(e){
-    console.warn("Data URL download failed", e);
-    return false;
-  }
+async function saveCsvFile(csvText, filename){
+  const w=createCsvDownloadWindow();
+  if(!w)return false;
+  return triggerCsvDownloadInWindow(w,csvText,filename);
 }
 
 function openCsvInWritableTab(csvText){
@@ -761,47 +768,47 @@ async function exportAdminCsvDownload(){
   const csvStatus=document.getElementById("csv-status");
   if(!authToken){alert("Login first.");return;}
 
-  // Open a top-level tab immediately while this click still counts as a user gesture.
-  // GoDaddy's embedded iframe can block direct downloads, but a real Render download
-  // in a new top-level tab is allowed.
-  let downloadWindow=null;
-  try{
-    downloadWindow=window.open("about:blank","_blank");
-    if(downloadWindow){
-      downloadWindow.document.open();
-      downloadWindow.document.write("<!doctype html><title>Preparing OpsGuard CSV</title><p style='font-family:Arial;padding:20px'>Preparing your OpsGuard CSV download...</p>");
-      downloadWindow.document.close();
-    }
-  }catch(e){downloadWindow=null;}
+  // Open the real top-level download tab while the click is still a user gesture.
+  // Do not navigate this tab later. Instead, prepare and trigger the CSV download
+  // inside the already-open top-level tab after the authenticated shift fetch returns.
+  const downloadWindow=createCsvDownloadWindow();
+  if(!downloadWindow){
+    if(csvStatus)csvStatus.textContent="Popup blocked. Allow popups for this page and try Export CSV again.";
+    return;
+  }
 
   if(csvStatus)csvStatus.textContent="Preparing CSV download...";
   try{
     const params=buildAdminShiftQuery();
-    const tokenData=await rawApi("/shifts/export-token?"+params.toString(),{method:"POST",silent:true});
-    if(!tokenData||!tokenData.download_path)throw new Error("Could not create CSV download link.");
-    const downloadUrl="https://opsguard-api.onrender.com"+tokenData.download_path;
+    const data=await rawApi("/shifts?"+params.toString(),{method:"GET",silent:true});
+    allShiftsCache=Array.isArray(data&&data.items)?data.items:[];
+    renderAdminShifts(data||{items:[]});
 
-    if(downloadWindow){
-      downloadWindow.location.replace(downloadUrl);
-    }else{
-      const a=document.createElement("a");
-      a.href=downloadUrl;
-      a.target="_blank";
-      a.rel="noopener";
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
+    if(!allShiftsCache.length){
+      throw new Error("No shifts found for the selected filters.");
     }
 
-    // Keep the working Show / Copy and Open in new tab fallbacks available too.
-    if(!adminFilteredShifts || !adminFilteredShifts.length)await loadAllShifts();
     const csvText=buildCsvFromLoadedRows();
     const today=new Date().toISOString().slice(0,10);
-    createCsvDownloadLinks(csvText,"OpsGuard_Shifts_Export_"+today+".csv",false);
-    if(csvStatus)csvStatus.textContent="CSV download started in a new tab. Show / Copy CSV and Open CSV in new tab are also available below.";
+    const filename="OpsGuard_Shifts_Export_"+today+".csv";
+
+    if(!triggerCsvDownloadInWindow(downloadWindow,csvText,filename)){
+      throw new Error("Could not prepare the CSV download.");
+    }
+
+    // Keep the visible manual fallbacks in Admin as well.
+    createCsvDownloadLinks(csvText,filename,false);
+    if(csvStatus)csvStatus.textContent="CSV ready. The download tab will start the file automatically; if your browser blocks it, tap Download CSV in that tab.";
   }catch(e){
-    if(downloadWindow)try{downloadWindow.close();}catch{}
     const message=e&&e.message?e.message:String(e);
+    if(downloadWindow&&!downloadWindow.closed){
+      try{
+        const st=downloadWindow.document.getElementById("csv-download-status");
+        const btn=downloadWindow.document.getElementById("csv-download-button");
+        if(st)st.textContent="Could not prepare the CSV: "+message;
+        if(btn)btn.disabled=true;
+      }catch{}
+    }
     if(csvStatus)csvStatus.textContent="Export failed: "+message;
   }
 }
