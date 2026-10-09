@@ -82,7 +82,7 @@ async def opsguard_portal():
 
     portal_html = portal_path.read_text(encoding="utf-8")
     scripts = (
-        '<script src="/csv-fix.js?v=20261008-1"></script>'
+        '<script src="/csv-fix.js?v=20261009-2"></script>'
         '<script src="/schedule-fix.js?v=20261009-1"></script>'
     )
 

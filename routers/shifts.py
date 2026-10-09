@@ -410,10 +410,11 @@ def _csv_response(csv_bytes: bytes) -> StreamingResponse:
     headers = {
         "Content-Disposition": f'attachment; filename="OpsGuard_Shifts_Export_{filename_date}.csv"',
         "Cache-Control": "no-store",
+        "X-Content-Type-Options": "nosniff",
     }
     return StreamingResponse(
         io.BytesIO(csv_bytes),
-        media_type="text/csv; charset=utf-8",
+        media_type="application/octet-stream",
         headers=headers,
     )
 
@@ -477,18 +478,21 @@ async def download_csv_export_token(
     token_hash = hashlib.sha256(token.encode("utf-8")).hexdigest()
     doc = await db.csv_export_tokens.find_one({
         "token_hash": token_hash,
-        "used_at": None,
         "expires_at": {"$gt": now},
     })
     if not doc:
         raise HTTPException(status_code=404, detail="Download link is invalid or expired")
 
-    claimed = await db.csv_export_tokens.update_one(
-        {"_id": doc["_id"], "used_at": None},
-        {"$set": {"used_at": now}},
+    # Android Chrome may request the attachment more than once while handing it
+    # to the download manager. Keep this short-lived unguessable link reusable
+    # until expiry instead of invalidating it on the first GET.
+    await db.csv_export_tokens.update_one(
+        {"_id": doc["_id"]},
+        {
+            "$set": {"last_download_at": now},
+            "$inc": {"download_count": 1},
+        },
     )
-    if claimed.modified_count != 1:
-        raise HTTPException(status_code=404, detail="Download link is invalid or expired")
 
     f = doc.get("filters") or {}
     hourly_rate = float(f.get("hourly_rate") or DEFAULT_HOURLY_RATE)
