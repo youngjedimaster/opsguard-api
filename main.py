@@ -50,15 +50,39 @@ async def health():
     return {"status": "ok"}
 
 
+@app.get("/csv-fix.js", include_in_schema=False)
+async def opsguard_csv_fix():
+    fix_path = Path(__file__).resolve().parent / "csv-fix.js"
+    if not fix_path.exists():
+        return HTMLResponse("csv-fix.js is missing from the deployed app.", status_code=500)
+    return FileResponse(
+        fix_path,
+        media_type="application/javascript",
+        headers={
+            "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+            "Pragma": "no-cache",
+            "Expires": "0",
+        },
+    )
+
+
 @app.get("/portal", include_in_schema=False)
 async def opsguard_portal():
     """Serve the OpsGuard frontend so GoDaddy only needs a small iframe embed."""
     portal_path = Path(__file__).resolve().parent / "portal.html"
     if not portal_path.exists():
         return HTMLResponse("portal.html is missing from the deployed app.", status_code=500)
-    return FileResponse(
-        portal_path,
-        media_type="text/html",
+
+    portal_html = portal_path.read_text(encoding="utf-8")
+    fix_script = '<script src="/csv-fix.js?v=20261008-1"></script>'
+    if fix_script not in portal_html:
+        if "</body>" in portal_html:
+            portal_html = portal_html.replace("</body>", fix_script + "</body>")
+        else:
+            portal_html += fix_script
+
+    return HTMLResponse(
+        portal_html,
         headers={
             "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
             "Pragma": "no-cache",

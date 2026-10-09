@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OpsGuard</title>
+<style>
+  html,body{margin:0;min-height:100%;background:#fff;font-family:Arial,sans-serif;color:#0b1f3b}
+  .wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;box-sizing:border-box}
+  .card{width:min(460px,100%);text-align:center}
+  .mark{font-size:34px;font-weight:800;letter-spacing:.3px}
+  .bar{height:5px;background:#10b8b5;border-radius:999px;margin:20px auto;width:180px}
+  .status{font-size:18px;font-weight:700;margin-top:18px}
+  .sub{font-size:14px;color:#52606d;line-height:1.45;margin-top:10px}
+  .dots:after{content:"";animation:dots 1.4s steps(4,end) infinite}
+  @keyframes dots{0%{content:""}25%{content:"."}50%{content:".."}75%,100%{content:"..."}}
+</style>
+</head>
+<body>
+<div class="wrap"><div class="card">
+  <div class="mark">OpsGuard</div>
+  <div class="bar"></div>
+  <div class="status">Opening secure portal<span class="dots"></span></div>
+  <div class="sub">OpsGuard is getting ready. This page will open automatically.</div>
+</div></div>
+<script>
+(function(){
+  const health="https://opsguard-api.onrender.com/api/health";
+  const portal="https://opsguard-api.onrender.com/portal";
+  const target=portal+window.location.search+window.location.hash;
+  let tries=0;
+  async function check(){
+    tries++;
+    try{
+      const r=await fetch(health+"?t="+Date.now(),{cache:"no-store"});
+      const data=await r.json();
+      if(r.ok&&data&&data.status==="ok"){
+        window.location.replace(target);
+        return;
+      }
+    }catch(e){}
+    setTimeout(check,Math.min(3000,1000+tries*250));
+  }
+  check();
+})();
+</script>
+</body>
+</html>
