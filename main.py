@@ -77,7 +77,8 @@ async def opsguard_portal():
     fix_script = '<script src="/csv-fix.js?v=20261008-1"></script>'
     if fix_script not in portal_html:
         if "</body>" in portal_html:
-            portal_html = portal_html.replace("</body>", fix_script + "</body>")
+            before, after = portal_html.rsplit("</body>", 1)
+            portal_html = before + fix_script + "</body>" + after
         else:
             portal_html += fix_script
 
