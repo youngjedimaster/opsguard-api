@@ -41,7 +41,8 @@ class ResetPasswordIn(BaseModel):
 
 
 RESET_TTL_MINUTES = int(os.getenv("PASSWORD_RESET_TTL_MINUTES", "30"))
-RESET_BASE_URL = os.getenv("PASSWORD_RESET_BASE_URL", "https://opsguard-api.onrender.com/portal")
+_default_reset_base = (os.getenv("RENDER_EXTERNAL_URL") or "https://opsguard-api.onrender.com").rstrip("/") + "/portal"
+RESET_BASE_URL = os.getenv("PASSWORD_RESET_BASE_URL", _default_reset_base)
 
 
 def _smtp_configured() -> bool:

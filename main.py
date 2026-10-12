@@ -46,7 +46,7 @@ app.include_router(schedules.router)
 
 @app.get("/api/health")
 async def health():
-    return {"status": "ok"}
+    return {"status": "ok", "environment": getattr(settings, "APP_ENV", "production")}
 
 
 def _no_cache_headers():
@@ -75,12 +75,13 @@ async def opsguard_schedule_fix():
 
 @app.get("/portal", include_in_schema=False)
 async def opsguard_portal():
-    """Serve the OpsGuard frontend so GoDaddy only needs a small iframe embed."""
+    """Serve the OpsGuard frontend for the current environment."""
     portal_path = Path(__file__).resolve().parent / "portal.html"
     if not portal_path.exists():
         return HTMLResponse("portal.html is missing from the deployed app.", status_code=500)
 
     portal_html = portal_path.read_text(encoding="utf-8")
+    portal_html = portal_html.replace("__OPSGUARD_ENV__", str(getattr(settings, "APP_ENV", "production")).strip().lower() or "production")
     scripts = (
         '<script src="/csv-fix.js?v=20261009-2"></script>'
         '<script src="/schedule-fix.js?v=20261009-1"></script>'
