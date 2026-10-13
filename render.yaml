@@ -11,6 +11,8 @@ services:
     autoDeployTrigger: commit
     healthCheckPath: /api/health
     envVars:
+      - key: PYTHON_VERSION
+        value: 3.13.4
       - key: APP_ENV
         value: staging
       - key: MONGODB_DB
