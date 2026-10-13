@@ -17,5 +17,7 @@ services:
         value: staging
       - key: MONGODB_DB
         value: opsguard_staging
+      - key: MONGODB_URI
+        sync: false
       - key: JWT_SECRET
         generateValue: true
