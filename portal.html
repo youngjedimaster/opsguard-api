@@ -82,6 +82,7 @@
 <div class="row">
 <div class="third input-group"><label>Start date / From</label><input id="admin-from-date-filter" type="date" title="Example: 2026-06-15"></div>
 <div class="third input-group"><label>End date / To</label><input id="admin-to-date-filter" type="date" title="Example: 2026-06-30"></div>
+<div class="third input-group" style="justify-content:flex-end"><label>&nbsp;</label><button type="button" class="primary secondary" style="padding:8px 12px;white-space:nowrap" onclick="clearAdminDateFilters()">Clear dates</button></div>
 </div>
 <div class="card" style="padding:8px;margin:4px 0 8px;background:#f9fafb">
 <h3 style="margin:0 0 4px;font-size:.86rem">Guard account management</h3>
@@ -626,6 +627,18 @@ function renderAdminShifts(data){
     tbody.appendChild(tr);
   });
   totalEl.textContent=`Total shifts: ${rows.length} | Total hours: ${totalHours.toFixed(2)} | Total payout: $${totalPayroll.toFixed(2)} | Paid: $${paidPayroll.toFixed(2)} | Unpaid: $${unpaidPayroll.toFixed(2)}`;
+}
+
+function clearAdminDateFilters(){
+  const from=document.getElementById("admin-from-date-filter");
+  const to=document.getElementById("admin-to-date-filter");
+  if(from)from.value="";
+  if(to)to.value="";
+  const total=document.getElementById("admin-total");
+  if(total)total.textContent="Date filters cleared. Click Load shifts to show all dates.";
+  if(authToken&&typeof refreshAdminGuardOptionsForCurrentRange==="function"){
+    refreshAdminGuardOptionsForCurrentRange().catch(()=>{});
+  }
 }
 
 async function loadAllShifts(){
