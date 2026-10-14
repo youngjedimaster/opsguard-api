@@ -10,6 +10,14 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24  # 1 day
 
+    # Server-side Composio bridge for Google Calendar sync.
+    # COMPOSIO_API_KEY is always supplied as a Render secret, never committed.
+    COMPOSIO_API_KEY: str = ""
+    COMPOSIO_CALENDAR_ACCOUNT: str = "googlecalendar_lif-bowet"
+    CALENDAR_TIMEZONE: str = "America/Toronto"
+    CALENDAR_GARRISON_ID: str = "garrisonstaff@gmail.com"
+    CALENDAR_BABY_G_ID: str = "s374q7mjj2hoc77f71oml6n5uc@group.calendar.google.com"
+
     ALLOWED_ORIGINS: list[str] = [
         "http://localhost:3000",
         "http://127.0.0.1:3000",

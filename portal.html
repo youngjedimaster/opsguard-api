@@ -101,6 +101,25 @@
     <button type="button" class="primary secondary" onclick="loadAdminDashboard()">Refresh</button>
   </div>
   <p id="dash-status" class="small"></p>
+  <div style="border-top:1px solid #e5e7eb;margin-top:10px;padding-top:10px">
+    <div style="display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap">
+      <div><strong style="font-size:.85rem">Google Calendar Sync</strong><div id="calendar-sync-connection" class="small">Checking connection…</div></div>
+      <span id="calendar-sync-badge" class="status-pill status-submitted">Checking</span>
+    </div>
+    <div class="row" style="margin-top:8px">
+      <div class="half input-group"><label>Preview from</label><input id="calendar-preview-from" type="date"></div>
+      <div class="half input-group"><label>Preview to</label><input id="calendar-preview-to" type="date"></div>
+    </div>
+    <div class="dash-btn-row">
+      <button id="calendar-preview-btn" type="button" class="primary" onclick="previewGoogleCalendarShifts()">Preview Calendar Shifts</button>
+      <button id="calendar-direct-export-btn" type="button" class="primary" style="background:#166534" onclick="syncConfirmedToGoogle()">Sync Confirmed to Google</button>
+    </div>
+    <p id="calendar-sync-status" class="small"></p>
+    <div id="calendar-preview-wrap" class="table-scroll" style="height:180px;display:none;margin-top:7px">
+      <table id="calendar-preview-table"><thead><tr><th>Date</th><th>Venue</th><th>Shift</th><th>Guard</th><th>Start</th><th>Calendar slot</th><th>OpsGuard</th></tr></thead><tbody></tbody></table>
+    </div>
+    <p class="small">Safety rule: only S1/S2/S3 events are read. Export changes the existing calendar event title only and never changes its start/end time. Missing or ambiguous slots are skipped instead of creating duplicates.</p>
+  </div>
 </div>
 </div>
 
@@ -654,6 +673,65 @@ async function dashboardMarkPaid(shiftId){
 async function dashboardExportConfirmed(){
   try{await exportAllConfirmedCalendar();setTimeout(()=>loadAdminDashboard(),500);}catch(e){const st=document.getElementById("dash-status");if(st)st.textContent="Calendar export could not be started.";}
 }
+async function loadCalendarSyncStatus(){
+  const badge=document.getElementById("calendar-sync-badge"),label=document.getElementById("calendar-sync-connection");
+  const previewBtn=document.getElementById("calendar-preview-btn"),exportBtn=document.getElementById("calendar-direct-export-btn");
+  try{
+    const data=await rawApi("/calendar-sync/status",{method:"GET",silent:true});
+    const ready=!!data.configured;
+    if(badge){badge.textContent=ready?"Connected":"Needs Setup";badge.className="status-pill "+(ready?"status-paid":"status-submitted");}
+    if(label)label.textContent=ready?"Direct Google sync is ready.":"Direct sync is built but the staging Composio key still needs to be added.";
+    if(previewBtn)previewBtn.disabled=!ready;
+    if(exportBtn)exportBtn.disabled=!ready;
+    return ready;
+  }catch(e){
+    if(badge){badge.textContent="Unavailable";badge.className="status-pill status-submitted";}
+    if(label)label.textContent="Could not check calendar connection.";
+    if(previewBtn)previewBtn.disabled=true;
+    if(exportBtn)exportBtn.disabled=true;
+    return false;
+  }
+}
+function initCalendarPreviewDates(){
+  const from=document.getElementById("calendar-preview-from"),to=document.getElementById("calendar-preview-to");
+  if(!from||!to||from.value||to.value)return;
+  const now=new Date(),later=new Date(now.getTime()+14*86400000);
+  const localDate=d=>{const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,"0"),day=String(d.getDate()).padStart(2,"0");return y+"-"+m+"-"+day};
+  from.value=localDate(now);to.value=localDate(later);
+}
+function renderCalendarPreview(items){
+  const wrap=document.getElementById("calendar-preview-wrap"),tbody=document.querySelector("#calendar-preview-table tbody");
+  if(!wrap||!tbody)return;
+  wrap.style.display="block";tbody.innerHTML="";
+  if(!items||!items.length){tbody.innerHTML="<tr><td colspan='7'>No S1/S2/S3 calendar shifts found in this range.</td></tr>";return;}
+  items.forEach(row=>{
+    const tr=document.createElement("tr");
+    const slot=(row.calendar_duration_minutes==null?"Unknown":row.calendar_duration_minutes+" min")+(row.requires_end_time_review?" ⚠":"");
+    tr.innerHTML="<td>"+(row.date||"")+"</td><td>"+(row.venue||"")+"</td><td><strong>"+(row.shift_code||"")+"</strong></td><td>"+(row.guard||"Unassigned")+"</td><td>"+(row.start_time||"")+"</td><td>"+slot+"</td><td>"+(row.already_in_opsguard?"Linked":"Calendar only")+"</td>";
+    tbody.appendChild(tr);
+  });
+}
+async function previewGoogleCalendarShifts(){
+  const st=document.getElementById("calendar-sync-status"),from=document.getElementById("calendar-preview-from")?.value||"",to=document.getElementById("calendar-preview-to")?.value||"";
+  if(!from||!to){if(st)st.textContent="Choose both preview dates.";return;}
+  if(st)st.textContent="Reading S1/S2/S3 shifts from Google Calendar…";
+  try{
+    const data=await rawApi("/calendar-sync/preview",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({from_date:from,to_date:to}),silent:true});
+    renderCalendarPreview(data.items||[]);
+    if(st)st.textContent=(data.count||0)+" S1/S2/S3 calendar shifts found. Short calendar slots are preview-only until their OpsGuard end time is reviewed."+(data.errors&&data.errors.length?" Some calendars returned an error.":"");
+  }catch(e){if(st)st.textContent="Calendar preview failed: "+(e&&e.message?e.message:String(e));}
+}
+async function syncConfirmedToGoogle(){
+  const st=document.getElementById("calendar-sync-status");
+  if(!(await confirmAction("Sync confirmed OpsGuard assignments to the existing Google Calendar S1/S2/S3 slots? Only event titles will change; calendar times will not be changed and missing slots will not be created.","Sync to Google")))return;
+  if(st)st.textContent="Syncing confirmed assignments…";
+  try{
+    const data=await rawApi("/calendar-sync/export-confirmed",{method:"POST",silent:true});
+    const done=(data.exported||[]).length,skipped=(data.skipped||[]).length;
+    if(st)st.textContent="Google sync finished: "+done+" updated/linked, "+skipped+" skipped."+(skipped?" Open Advanced Admin if a shift needs review.":"");
+    await loadAdminDashboard();
+  }catch(e){if(st)st.textContent="Google sync failed: "+(e&&e.message?e.message:String(e));}
+}
 function renderAdminDashboard(shifts,schedules){
   const rows=Array.isArray(shifts)?shifts:[];
   const scheduleRows=Array.isArray(schedules)?schedules:[];
@@ -712,6 +790,8 @@ async function loadAdminDashboard(){
     allShiftsCache=shifts;
     adminScheduleConfirmationsCache=schedules;
     renderAdminDashboard(shifts,schedules);
+    initCalendarPreviewDates();
+    loadCalendarSyncStatus();
     if(st)st.textContent="Updated just now.";
   }catch(e){
     if(st)st.textContent="Could not refresh dashboard.";

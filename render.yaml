@@ -19,5 +19,15 @@ services:
         value: opsguard_staging
       - key: MONGODB_URI
         sync: false
+      - key: COMPOSIO_API_KEY
+        sync: false
+      - key: COMPOSIO_CALENDAR_ACCOUNT
+        value: googlecalendar_lif-bowet
+      - key: CALENDAR_TIMEZONE
+        value: America/Toronto
+      - key: CALENDAR_GARRISON_ID
+        value: garrisonstaff@gmail.com
+      - key: CALENDAR_BABY_G_ID
+        value: s374q7mjj2hoc77f71oml6n5uc@group.calendar.google.com
       - key: JWT_SECRET
         generateValue: true
