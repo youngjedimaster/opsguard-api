@@ -28,6 +28,15 @@ class PreviewRequest(BaseModel):
     to_date: date
 
 
+class ImportDraftItem(BaseModel):
+    calendar_id: str
+    google_event_id: str
+
+
+class ImportDraftRequest(BaseModel):
+    items: list[ImportDraftItem]
+
+
 def _calendar_map() -> dict[str, str]:
     titan = str(getattr(settings, "CALENDAR_TITAN_SECURITY_ID", "") or "").strip()
     return {
@@ -308,6 +317,34 @@ def _normalize_shift_event(event: dict, venue: str | None, calendar_id: str, tz:
     }
 
 
+async def _get_calendar_event(calendar_id: str, event_id: str) -> dict:
+    payload = await _execute(
+        "GOOGLECALENDAR_EVENTS_GET",
+        {
+            "calendar_id": calendar_id,
+            "event_id": event_id,
+            "time_zone": str(getattr(settings, "CALENDAR_TIMEZONE", "America/Toronto") or "America/Toronto"),
+        },
+    )
+    current: Any = payload
+    for _ in range(6):
+        if isinstance(current, dict):
+            if ("id" in current or "event_id" in current) and ("start" in current or "start_time" in current):
+                return current
+            moved = False
+            for key in ("data", "response_data", "event_data", "result"):
+                child = current.get(key)
+                if isinstance(child, dict):
+                    current = child
+                    moved = True
+                    break
+            if not moved:
+                break
+        else:
+            break
+    raise RuntimeError("Calendar event could not be read")
+
+
 async def _list_calendar_events(calendar_id: str, from_date: date, to_date: date) -> list[dict]:
     tz = ZoneInfo(str(getattr(settings, "CALENDAR_TIMEZONE", "America/Toronto") or "America/Toronto"))
     start = datetime.combine(from_date, time.min, tzinfo=tz)
@@ -337,18 +374,29 @@ async def _existing_google_ids(db) -> set[tuple[str, str]]:
             eid = str(shift.get("google_event_id") or "").strip()
             if cal and eid:
                 pairs.add((cal, eid))
+    draft_cursor = db.calendar_imports.find(
+        {"status": {"$ne": "discarded"}},
+        {"calendar_id": 1, "google_event_id": 1},
+    )
+    async for doc in draft_cursor:
+        cal = str(doc.get("calendar_id") or "").strip()
+        eid = str(doc.get("google_event_id") or "").strip()
+        if cal and eid:
+            pairs.add((cal, eid))
     return pairs
 
 
 @router.get("/status")
-async def calendar_sync_status(admin=Depends(get_admin_user)):
+async def calendar_sync_status(admin=Depends(get_admin_user), db=Depends(get_db)):
     calendars = [
         {"source": src["name"], "calendar_id": src["calendar_id"], "fixed_venue": src["fixed_venue"]}
         for src in _calendar_sources()
         if src["calendar_id"]
     ]
+    draft_count = await db.calendar_imports.count_documents({"status": "review"})
     return {
         "configured": _configured(),
+        "draft_count": draft_count,
         "account_configured": bool(str(getattr(settings, "COMPOSIO_CALENDAR_ACCOUNT", "") or "").strip()),
         "timezone": str(getattr(settings, "CALENDAR_TIMEZONE", "America/Toronto") or "America/Toronto"),
         "calendars": calendars,
@@ -397,6 +445,127 @@ async def preview_calendar_shifts(
         "errors": errors,
         "note": "Calendar event end times are shown for reference only. Short calendar slots are flagged for end-time review before creating an OpsGuard schedule.",
     }
+
+
+def _serialize_import_draft(doc: dict) -> dict:
+    return {
+        "id": str(doc.get("_id")) if doc.get("_id") else None,
+        "calendar_id": doc.get("calendar_id"),
+        "google_event_id": doc.get("google_event_id"),
+        "calendar_source": doc.get("calendar_source"),
+        "venue": doc.get("venue"),
+        "shift_code": doc.get("shift_code"),
+        "guard": doc.get("guard") or "",
+        "matched_guard_id": str(doc.get("matched_guard_id")) if doc.get("matched_guard_id") else None,
+        "date": doc.get("date"),
+        "start_time": doc.get("start_time"),
+        "end_time": doc.get("end_time"),
+        "calendar_start_time": doc.get("calendar_start_time"),
+        "calendar_end_time": doc.get("calendar_end_time"),
+        "calendar_duration_minutes": doc.get("calendar_duration_minutes"),
+        "needs_guard_review": bool(doc.get("needs_guard_review", False)),
+        "needs_end_time_review": bool(doc.get("needs_end_time_review", True)),
+        "status": doc.get("status") or "review",
+        "created_at": doc.get("created_at").isoformat() if isinstance(doc.get("created_at"), datetime) else doc.get("created_at"),
+    }
+
+
+def _calendar_source_name(calendar_id: str) -> str:
+    for source in _calendar_sources():
+        if source.get("calendar_id") == calendar_id:
+            return str(source.get("name") or "Google Calendar")
+    return "Google Calendar"
+
+
+@router.get("/drafts")
+async def list_calendar_import_drafts(
+    admin=Depends(get_admin_user),
+    db=Depends(get_db),
+):
+    items = []
+    cursor = db.calendar_imports.find({"status": "review"}).sort([("date", 1), ("start_time", 1), ("created_at", 1)])
+    async for doc in cursor:
+        items.append(_serialize_import_draft(doc))
+    return {"items": items, "count": len(items)}
+
+
+@router.post("/import-drafts")
+async def import_calendar_drafts(
+    payload: ImportDraftRequest,
+    admin=Depends(get_admin_user),
+    db=Depends(get_db),
+):
+    if not _configured():
+        raise HTTPException(status_code=503, detail="Calendar connection is not configured in staging")
+    if not payload.items:
+        raise HTTPException(status_code=400, detail="Select at least one calendar shift")
+    if len(payload.items) > 100:
+        raise HTTPException(status_code=400, detail="Import is limited to 100 shifts at a time")
+
+    known_calendar_ids = {src["calendar_id"] for src in _calendar_sources() if src.get("calendar_id")}
+    existing = await _existing_google_ids(db)
+    tz = ZoneInfo(str(getattr(settings, "CALENDAR_TIMEZONE", "America/Toronto") or "America/Toronto"))
+    imported: list[dict] = []
+    skipped: list[dict] = []
+
+    for requested in payload.items:
+        calendar_id = str(requested.calendar_id or "").strip()
+        event_id = str(requested.google_event_id or "").strip()
+        if not calendar_id or not event_id:
+            skipped.append({"calendar_id": calendar_id, "google_event_id": event_id, "reason": "Missing calendar or event id"})
+            continue
+        if calendar_id not in known_calendar_ids:
+            skipped.append({"calendar_id": calendar_id, "google_event_id": event_id, "reason": "Calendar is not an OpsGuard calendar source"})
+            continue
+        if (calendar_id, event_id) in existing:
+            skipped.append({"calendar_id": calendar_id, "google_event_id": event_id, "reason": "Already linked or imported"})
+            continue
+
+        try:
+            event = await _get_calendar_event(calendar_id, event_id)
+            row = _normalize_shift_event(event, None, calendar_id, tz)
+            if not row:
+                skipped.append({"calendar_id": calendar_id, "google_event_id": event_id, "reason": "Event is not a timed S1/S2/S3 shift with a recognized venue"})
+                continue
+
+            guard_text = str(row.get("guard") or "").strip()
+            guard_user = None
+            if guard_text:
+                guard_user = await db.users.find_one(
+                    {"role": "guard", "name": {"$regex": f"^{re.escape(guard_text)}$", "$options": "i"}}
+                )
+
+            now = datetime.utcnow()
+            doc = {
+                "calendar_id": calendar_id,
+                "google_event_id": event_id,
+                "calendar_source": _calendar_source_name(calendar_id),
+                "venue": row.get("venue"),
+                "shift_code": row.get("shift_code"),
+                "guard": guard_text,
+                "matched_guard_id": guard_user.get("_id") if guard_user else None,
+                "date": row.get("date"),
+                "start_time": row.get("start_time"),
+                # Never trust the short Google Calendar slot as the OpsGuard end time.
+                "end_time": None,
+                "calendar_start_time": row.get("calendar_start_iso"),
+                "calendar_end_time": row.get("calendar_end_iso"),
+                "calendar_duration_minutes": row.get("calendar_duration_minutes"),
+                "needs_guard_review": not bool(guard_user),
+                "needs_end_time_review": True,
+                "status": "review",
+                "created_at": now,
+                "created_by_admin_id": str(admin["_id"]),
+                "updated_at": now,
+            }
+            res = await db.calendar_imports.insert_one(doc)
+            doc["_id"] = res.inserted_id
+            imported.append(_serialize_import_draft(doc))
+            existing.add((calendar_id, event_id))
+        except Exception as exc:
+            skipped.append({"calendar_id": calendar_id, "google_event_id": event_id, "reason": str(exc)[:500]})
+
+    return {"imported": imported, "skipped": skipped}
 
 
 async def _find_existing_calendar_slot(shift: dict, guard: str) -> tuple[dict, str]:

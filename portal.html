@@ -112,13 +112,21 @@
     </div>
     <div class="dash-btn-row">
       <button id="calendar-preview-btn" type="button" class="primary" onclick="previewGoogleCalendarShifts()">Preview Calendar Shifts</button>
+      <button id="calendar-import-drafts-btn" type="button" class="primary" style="background:#7c3aed" onclick="importSelectedCalendarDrafts()" disabled>Import Selected as Drafts</button>
       <button id="calendar-direct-export-btn" type="button" class="primary" style="background:#166534" onclick="syncConfirmedToGoogle()">Sync Confirmed to Google</button>
     </div>
     <p id="calendar-sync-status" class="small"></p>
     <div id="calendar-preview-wrap" class="table-scroll" style="height:180px;display:none;margin-top:7px">
-      <table id="calendar-preview-table"><thead><tr><th>Date</th><th>Venue</th><th>Shift</th><th>Guard</th><th>Start</th><th>Calendar slot</th><th>OpsGuard</th></tr></thead><tbody></tbody></table>
+      <table id="calendar-preview-table"><thead><tr><th>Select</th><th>Date</th><th>Venue</th><th>Shift</th><th>Guard</th><th>Start</th><th>Calendar slot</th><th>OpsGuard</th></tr></thead><tbody></tbody></table>
     </div>
-    <p class="small">Safety rule: only S1/S2/S3 events are read. Export changes the existing calendar event title only and never changes its start/end time. Missing or ambiguous slots are skipped instead of creating duplicates.</p>
+    <p class="small">Safety rule: only S1/S2/S3 events are read. Import Selected creates OpsGuard review drafts only; it never treats the short Calendar slot as the real shift end time. Export changes the existing calendar event title only and never changes its start/end time. Missing or ambiguous slots are skipped instead of creating duplicates.</p>
+    <div style="border-top:1px solid #e5e7eb;margin-top:9px;padding-top:8px">
+      <div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><strong style="font-size:.82rem">Calendar Import Drafts</strong><span id="calendar-draft-count" class="status-pill status-approved">0</span></div>
+      <div class="dash-btn-row"><button type="button" class="primary secondary" onclick="loadCalendarImportDrafts()">Refresh Drafts</button></div>
+      <div id="calendar-drafts-wrap" class="table-scroll" style="height:160px;margin-top:6px">
+        <table id="calendar-drafts-table"><thead><tr><th>Date</th><th>Venue</th><th>Shift</th><th>Guard</th><th>Start</th><th>Needs Review</th></tr></thead><tbody><tr><td colspan="6">No drafts loaded.</td></tr></tbody></table>
+      </div>
+    </div>
   </div>
 </div>
 </div>
@@ -680,7 +688,8 @@ async function loadCalendarSyncStatus(){
     const data=await rawApi("/calendar-sync/status",{method:"GET",silent:true});
     const ready=!!data.configured;
     if(badge){badge.textContent=ready?"Connected":"Needs Setup";badge.className="status-pill "+(ready?"status-paid":"status-submitted");}
-    if(label)label.textContent=ready?"Direct Google sync is ready.":"Direct sync is built but the staging Composio key still needs to be added.";
+    if(label)label.textContent=ready?"Direct Google sync is ready. "+String(data.draft_count||0)+" import draft(s) await review.":"Direct sync is built but the staging Composio key still needs to be added.";
+    const draftCount=document.getElementById("calendar-draft-count");if(draftCount)draftCount.textContent=String(data.draft_count||0);
     if(previewBtn)previewBtn.disabled=!ready;
     if(exportBtn)exportBtn.disabled=!ready;
     return ready;
@@ -699,17 +708,62 @@ function initCalendarPreviewDates(){
   const localDate=d=>{const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,"0"),day=String(d.getDate()).padStart(2,"0");return y+"-"+m+"-"+day};
   from.value=localDate(now);to.value=localDate(later);
 }
+let calendarPreviewCache=[];
 function renderCalendarPreview(items){
-  const wrap=document.getElementById("calendar-preview-wrap"),tbody=document.querySelector("#calendar-preview-table tbody");
+  const wrap=document.getElementById("calendar-preview-wrap"),tbody=document.querySelector("#calendar-preview-table tbody"),importBtn=document.getElementById("calendar-import-drafts-btn");
   if(!wrap||!tbody)return;
+  calendarPreviewCache=Array.isArray(items)?items:[];
   wrap.style.display="block";tbody.innerHTML="";
-  if(!items||!items.length){tbody.innerHTML="<tr><td colspan='7'>No S1/S2/S3 calendar shifts found in this range.</td></tr>";return;}
-  items.forEach(row=>{
+  if(importBtn)importBtn.disabled=true;
+  if(!calendarPreviewCache.length){tbody.innerHTML="<tr><td colspan='8'>No S1/S2/S3 calendar shifts found in this range.</td></tr>";return;}
+  calendarPreviewCache.forEach((row,index)=>{
     const tr=document.createElement("tr");
     const slot=(row.calendar_duration_minutes==null?"Unknown":row.calendar_duration_minutes+" min")+(row.requires_end_time_review?" ⚠":"");
-    tr.innerHTML="<td>"+(row.date||"")+"</td><td>"+(row.venue||"")+"</td><td><strong>"+(row.shift_code||"")+"</strong></td><td>"+(row.guard||"Unassigned")+"</td><td>"+(row.start_time||"")+"</td><td>"+slot+"</td><td>"+(row.already_in_opsguard?"Linked":"Calendar only")+"</td>";
+    const disabled=row.already_in_opsguard?"disabled":"";
+    tr.innerHTML="<td style='text-align:center'><input class='calendar-preview-select' type='checkbox' data-index='"+index+"' "+disabled+" onchange='updateCalendarDraftImportButton()'></td><td>"+(row.date||"")+"</td><td>"+(row.venue||"")+"</td><td><strong>"+(row.shift_code||"")+"</strong></td><td>"+(row.guard||"Unassigned")+"</td><td>"+(row.start_time||"")+"</td><td>"+slot+"</td><td>"+(row.already_in_opsguard?"Linked / Drafted":"Calendar only")+"</td>";
     tbody.appendChild(tr);
   });
+}
+function updateCalendarDraftImportButton(){
+  const btn=document.getElementById("calendar-import-drafts-btn");
+  if(!btn)return;
+  btn.disabled=!document.querySelector(".calendar-preview-select:checked");
+}
+async function importSelectedCalendarDrafts(){
+  const st=document.getElementById("calendar-sync-status");
+  const checked=[...document.querySelectorAll(".calendar-preview-select:checked")];
+  const items=checked.map(el=>calendarPreviewCache[Number(el.dataset.index)]).filter(Boolean).map(row=>({calendar_id:row.calendar_id,google_event_id:row.google_event_id}));
+  if(!items.length){if(st)st.textContent="Select at least one Calendar shift first.";return;}
+  if(!(await confirmAction("Import "+items.length+" selected Calendar shift(s) into OpsGuard as review drafts? Calendar end times will NOT become OpsGuard shift end times.","Import Drafts")))return;
+  if(st)st.textContent="Importing selected Calendar shifts as review drafts…";
+  try{
+    const data=await rawApi("/calendar-sync/import-drafts",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({items}),silent:true});
+    const done=(data.imported||[]).length,skipped=(data.skipped||[]).length;
+    if(st)st.textContent=done+" draft(s) imported, "+skipped+" skipped. Drafts require end-time/guard review before they can become guard schedules.";
+    await loadCalendarImportDrafts();
+    await previewGoogleCalendarShifts();
+    await loadCalendarSyncStatus();
+  }catch(e){if(st)st.textContent="Draft import failed: "+(e&&e.message?e.message:String(e));}
+}
+async function loadCalendarImportDrafts(){
+  const tbody=document.querySelector("#calendar-drafts-table tbody"),count=document.getElementById("calendar-draft-count");
+  if(!tbody)return;
+  try{
+    const data=await rawApi("/calendar-sync/drafts",{method:"GET",silent:true});
+    const rows=Array.isArray(data.items)?data.items:[];
+    if(count)count.textContent=String(rows.length);
+    tbody.innerHTML="";
+    if(!rows.length){tbody.innerHTML="<tr><td colspan='6'>No Calendar import drafts awaiting review.</td></tr>";return;}
+    rows.forEach(row=>{
+      const tr=document.createElement("tr");
+      const review=[row.needs_guard_review?"guard":"",row.needs_end_time_review?"end time":""].filter(Boolean).join(" + ")||"Ready";
+      tr.innerHTML="<td>"+(row.date||"")+"</td><td>"+(row.venue||"")+"</td><td><strong>"+(row.shift_code||"")+"</strong></td><td>"+(row.guard||"Unassigned")+"</td><td>"+(row.start_time||"")+"</td><td>"+review+"</td>";
+      tbody.appendChild(tr);
+    });
+  }catch(e){
+    if(count)count.textContent="!";
+    tbody.innerHTML="<tr><td colspan='6'>Drafts could not be loaded.</td></tr>";
+  }
 }
 async function previewGoogleCalendarShifts(){
   const st=document.getElementById("calendar-sync-status"),from=document.getElementById("calendar-preview-from")?.value||"",to=document.getElementById("calendar-preview-to")?.value||"";
@@ -792,6 +846,7 @@ async function loadAdminDashboard(){
     renderAdminDashboard(shifts,schedules);
     initCalendarPreviewDates();
     loadCalendarSyncStatus();
+    loadCalendarImportDrafts();
     if(st)st.textContent="Updated just now.";
   }catch(e){
     if(st)st.textContent="Could not refresh dashboard.";
