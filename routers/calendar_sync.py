@@ -142,9 +142,22 @@ def _assignment_title(event: dict, venue: str, shift_code: str, guard: str) -> s
     return f"{shift_code}:{guard}"
 
 
+def _composio_key() -> str:
+    return str(getattr(settings, "COMPOSIO_API_KEY", "") or "").strip()
+
+
+def _composio_auth_mode() -> str:
+    key = _composio_key()
+    if key.startswith("ck_"):
+        return "consumer_mcp"
+    if key:
+        return "project_api"
+    return "none"
+
+
 def _configured() -> bool:
     return bool(
-        str(getattr(settings, "COMPOSIO_API_KEY", "") or "").strip()
+        _composio_key()
         and str(getattr(settings, "COMPOSIO_CALENDAR_ACCOUNT", "") or "").strip()
     )
 
@@ -203,8 +216,166 @@ def _event_items(obj: Any) -> list[dict]:
     return walk(obj)
 
 
-def _execute_composio(tool_slug: str, arguments: dict) -> dict:
-    api_key = str(getattr(settings, "COMPOSIO_API_KEY", "") or "").strip()
+def _parse_http_payload(raw: str, content_type: str = "") -> dict:
+    text = (raw or "").strip()
+    if not text:
+        return {}
+    if "text/event-stream" in (content_type or "").lower() or text.startswith("event:") or text.startswith("data:"):
+        for block in re.split(r"\r?\n\r?\n", text):
+            data_lines = []
+            for line in block.splitlines():
+                if line.startswith("data:"):
+                    data_lines.append(line[5:].lstrip())
+            if not data_lines:
+                continue
+            candidate = "\n".join(data_lines).strip()
+            if candidate and candidate != "[DONE]":
+                try:
+                    return json.loads(candidate)
+                except json.JSONDecodeError:
+                    continue
+        raise RuntimeError("Calendar MCP returned an unreadable event-stream response")
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError as exc:
+        raise RuntimeError("Calendar service returned invalid JSON") from exc
+
+
+def _mcp_post(api_key: str, payload: dict, session_id: str | None = None, allow_empty: bool = False) -> tuple[dict, str | None]:
+    headers = {
+        "x-consumer-api-key": api_key,
+        "Content-Type": "application/json",
+        "Accept": "application/json, text/event-stream",
+        "MCP-Protocol-Version": "2025-06-18",
+    }
+    if session_id:
+        headers["Mcp-Session-Id"] = session_id
+    req = Request(
+        str(getattr(settings, "COMPOSIO_CONNECT_MCP_URL", "https://connect.composio.dev/mcp") or "https://connect.composio.dev/mcp"),
+        data=json.dumps(payload).encode("utf-8"),
+        method="POST",
+        headers=headers,
+    )
+    try:
+        with urlopen(req, timeout=60) as resp:
+            raw = resp.read().decode("utf-8", "replace")
+            returned_session = resp.headers.get("Mcp-Session-Id") or resp.headers.get("mcp-session-id") or session_id
+            if not raw.strip() and allow_empty:
+                return {}, returned_session
+            return _parse_http_payload(raw, resp.headers.get("Content-Type", "")), returned_session
+    except HTTPError as exc:
+        detail = exc.read().decode("utf-8", "replace")[:800]
+        raise RuntimeError(f"Composio Connect calendar call failed ({exc.code}): {detail}") from exc
+    except (URLError, TimeoutError) as exc:
+        raise RuntimeError("Could not reach Composio Connect") from exc
+
+
+def _extract_mcp_tool_text(payload: dict) -> dict:
+    if not isinstance(payload, dict):
+        raise RuntimeError("Composio Connect returned an invalid response")
+    if payload.get("error"):
+        err = payload.get("error")
+        if isinstance(err, dict):
+            raise RuntimeError(str(err.get("message") or err)[:800])
+        raise RuntimeError(str(err)[:800])
+    result = payload.get("result")
+    if not isinstance(result, dict):
+        raise RuntimeError("Composio Connect did not return a tool result")
+    if result.get("isError"):
+        raise RuntimeError("Composio Connect tool execution failed")
+    for item in result.get("content") or []:
+        if not isinstance(item, dict) or item.get("type") != "text":
+            continue
+        text = str(item.get("text") or "").strip()
+        if not text:
+            continue
+        try:
+            parsed = json.loads(text)
+        except json.JSONDecodeError:
+            continue
+        if isinstance(parsed, dict):
+            return parsed
+    # Some MCP servers may return structuredContent directly.
+    structured = result.get("structuredContent")
+    if isinstance(structured, dict):
+        return structured
+    raise RuntimeError("Composio Connect returned no structured tool data")
+
+
+def _execute_composio_consumer(tool_slug: str, arguments: dict) -> dict:
+    api_key = _composio_key()
+    account = str(getattr(settings, "COMPOSIO_CALENDAR_ACCOUNT", "") or "").strip()
+    if not api_key or not account:
+        raise RuntimeError("Calendar connection is not configured")
+
+    init, session_id = _mcp_post(
+        api_key,
+        {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "initialize",
+            "params": {
+                "protocolVersion": "2025-06-18",
+                "capabilities": {},
+                "clientInfo": {"name": "OpsGuard", "version": "1.0"},
+            },
+        },
+    )
+    if init.get("error"):
+        raise RuntimeError("Composio Connect MCP initialization failed")
+    if session_id:
+        _mcp_post(
+            api_key,
+            {"jsonrpc": "2.0", "method": "notifications/initialized", "params": {}},
+            session_id=session_id,
+            allow_empty=True,
+        )
+
+    call_payload, _ = _mcp_post(
+        api_key,
+        {
+            "jsonrpc": "2.0",
+            "id": 2,
+            "method": "tools/call",
+            "params": {
+                "name": "COMPOSIO_MULTI_EXECUTE_TOOL",
+                "arguments": {
+                    "tools": [
+                        {
+                            "tool_slug": tool_slug,
+                            "account": account,
+                            "arguments": arguments,
+                        }
+                    ],
+                    "thought": "OpsGuard Google Calendar synchronization",
+                    "sync_response_to_workbench": False,
+                },
+            },
+        },
+        session_id=session_id,
+    )
+    wrapper = _extract_mcp_tool_text(call_payload)
+    if wrapper.get("successful") is False:
+        raise RuntimeError(str(wrapper.get("error") or "Calendar tool failed")[:800])
+    data = wrapper.get("data") if isinstance(wrapper.get("data"), dict) else wrapper
+    results = data.get("results") if isinstance(data, dict) else None
+    if not isinstance(results, list) or not results:
+        raise RuntimeError("Composio Connect returned no calendar execution result")
+    first = results[0]
+    if not isinstance(first, dict):
+        raise RuntimeError("Composio Connect returned an invalid calendar result")
+    if first.get("error"):
+        raise RuntimeError(str(first.get("error"))[:800])
+    response = first.get("response")
+    if isinstance(response, dict):
+        if response.get("successful") is False:
+            raise RuntimeError(str(response.get("error") or "Calendar tool failed")[:800])
+        return response
+    return first
+
+
+def _execute_composio_project(tool_slug: str, arguments: dict) -> dict:
+    api_key = _composio_key()
     account = str(getattr(settings, "COMPOSIO_CALENDAR_ACCOUNT", "") or "").strip()
     if not api_key or not account:
         raise RuntimeError("Calendar connection is not configured")
@@ -238,6 +409,12 @@ def _execute_composio(tool_slug: str, arguments: dict) -> dict:
     if isinstance(payload, dict) and payload.get("successful") is False:
         raise RuntimeError(str(payload.get("error") or "Calendar tool failed"))
     return payload if isinstance(payload, dict) else {"data": payload}
+
+
+def _execute_composio(tool_slug: str, arguments: dict) -> dict:
+    if _composio_auth_mode() == "consumer_mcp":
+        return _execute_composio_consumer(tool_slug, arguments)
+    return _execute_composio_project(tool_slug, arguments)
 
 
 async def _execute(tool_slug: str, arguments: dict) -> dict:
@@ -396,6 +573,7 @@ async def calendar_sync_status(admin=Depends(get_admin_user), db=Depends(get_db)
     draft_count = await db.calendar_imports.count_documents({"status": "review"})
     return {
         "configured": _configured(),
+        "auth_mode": _composio_auth_mode(),
         "draft_count": draft_count,
         "account_configured": bool(str(getattr(settings, "COMPOSIO_CALENDAR_ACCOUNT", "") or "").strip()),
         "timezone": str(getattr(settings, "CALENDAR_TIMEZONE", "America/Toronto") or "America/Toronto"),

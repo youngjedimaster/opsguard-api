@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     # Server-side Composio bridge for Google Calendar sync.
     # COMPOSIO_API_KEY is always supplied as a Render secret, never committed.
     COMPOSIO_API_KEY: str = ""
+    COMPOSIO_CONNECT_MCP_URL: str = "https://connect.composio.dev/mcp"
     COMPOSIO_CALENDAR_ACCOUNT: str = "googlecalendar_lif-bowet"
     CALENDAR_TIMEZONE: str = "America/Toronto"
     CALENDAR_GARRISON_ID: str = "garrisonstaff@gmail.com"
