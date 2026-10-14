@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     CALENDAR_TIMEZONE: str = "America/Toronto"
     CALENDAR_GARRISON_ID: str = "garrisonstaff@gmail.com"
     CALENDAR_BABY_G_ID: str = "s374q7mjj2hoc77f71oml6n5uc@group.calendar.google.com"
+    CALENDAR_TITAN_SECURITY_ID: str = "78f673188cd9e7f1c76014eee634b0b5578f9da7f0657796fcb45e05080f45c3@group.calendar.google.com"
 
     ALLOWED_ORIGINS: list[str] = [
         "http://localhost:3000",

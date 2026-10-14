@@ -29,10 +29,108 @@ class PreviewRequest(BaseModel):
 
 
 def _calendar_map() -> dict[str, str]:
+    titan = str(getattr(settings, "CALENDAR_TITAN_SECURITY_ID", "") or "").strip()
     return {
         "Garrison": str(getattr(settings, "CALENDAR_GARRISON_ID", "") or "").strip(),
         "Baby G": str(getattr(settings, "CALENDAR_BABY_G_ID", "") or "").strip(),
+        "St Anne's": titan,
+        "Jean Darlene": titan,
+        "Get Well": titan,
+        "Standard Time": titan,
+        "Two Kats": titan,
     }
+
+
+def _calendar_sources() -> list[dict]:
+    return [
+        {"name": "Garrison Staff", "calendar_id": _calendar_map().get("Garrison", ""), "fixed_venue": "Garrison"},
+        {"name": "Baby G Staff", "calendar_id": _calendar_map().get("Baby G", ""), "fixed_venue": "Baby G"},
+        {
+            "name": "Titan Security",
+            "calendar_id": str(getattr(settings, "CALENDAR_TITAN_SECURITY_ID", "") or "").strip(),
+            "fixed_venue": None,
+        },
+    ]
+
+
+def _event_location(event: dict) -> str:
+    return str(event.get("location") or "").strip()
+
+
+def _infer_titan_security_venue(event: dict) -> str | None:
+    title = _event_summary(event)
+    location = _event_location(event)
+    hay = f"{title} {location}".lower()
+    if "st anne" in hay or "st  anne" in hay:
+        return "St Anne's"
+    if "getwell" in hay or "get well" in hay:
+        return "Get Well"
+    if "standard time" in hay or re.search(r"^\s*S[123]\s*:\s*ST", title, re.IGNORECASE):
+        return "Standard Time"
+    if re.search(r"^\s*S[123]\s*:\s*JD", title, re.IGNORECASE) or "jean darlene" in hay:
+        return "Jean Darlene"
+    if "two kats" in hay or "2 kats" in hay:
+        return "Two Kats"
+    return None
+
+
+def _strip_venue_prefix(remainder: str, venue: str) -> str:
+    text = str(remainder or "").strip()
+    patterns = {
+        "St Anne's": r"^\s*st\s+anne'?s\s*[-:]?\s*",
+        "Get Well": r"^\s*get\s*well\s*[-:]?\s*",
+        "Standard Time": r"^\s*(?:standard\s*time|st)\s*[-:]?\s*",
+        "Jean Darlene": r"^\s*(?:jean\s*darlene|jd)\s*[-:]?\s*",
+        "Two Kats": r"^\s*(?:two\s*kats|2\s*kats)\s*[-:]?\s*",
+    }
+    pat = patterns.get(venue)
+    if pat:
+        text = re.sub(pat, "", text, flags=re.IGNORECASE).strip()
+    return text
+
+
+def _event_venue(event: dict, calendar_id: str) -> str | None:
+    mapping = _calendar_map()
+    titan = str(getattr(settings, "CALENDAR_TITAN_SECURITY_ID", "") or "").strip()
+    if calendar_id == titan:
+        return _infer_titan_security_venue(event)
+    for venue in ("Garrison", "Baby G"):
+        if mapping.get(venue) == calendar_id:
+            return venue
+    return None
+
+
+def _event_guard(event: dict, venue: str | None = None) -> str:
+    match = SHIFT_TITLE_RE.match(_event_summary(event))
+    if not match:
+        return ""
+    remainder = (match.group(2) or "").strip()
+    venue = venue or ""
+    if venue in {"St Anne's", "Get Well", "Standard Time", "Jean Darlene", "Two Kats"}:
+        remainder = _strip_venue_prefix(remainder, venue)
+    return remainder.strip()
+
+
+def _assignment_title(event: dict, venue: str, shift_code: str, guard: str) -> str:
+    current = _event_summary(event)
+    remainder = ""
+    match = SHIFT_TITLE_RE.match(current)
+    if match:
+        remainder = (match.group(2) or "").strip()
+
+    if venue == "St Anne's":
+        if "st anne" in remainder.lower() or "st  anne" in remainder.lower():
+            return f"{shift_code}:St Anne's - {guard}"
+        return f"{shift_code}:{guard}"
+    if venue == "Get Well":
+        return f"{shift_code}:Getwell - {guard}"
+    if venue == "Standard Time":
+        return f"{shift_code}:ST - {guard}"
+    if venue == "Jean Darlene":
+        return f"{shift_code}:JD - {guard}"
+    if venue == "Two Kats":
+        return f"{shift_code}:Two Kats - {guard}"
+    return f"{shift_code}:{guard}"
 
 
 def _configured() -> bool:
@@ -174,10 +272,13 @@ def _event_summary(event: dict) -> str:
     return str(event.get("summary") or event.get("title") or "").strip()
 
 
-def _normalize_shift_event(event: dict, venue: str, calendar_id: str, tz: ZoneInfo) -> dict | None:
+def _normalize_shift_event(event: dict, venue: str | None, calendar_id: str, tz: ZoneInfo) -> dict | None:
     title = _event_summary(event)
     match = SHIFT_TITLE_RE.match(title)
     if not match:
+        return None
+    venue = venue or _event_venue(event, calendar_id)
+    if not venue:
         return None
     start_raw, end_raw = _event_bounds(event)
     if not start_raw or "T" not in start_raw:
@@ -189,7 +290,7 @@ def _normalize_shift_event(event: dict, venue: str, calendar_id: str, tz: ZoneIn
     duration = None
     if end_dt:
         duration = max(0, round((end_dt - start_dt).total_seconds() / 60))
-    guard = (match.group(2) or "").strip()
+    guard = _event_guard(event, venue)
     return {
         "calendar_id": calendar_id,
         "google_event_id": _event_id(event),
@@ -241,13 +342,17 @@ async def _existing_google_ids(db) -> set[tuple[str, str]]:
 
 @router.get("/status")
 async def calendar_sync_status(admin=Depends(get_admin_user)):
-    calendars = [{"venue": venue, "calendar_id": cid} for venue, cid in _calendar_map().items() if cid]
+    calendars = [
+        {"source": src["name"], "calendar_id": src["calendar_id"], "fixed_venue": src["fixed_venue"]}
+        for src in _calendar_sources()
+        if src["calendar_id"]
+    ]
     return {
         "configured": _configured(),
         "account_configured": bool(str(getattr(settings, "COMPOSIO_CALENDAR_ACCOUNT", "") or "").strip()),
         "timezone": str(getattr(settings, "CALENDAR_TIMEZONE", "America/Toronto") or "America/Toronto"),
         "calendars": calendars,
-        "import_rule": "Only event titles matching S1, S2 or S3, optionally followed by :Guard",
+        "import_rule": "Read S1/S2/S3 only. Garrison and Baby G are fixed calendars; Titan Security is classified into known OpsGuard venues from title/location and unrelated events are ignored.",
         "export_rule": "Patch the title of an existing matching calendar event only; never alter calendar times or auto-create a missing event.",
     }
 
@@ -269,19 +374,21 @@ async def preview_calendar_shifts(
     existing = await _existing_google_ids(db)
     out: list[dict] = []
     errors: list[dict] = []
-    for venue, calendar_id in _calendar_map().items():
+    for source in _calendar_sources():
+        calendar_id = source["calendar_id"]
         if not calendar_id:
             continue
         try:
             events = await _list_calendar_events(calendar_id, payload.from_date, payload.to_date)
             for event in events:
-                row = _normalize_shift_event(event, venue, calendar_id, tz)
+                row = _normalize_shift_event(event, source["fixed_venue"], calendar_id, tz)
                 if not row:
                     continue
+                row["calendar_source"] = source["name"]
                 row["already_in_opsguard"] = (calendar_id, row["google_event_id"]) in existing
                 out.append(row)
         except Exception as exc:
-            errors.append({"venue": venue, "error": str(exc)[:500]})
+            errors.append({"calendar": source["name"], "error": str(exc)[:500]})
 
     out.sort(key=lambda x: (x.get("date") or "", x.get("venue") or "", x.get("start_time") or "", x.get("shift_code") or ""))
     return {
@@ -314,12 +421,17 @@ async def _find_existing_calendar_slot(shift: dict, guard: str) -> tuple[dict, s
         raise HTTPException(status_code=409, detail="Shift date is invalid") from exc
 
     events = await _list_calendar_events(calendar_id, day, day)
+    target_venue = str(shift.get("venue") or "").strip()
     candidates = []
     for event in events:
         title = _event_summary(event)
         match = SHIFT_TITLE_RE.match(title)
-        if match and match.group(1).upper() == shift_code:
-            candidates.append(event)
+        if not match or match.group(1).upper() != shift_code:
+            continue
+        event_venue = _event_venue(event, calendar_id)
+        if event_venue and target_venue and event_venue != target_venue:
+            continue
+        candidates.append(event)
 
     if not candidates:
         raise HTTPException(
@@ -333,8 +445,7 @@ async def _find_existing_calendar_slot(shift: dict, guard: str) -> tuple[dict, s
     guard_norm = guard.strip().lower()
     same_guard = []
     for event in candidates:
-        match = SHIFT_TITLE_RE.match(_event_summary(event))
-        event_guard = (match.group(2) or "").strip().lower() if match else ""
+        event_guard = _event_guard(event, target_venue).lower()
         if guard_norm and event_guard == guard_norm:
             same_guard.append(event)
     if len(same_guard) == 1:
@@ -379,7 +490,8 @@ async def _export_one(db, schedule_doc: dict, shift_index: int) -> dict:
     if not event_id:
         raise HTTPException(status_code=409, detail="Matched calendar event has no event id")
 
-    target_title = f"{shift_code}:{guard}"
+    venue = str(shift.get("venue") or "").strip()
+    target_title = _assignment_title(event, venue, shift_code, guard)
     current_title = _event_summary(event)
     if current_title != target_title:
         await _execute(
