@@ -126,7 +126,7 @@
 
 <div class="row">
 <div class="third input-group"><label>Hourly rate ($)</label><input id="admin-rate" step=".01" type="number" value="20"/></div>
-<div class="third input-group"><label>Guard</label><select id="admin-guard-filter"><option value="__all__">All guards</option></select></div>
+<div class="third input-group"><label>Guard filter (shifts in selected range)</label><select id="admin-guard-filter"><option value="__all__">All guards</option></select></div>
 <div class="third input-group"><label>Venue</label><select id="admin-venue-filter"><option value="__all__">All venues</option><option value="Baby G">Baby G</option><option value="Garrison">Garrison</option><option value="Get Well">Get Well</option><option value="Jean Darlene">Jean Darlene</option><option value="St Anne's">St Anne's</option><option value="Standard Time">Standard Time</option><option value="Two Kats">Two Kats</option><option value="__other__">Other...</option></select></div>
 </div>
 <div class="row">
@@ -136,9 +136,9 @@
 </div>
 <div class="card" style="padding:8px;margin:4px 0 8px;background:#f9fafb">
 <h3 style="margin:0 0 4px;font-size:.86rem">Guard Schedule &amp; Account</h3>
-<p class="small" style="margin:0 0 6px">Choose a registered guard, then build and send their shifts. Manual shifts do not need to exist in Google Calendar first.</p>
+<p class="small" style="margin:0 0 6px">Choose from all registered guard accounts, then build and send shifts. This roster does not change with date or venue filters. Manual shifts do not need to exist in Google Calendar first.</p>
 <div class="row">
-<div class="half input-group"><label>Selected guard account</label><select id="admin-user-manage"><option value="">Choose registered guard</option></select></div>
+<div class="half input-group"><label>Selected guard account (all registered guards)</label><select id="admin-user-manage"><option value="">Choose registered guard</option></select></div>
 <button class="primary" onclick="openCheckAvailabilityModal()" type="button">Build / Send Schedule</button></div>
 <div class="row">
 <button class="primary" onclick="adminDeleteSelectedGuard()" style="background:#991b1b" type="button">Delete selected guard</button>
@@ -631,7 +631,35 @@ function buildAdminShiftQuery(){
 function preserveSelectedOptions(){const guardSel=document.getElementById("admin-guard-filter"),venueSel=document.getElementById("admin-venue-filter");return {guard:guardSel?guardSel.value:"__all__",venue:venueSel?venueSel.value:"__all__"};}
 function setSelectOptions(selectEl,values,allValue,allLabel,keepValue){if(!selectEl)return;const current=keepValue||selectEl.value||allValue;selectEl.innerHTML="";const allOpt=document.createElement("option");allOpt.value=allValue;allOpt.textContent=allLabel;selectEl.appendChild(allOpt);[...new Set(values.filter(Boolean))].sort((a,b)=>String(a).localeCompare(String(b))).forEach(v=>{const o=document.createElement("option");o.value=v;o.textContent=v;selectEl.appendChild(o);});selectEl.value=[...selectEl.options].some(o=>o.value===current)?current:allValue;}
 function ensureFixedAdminVenueOptions(){const sel=document.getElementById("admin-venue-filter");if(!sel)return;const keep=sel.value||"__all__";sel.innerHTML='<option value="__all__">All venues</option>';FIXED_VENUES.forEach(v=>{const o=document.createElement("option");o.value=v;o.textContent=v;sel.appendChild(o)});const other=document.createElement("option");other.value="__other__";other.textContent="Other...";sel.appendChild(other);if([...sel.options].some(o=>o.value===keep))sel.value=keep;}
-async function loadAdminUsers(){if(!authToken||currentUserRole!=="admin")return;try{const data=await rawApi("/auth/users?role=guard",{method:"GET",silent:true});adminUserMap={};const manage=document.getElementById("admin-user-manage");if(!manage)return;manage.innerHTML="<option value=''>Choose registered guard</option>";(data.items||[]).sort((a,b)=>String(a.name||a.email).localeCompare(String(b.name||b.email))).forEach(u=>{adminUserMap[u.id]=u;const o=document.createElement("option");o.value=u.id;o.textContent=(u.name||u.email)+(u.email?" ("+u.email+")":"");manage.appendChild(o);});}catch(e){const st=document.getElementById("admin-management-status");if(st)st.textContent="Could not load guard accounts.";}}
+async function loadAdminUsers(){
+  if(!authToken||currentUserRole!=="admin")return;
+  const manage=document.getElementById("admin-user-manage");
+  const st=document.getElementById("admin-management-status");
+  const previous=manage?manage.value:"";
+  try{
+    // Load the complete registered-user roster, then exclude explicit admins.
+    // Legacy guard accounts may not have a stored role field; the API serializes those as guards.
+    const data=await rawApi("/auth/users",{method:"GET",silent:true});
+    const guards=(data.items||[])
+      .filter(u=>String(u.role||"guard").toLowerCase()!=="admin")
+      .sort((a,b)=>String(a.name||a.email||"").localeCompare(String(b.name||b.email||"")));
+    adminUserMap={};
+    if(!manage)return;
+    manage.innerHTML="<option value=''>Choose registered guard</option>";
+    guards.forEach(u=>{
+      adminUserMap[u.id]=u;
+      const o=document.createElement("option");
+      o.value=u.id;
+      o.textContent=(u.name||u.email)+(u.email?" ("+u.email+")":"");
+      manage.appendChild(o);
+    });
+    if(previous&&[...manage.options].some(o=>o.value===previous))manage.value=previous;
+    if(st)st.textContent=guards.length+" registered guard account"+(guards.length===1?"":"s")+" loaded. This list is independent of date and venue filters.";
+  }catch(e){
+    if(st)st.textContent="Could not load all registered guard accounts.";
+  }
+}
+
 function buildRangeOnlyQuery(){const params=new URLSearchParams();const rate=Number(document.getElementById("admin-rate").value)||20;const venue=document.getElementById("admin-venue-filter")?.value||"__all__";const fromDate=document.getElementById("admin-from-date-filter")?.value||"";const toDate=document.getElementById("admin-to-date-filter")?.value||"";params.set("hourly_rate",String(rate));if(venue!=="__all__")params.set("venue",venue);if(fromDate)params.set("from_date",fromDate);if(toDate)params.set("to_date",toDate);return params;}
 async function refreshAdminGuardOptionsForCurrentRange(){if(!authToken||currentUserRole!=="admin")return;ensureFixedAdminVenueOptions();const guardSel=document.getElementById("admin-guard-filter"),previous=guardSel?guardSel.value:"__all__";try{const data=await rawApi("/shifts?"+buildRangeOnlyQuery().toString(),{method:"GET",silent:true});const rows=Array.isArray(data.items)?data.items:[];const guards=[...new Set(rows.map(getGuardLabel).filter(Boolean))].sort((a,b)=>a.localeCompare(b));setSelectOptions(guardSel,guards,"__all__","All guards",previous);}catch(e){setSelectOptions(guardSel,[],"__all__","All guards","__all__");}}
 async function loadAdminFilterOptions(){await loadAdminUsers();await refreshAdminGuardOptionsForCurrentRange();}
@@ -1138,13 +1166,10 @@ function selectedScheduleGuard(){
   const manage=document.getElementById("admin-user-manage");
   const userId=manage?manage.value:"";
   const u=userId?(adminUserMap[userId]||{}):{};
-  if(userId){
-    return {id:userId,name:u.name||u.label||u.email||userId,email:u.email||""};
-  }
-  const guardSel=document.getElementById("admin-guard-filter");
-  const guard=guardSel&&guardSel.value!=="__all__"?guardSel.value:"";
-  return guard?{id:"",name:guard,email:guard.includes("@")?guard:""}:null;
+  if(!userId)return null;
+  return {id:userId,name:u.name||u.label||u.email||userId,email:u.email||""};
 }
+
 function scheduleMonth(){
   const d=(document.getElementById("admin-from-date-filter")||{}).value||"";
   if(d&&/^\d{4}-\d{2}-\d{2}$/.test(d))return d.slice(0,7);
@@ -1193,7 +1218,7 @@ async function openCheckAvailabilityModal(){
     await loadAdminFilterOptions();
     g=selectedScheduleGuard();
   }
-  if(!g){if(adminSt)adminSt.textContent="Choose a registered guard or select a Guard filter first.";return;}
+  if(!g){if(adminSt)adminSt.textContent="Choose a registered guard under Guard Schedule & Account first.";return;}
   scheduleDraft=[];currentGuardAvailability=[];
   const display=document.getElementById("schedule-guard-display");if(display)display.value=g.name||g.email||"";
   const note=document.getElementById("schedule-note");if(note)note.value="";
