@@ -1,46 +1,44 @@
-<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>OpsGuard Portal</title><style>:root{--bg:#0B1F3B;--bg2:#1F3C88;--radius:14px}*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f3f4f6;color:#111827}header{background:var(--bg);color:#fff;padding:12px 18px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;position:sticky;top:0;z-index:1000}header h1{font-size:1.1rem;margin:0}.env-badge{display:none;margin-left:8px;padding:3px 7px;border-radius:999px;background:#facc15;color:#422006;font-size:.68rem;font-weight:900;letter-spacing:.06em;vertical-align:middle}.nav-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap}.nav-btn{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);padding:6px 10px;color:#fff;border-radius:999px;font-size:.75rem;cursor:pointer}.nav-btn:hover{background:rgba(255,255,255,.18)}.user-menu-wrap{position:relative;display:none}.avatar-btn{width:34px;height:34px;border-radius:999px;display:grid;place-items:center;background:#fff;color:var(--bg);font-weight:800;font-size:.9rem;border:none;cursor:pointer}.user-dropdown{position:absolute;right:0;top:44px;background:#fff;color:#111827;border-radius:12px;min-width:190px;box-shadow:0 10px 30px rgba(0,0,0,.15);overflow:hidden;display:none}.ud-head{padding:8px 10px;border-bottom:1px solid #e5e7eb;font-size:.78rem;color:#374151;background:#f9fafb}.user-dropdown button{width:100%;text-align:left;padding:8px 10px;border:none;background:#fff;font-size:.8rem;cursor:pointer}.user-dropdown button:hover{background:#f3f4f6}.shell{max-width:1100px;margin:18px auto;padding:0 14px 60px}.card{background:#fff;border-radius:var(--radius);padding:12px 12px 16px;box-shadow:0 10px 30px rgba(11,31,59,.08);margin-bottom:12px}.row{display:flex;gap:10px;flex-wrap:wrap}.input-group{margin-bottom:8px;width:100%}label{display:block;font-weight:600;margin-bottom:2px;font-size:.78rem}input,select,textarea{width:100%;padding:6px 8px;border-radius:9px;border:1px solid #d1d5db;font-size:.8rem}button.primary{background:var(--bg2);border:none;color:#fff;padding:7px 11px;border-radius:999px;cursor:pointer;font-weight:600;font-size:.78rem}button.primary:hover{opacity:.95}.hidden{display:none}table{width:100%;border-collapse:collapse;font-size:.72rem}th,td{border-bottom:1px solid #e5e7eb;padding:5px 4px;text-align:left}th{font-weight:600;color:#4b5563}.table-scroll{height:120px;overflow-y:auto;overflow-x:hidden;border-radius:10px;border:1px solid #e5e7eb;background:#fff;margin-top:4px}.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;z-index:2000}.modal{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(520px,calc(100% - 24px));background:#fff;border-radius:16px;padding:12px;box-shadow:0 20px 60px rgba(0,0,0,.25);display:none;z-index:2001;max-height:90vh;overflow-y:auto}.modal h3{margin:0 0 4px;font-size:1rem}.modal small{color:#6b7280;font-size:.72rem}.modal .actions{display:flex;gap:8px;margin-top:6px;flex-wrap:wrap}.modal .actions .secondary{background:#0B1F3B}p.small{font-size:.7rem;margin-top:4px;color:#4b5563}.avail-line{padding:2px 4px;border-radius:6px;font-size:.75rem}.avail-line:hover{background:#e5e7eb}.icon-btn{background:transparent;border:1px solid #d1d5db;border-radius:999px;padding:3px 8px;cursor:pointer;font-size:.72rem}.icon-btn:hover{background:#f3f4f6}a{color:var(--bg2);text-decoration:none}a:hover{text-decoration:underline}.dash-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0}.dash-metric{border:1px solid #e5e7eb;border-radius:14px;padding:12px;background:#fff;min-height:96px}.dash-metric-label{font-size:.72rem;color:#4b5563;font-weight:700}.dash-metric-value{font-size:1.65rem;line-height:1.05;font-weight:900;color:#0B1F3B;margin-top:5px}.dash-metric-sub{font-size:.7rem;color:#6b7280;margin-top:4px}.dash-section{border:1px solid #e5e7eb;border-radius:14px;padding:11px;background:#f9fafb;margin-top:10px}.dash-section h3{margin:0 0 6px;font-size:.9rem}.dash-action-list{display:grid;gap:8px}.dash-action-item{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:9px}.dash-action-main{min-width:0}.dash-action-title{font-size:.78rem;font-weight:800}.dash-action-meta{font-size:.7rem;color:#6b7280;margin-top:2px}.dash-action-amount{font-size:.78rem;font-weight:800;white-space:nowrap}.dash-btn-row{display:flex;flex-wrap:wrap;gap:7px;margin-top:9px}.dash-empty{font-size:.75rem;color:#6b7280;padding:8px 2px}.dash-calendar-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.dash-calendar-stat{background:#fff;border-radius:10px;padding:8px;text-align:center;border:1px solid #e5e7eb}.dash-calendar-stat strong{display:block;font-size:1.05rem;color:#0B1F3B}.pay-list{display:grid;gap:10px;margin-top:8px}.pay-card{border:1px solid #e5e7eb;border-radius:12px;padding:10px;background:#fff}.pay-card-top{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}.pay-card-title{font-weight:800;font-size:.88rem}.pay-card-meta{font-size:.75rem;color:#4b5563;margin-top:3px}.status-pill{display:inline-block;border-radius:999px;padding:4px 8px;font-size:.7rem;font-weight:800;white-space:nowrap}.status-submitted{background:#fef3c7;color:#92400e}.status-approved{background:#dbeafe;color:#1e40af}.status-paid{background:#dcfce7;color:#166534}.pay-detail-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-top:8px;font-size:.74rem}.pay-detail{background:#f9fafb;border-radius:8px;padding:6px}.password-wrap{display:flex;gap:4px}.password-wrap input{flex:1}.eye-btn{min-width:58px;padding:0 10px;border:1px solid #d1d5db;background:#fff;border-radius:9px;cursor:pointer;font-size:.78rem;font-weight:700;color:#0B1F3B}@media(min-width:700px){.row>.half{width:calc(50% - 5px)}.row>.third{width:calc(33.333% - 7px)}.dash-grid{grid-template-columns:repeat(4,minmax(0,1fr))}.dash-action-list{grid-template-columns:repeat(2,minmax(0,1fr))}}</style></head><body data-environment="__OPSGUARD_ENV__">
-<header><h1>OpsGuard Portal <span id="env-badge" class="env-badge">STAGING</span></h1><div class="nav-row">
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width,initial-scale=1" name="viewport"/><title>OpsGuard Portal</title><style>:root{--bg:#0B1F3B;--bg2:#1F3C88;--radius:14px}*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f3f4f6;color:#111827}header{background:var(--bg);color:#fff;padding:12px 18px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;position:sticky;top:0;z-index:1000}header h1{font-size:1.1rem;margin:0}.env-badge{display:none;margin-left:8px;padding:3px 7px;border-radius:999px;background:#facc15;color:#422006;font-size:.68rem;font-weight:900;letter-spacing:.06em;vertical-align:middle}.nav-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap}.nav-btn{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);padding:6px 10px;color:#fff;border-radius:999px;font-size:.75rem;cursor:pointer}.nav-btn:hover{background:rgba(255,255,255,.18)}.user-menu-wrap{position:relative;display:none}.avatar-btn{width:34px;height:34px;border-radius:999px;display:grid;place-items:center;background:#fff;color:var(--bg);font-weight:800;font-size:.9rem;border:none;cursor:pointer}.user-dropdown{position:absolute;right:0;top:44px;background:#fff;color:#111827;border-radius:12px;min-width:190px;box-shadow:0 10px 30px rgba(0,0,0,.15);overflow:hidden;display:none}.ud-head{padding:8px 10px;border-bottom:1px solid #e5e7eb;font-size:.78rem;color:#374151;background:#f9fafb}.user-dropdown button{width:100%;text-align:left;padding:8px 10px;border:none;background:#fff;font-size:.8rem;cursor:pointer}.user-dropdown button:hover{background:#f3f4f6}.shell{max-width:1100px;margin:18px auto;padding:0 14px 60px}.card{background:#fff;border-radius:var(--radius);padding:12px 12px 16px;box-shadow:0 10px 30px rgba(11,31,59,.08);margin-bottom:12px}.row{display:flex;gap:10px;flex-wrap:wrap}.input-group{margin-bottom:8px;width:100%}label{display:block;font-weight:600;margin-bottom:2px;font-size:.78rem}input,select,textarea{width:100%;padding:6px 8px;border-radius:9px;border:1px solid #d1d5db;font-size:.8rem}button.primary{background:var(--bg2);border:none;color:#fff;padding:7px 11px;border-radius:999px;cursor:pointer;font-weight:600;font-size:.78rem}button.primary:hover{opacity:.95}.hidden{display:none}table{width:100%;border-collapse:collapse;font-size:.72rem}th,td{border-bottom:1px solid #e5e7eb;padding:5px 4px;text-align:left}th{font-weight:600;color:#4b5563}.table-scroll{height:120px;overflow-y:auto;overflow-x:hidden;border-radius:10px;border:1px solid #e5e7eb;background:#fff;margin-top:4px}.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;z-index:2000}.modal{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(520px,calc(100% - 24px));background:#fff;border-radius:16px;padding:12px;box-shadow:0 20px 60px rgba(0,0,0,.25);display:none;z-index:2001;max-height:90vh;overflow-y:auto}.modal h3{margin:0 0 4px;font-size:1rem}.modal small{color:#6b7280;font-size:.72rem}.modal .actions{display:flex;gap:8px;margin-top:6px;flex-wrap:wrap}.modal .actions .secondary{background:#0B1F3B}p.small{font-size:.7rem;margin-top:4px;color:#4b5563}.avail-line{padding:2px 4px;border-radius:6px;font-size:.75rem}.avail-line:hover{background:#e5e7eb}.icon-btn{background:transparent;border:1px solid #d1d5db;border-radius:999px;padding:3px 8px;cursor:pointer;font-size:.72rem}.icon-btn:hover{background:#f3f4f6}a{color:var(--bg2);text-decoration:none}a:hover{text-decoration:underline}.dash-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0}.dash-metric{border:1px solid #e5e7eb;border-radius:14px;padding:12px;background:#fff;min-height:96px}.dash-metric-label{font-size:.72rem;color:#4b5563;font-weight:700}.dash-metric-value{font-size:1.65rem;line-height:1.05;font-weight:900;color:#0B1F3B;margin-top:5px}.dash-metric-sub{font-size:.7rem;color:#6b7280;margin-top:4px}.dash-section{border:1px solid #e5e7eb;border-radius:14px;padding:11px;background:#f9fafb;margin-top:10px}.dash-section h3{margin:0 0 6px;font-size:.9rem}.dash-action-list{display:grid;gap:8px}.dash-action-item{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:9px}.dash-action-main{min-width:0}.dash-action-title{font-size:.78rem;font-weight:800}.dash-action-meta{font-size:.7rem;color:#6b7280;margin-top:2px}.dash-action-amount{font-size:.78rem;font-weight:800;white-space:nowrap}.dash-btn-row{display:flex;flex-wrap:wrap;gap:7px;margin-top:9px}.dash-empty{font-size:.75rem;color:#6b7280;padding:8px 2px}.dash-calendar-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.dash-calendar-stat{background:#fff;border-radius:10px;padding:8px;text-align:center;border:1px solid #e5e7eb}.dash-calendar-stat strong{display:block;font-size:1.05rem;color:#0B1F3B}.pay-list{display:grid;gap:10px;margin-top:8px}.pay-card{border:1px solid #e5e7eb;border-radius:12px;padding:10px;background:#fff}.pay-card-top{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}.pay-card-title{font-weight:800;font-size:.88rem}.pay-card-meta{font-size:.75rem;color:#4b5563;margin-top:3px}.status-pill{display:inline-block;border-radius:999px;padding:4px 8px;font-size:.7rem;font-weight:800;white-space:nowrap}.status-submitted{background:#fef3c7;color:#92400e}.status-approved{background:#dbeafe;color:#1e40af}.status-paid{background:#dcfce7;color:#166534}.pay-detail-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-top:8px;font-size:.74rem}.pay-detail{background:#f9fafb;border-radius:8px;padding:6px}.password-wrap{display:flex;gap:4px}.password-wrap input{flex:1}.eye-btn{min-width:58px;padding:0 10px;border:1px solid #d1d5db;background:#fff;border-radius:9px;cursor:pointer;font-size:.78rem;font-weight:700;color:#0B1F3B}@media(min-width:700px){.row>.half{width:calc(50% - 5px)}.row>.third{width:calc(33.333% - 7px)}.dash-grid{grid-template-columns:repeat(4,minmax(0,1fr))}.dash-action-list{grid-template-columns:repeat(2,minmax(0,1fr))}}</style></head><body data-environment="__OPSGUARD_ENV__">
+<header><h1>OpsGuard Portal <span class="env-badge" id="env-badge">STAGING</span></h1><div class="nav-row">
 <button class="nav-btn" onclick="showSection('login')">Login</button>
 <button class="nav-btn" onclick="showSection('submit')">Submit Hours</button>
 <button class="nav-btn" onclick="showSection('availability')">Availability</button>
 <button class="nav-btn" onclick="showSection('schedule')">Schedule</button>
 <button class="nav-btn" onclick="showSection('pay')">My Hours &amp; Pay</button>
 <button class="nav-btn" onclick="showSection('admin-dashboard')">Dashboard</button>
-<div id="user-menu-wrap" class="user-menu-wrap">
-<button id="avatar-btn" class="avatar-btn" onclick="toggleUserDropdown()" aria-label="User menu">U</button>
-<div id="user-dropdown" class="user-dropdown">
+<div class="user-menu-wrap" id="user-menu-wrap">
+<button aria-label="User menu" class="avatar-btn" id="avatar-btn" onclick="toggleUserDropdown()">U</button>
+<div class="user-dropdown" id="user-dropdown">
 <div class="ud-head"><div id="ud-name" style="font-weight:700">User</div><div id="ud-email">user@example.com</div></div>
 <button onclick="openProfileModal()">Profile</button><button onclick="logout()">Log out</button>
 </div></div></div></header>
-
 <div class="shell">
-<div id="section-login" class="card">
+<div class="card" id="section-login">
 <h2 style="margin:0 0 4px">Login / Register</h2><p class="small">Use your OpsGuard account to access all tabs.</p>
-<div class="row"><div class="half input-group"><label>Email</label><input id="auth-email" type="email" placeholder="guard@example.com"></div>
-<div class="half input-group"><label>Password</label><div class="password-wrap"><input id="auth-password" type="password" placeholder="********"><button type="button" class="eye-btn" onclick="togglePasswordVisibility('auth-password', this)" title="Show password">Show</button></div></div></div>
-<div class="row"><div class="half input-group"><label>Full name (register)</label><input id="auth-name" type="text" placeholder="John Guard"></div></div>
-<div class="row"><button id="login-btn" class="primary">Login</button><button id="register-btn" class="primary" style="background:#0B1F3B">Register</button></div>
+<div class="row"><div class="half input-group"><label>Email</label><input id="auth-email" placeholder="guard@example.com" type="email"/></div>
+<div class="half input-group"><label>Password</label><div class="password-wrap"><input id="auth-password" placeholder="********" type="password"/><button class="eye-btn" onclick="togglePasswordVisibility('auth-password', this)" title="Show password" type="button">Show</button></div></div></div>
+<div class="row"><div class="half input-group"><label>Full name (register)</label><input id="auth-name" placeholder="John Guard" type="text"/></div></div>
+<div class="row"><button class="primary" id="login-btn">Login</button><button class="primary" id="register-btn" style="background:#0B1F3B">Register</button></div>
 <p class="small" style="margin-top:6px"><a href="#" onclick="openForgotPasswordModal();return false;">Forgot password?</a></p>
-<p id="auth-status" class="small"></p>
+<p class="small" id="auth-status"></p>
 </div>
-
-<div id="section-submit" class="card hidden">
+<div class="card hidden" id="section-submit">
 <h2 style="margin:0 0 4px">Submit Hours</h2>
-<div class="row"><div class="third input-group"><label>Date</label><input id="shift-date" type="date"></div>
-<div class="third input-group"><label>Venue / Site</label><select id="shift-venue-select" onchange="toggleOtherVenueInput()"><option value="Baby G">Baby G</option><option value="Garrison">Garrison</option><option value="Get Well">Get Well</option><option value="Jean Darlene">Jean Darlene</option><option value="St Anne's">St Anne's</option><option value="Standard Time">Standard Time</option><option value="Two Kats">Two Kats</option><option value="__other__">Other...</option></select><input id="shift-venue-other" class="hidden" type="text" placeholder="Enter other venue" style="margin-top:5px"></div></div>
+<div class="row"><div class="third input-group"><label>Date</label><input id="shift-date" type="date"/></div>
+<div class="third input-group"><label>Venue / Site</label><select id="shift-venue-select" onchange="toggleOtherVenueInput()"><option value="Baby G">Baby G</option><option value="Garrison">Garrison</option><option value="Get Well">Get Well</option><option value="Jean Darlene">Jean Darlene</option><option value="St Anne's">St Anne's</option><option value="Standard Time">Standard Time</option><option value="Two Kats">Two Kats</option><option value="__other__">Other...</option></select><input class="hidden" id="shift-venue-other" placeholder="Enter other venue" style="margin-top:5px" type="text"/></div></div>
 <div class="row">
 <div class="third input-group"><label>Start Time</label><div style="display:flex;gap:4px"><select id="start-hour"></select><select id="start-min"></select><select id="start-ampm"><option>AM</option><option>PM</option></select></div></div>
 <div class="third input-group"><label>End Time</label><div style="display:flex;gap:4px"><select id="end-hour"></select><select id="end-min"></select><select id="end-ampm"><option>AM</option><option>PM</option></select></div></div>
 </div>
-<div class="input-group"><label>Notes</label><textarea id="shift-notes" rows="3" placeholder="Optional"></textarea></div>
-<button class="primary" onclick="submitShift()">Submit Shift</button><p id="shift-status" class="small"></p>
+<div class="input-group"><label>Notes</label><textarea id="shift-notes" placeholder="Optional" rows="3"></textarea></div>
+<button class="primary" onclick="submitShift()">Submit Shift</button><p class="small" id="shift-status"></p>
 <h3 style="margin:8px 0 4px;font-size:.9rem">My Recent Shifts</h3>
 <div class="table-scroll"><table id="my-shifts-table"><thead><tr><th>Date</th><th>Venue</th><th>Start</th><th>End</th><th>Total</th><th>Delete</th></tr></thead><tbody></tbody></table></div>
 </div>
-
-<div id="section-availability" class="card hidden">
+<div class="card hidden" id="section-availability">
 <h2 style="margin:0 0 4px">My Availability</h2>
-<div class="row"><div class="third input-group"><label>Date</label><div style="display:flex;gap:6px;align-items:center"><input id="avail-date" type="date" onchange="onSingleAvailabilityDateChanged()" style="flex:1"><button type="button" class="primary secondary" style="padding:7px 10px;white-space:nowrap" onclick="clearSingleAvailabilityDate()">Clear date</button></div></div>
+<div class="row"><div class="third input-group"><label>Date</label><div style="display:flex;gap:6px;align-items:center"><input id="avail-date" onchange="onSingleAvailabilityDateChanged()" style="flex:1" type="date"/><button class="primary secondary" onclick="clearSingleAvailabilityDate()" style="padding:7px 10px;white-space:nowrap" type="button">Clear date</button></div></div>
 <div class="third input-group"><label>Available?</label><select id="avail-is"><option value="true">Yes</option><option value="false">No</option></select></div></div>
 <div class="row">
 <div class="third input-group"><label>Start time</label><div style="display:flex;gap:4px"><select id="avail-start-hour"></select><select id="avail-start-min"></select><select id="avail-start-ampm"><option>AM</option><option>PM</option></select></div></div>
@@ -48,165 +46,154 @@
 </div>
 <div class="card" style="margin-top:6px;padding:8px">
 <h3 style="margin:0 0 3px;font-size:.86rem">Bulk apply (optional)</h3><p class="small" style="margin:0 0 4px">Pick months and days to duplicate the same times.</p>
-<div class="row"><div class="half input-group"><label>Months</label><select id="bulk-months" multiple size="4" onchange="onBulkAvailabilityChanged()"></select></div>
-<div class="half input-group"><label>Days</label><select id="bulk-days" multiple size="6" onchange="onBulkAvailabilityChanged()"></select></div></div>
+<div class="row"><div class="half input-group"><label>Months</label><select id="bulk-months" multiple="" onchange="onBulkAvailabilityChanged()" size="4"></select></div>
+<div class="half input-group"><label>Days</label><select id="bulk-days" multiple="" onchange="onBulkAvailabilityChanged()" size="6"></select></div></div>
 </div>
 <div class="input-group"><label>Notes</label><textarea id="avail-notes" placeholder="Optional"></textarea></div>
 <button class="primary" onclick="saveAvailability()">Save</button>
-<button class="primary" style="background:#0B1F3B" onclick="loadMyAvailability()">Load month</button>
-<p id="avail-status" class="small"></p>
+<button class="primary" onclick="loadMyAvailability()" style="background:#0B1F3B">Load month</button>
+<p class="small" id="avail-status"></p>
 <div class="table-scroll"><table id="my-avail-table"><thead><tr><th>Date</th><th>Avail</th><th>Start</th><th>End</th><th>Notes</th><th>Delete</th></tr></thead><tbody></tbody></table></div>
 </div>
-
-<div id="section-schedule" class="card hidden">
+<div class="card hidden" id="section-schedule">
 <h2 style="margin:0 0 4px">My Schedule</h2><p class="small">Schedules sent from the Admin tab appear here. Tap Confirm on each shift you accept. Once confirmed, that shift is locked.</p>
 <div class="table-scroll"><table id="my-schedule-table"><thead><tr><th>Confirm</th><th>Date</th><th>Venue</th><th>Shift</th><th>Start</th><th>End</th><th>Guard</th><th>Note</th><th>Status</th></tr></thead>
 <tbody><tr><td colspan="9">Login to see your schedule.</td></tr></tbody></table></div>
-<p id="my-schedule-status" class="small"></p>
+<p class="small" id="my-schedule-status"></p>
 </div>
-
-<div id="section-pay" class="card hidden">
+<div class="card hidden" id="section-pay">
 <h2 style="margin:0 0 4px">My Hours &amp; Pay</h2>
 <p class="small">Track your submitted hours from review through payment. Approved and paid records are locked; contact an admin if a correction is needed.</p>
-<div id="my-pay-list" class="pay-list"><div class="pay-card"><div class="pay-card-meta">Login to see your hours and pay status.</div></div></div>
-<p id="my-pay-status" class="small"></p>
+<div class="pay-list" id="my-pay-list"><div class="pay-card"><div class="pay-card-meta">Login to see your hours and pay status.</div></div></div>
+<p class="small" id="my-pay-status"></p>
 </div>
-
-<div id="section-admin-dashboard" class="card hidden">
+<div class="card hidden" id="section-admin-dashboard">
 <h2 style="margin:0 0 3px">Admin Dashboard</h2>
-<p class="small" style="margin-bottom:8px">Your OpsGuard action centre. Review hours, payments, confirmations and calendar status here. Detailed controls remain in Advanced Admin.</p>
+<p class="small" style="margin-bottom:8px">Your OpsGuard control centre. Build and send schedules, manage guards, review hours, payments, confirmations, exports and Calendar status here.</p>
 <div class="dash-grid">
-  <div class="dash-metric"><div class="dash-metric-label">Needs Approval</div><div id="dash-needs-approval" class="dash-metric-value">—</div><div id="dash-needs-approval-sub" class="dash-metric-sub">Submitted hours</div></div>
-  <div class="dash-metric"><div class="dash-metric-label">Ready to Pay</div><div id="dash-ready-pay" class="dash-metric-value">—</div><div id="dash-ready-pay-sub" class="dash-metric-sub">Approved, unpaid</div></div>
-  <div class="dash-metric"><div class="dash-metric-label">Paid</div><div id="dash-paid" class="dash-metric-value">—</div><div id="dash-paid-sub" class="dash-metric-sub">Paid records</div></div>
-  <div class="dash-metric"><div class="dash-metric-label">Awaiting Confirmation</div><div id="dash-awaiting-confirm" class="dash-metric-value">—</div><div id="dash-awaiting-confirm-sub" class="dash-metric-sub">Scheduled shifts</div></div>
+<div class="dash-metric"><div class="dash-metric-label">Needs Approval</div><div class="dash-metric-value" id="dash-needs-approval">—</div><div class="dash-metric-sub" id="dash-needs-approval-sub">Submitted hours</div></div>
+<div class="dash-metric"><div class="dash-metric-label">Ready to Pay</div><div class="dash-metric-value" id="dash-ready-pay">—</div><div class="dash-metric-sub" id="dash-ready-pay-sub">Approved, unpaid</div></div>
+<div class="dash-metric"><div class="dash-metric-label">Paid</div><div class="dash-metric-value" id="dash-paid">—</div><div class="dash-metric-sub" id="dash-paid-sub">Paid records</div></div>
+<div class="dash-metric"><div class="dash-metric-label">Awaiting Confirmation</div><div class="dash-metric-value" id="dash-awaiting-confirm">—</div><div class="dash-metric-sub" id="dash-awaiting-confirm-sub">Scheduled shifts</div></div>
 </div>
-
 <div class="dash-section">
-  <h3>Needs Attention</h3>
-  <div id="dash-attention-list" class="dash-action-list"><div class="dash-empty">Loading dashboard…</div></div>
+<h3>Needs Attention</h3>
+<div class="dash-action-list" id="dash-attention-list"><div class="dash-empty">Loading dashboard…</div></div>
 </div>
-
 <div class="dash-section">
-  <h3>Calendar &amp; Schedule</h3>
-  <div class="dash-calendar-grid">
-    <div class="dash-calendar-stat"><strong id="dash-confirmed">—</strong><span class="small">Confirmed</span></div>
-    <div class="dash-calendar-stat"><strong id="dash-ready-export">—</strong><span class="small">Ready to export</span></div>
-    <div class="dash-calendar-stat"><strong id="dash-exported">—</strong><span class="small">Exported</span></div>
-  </div>
-  <div class="dash-btn-row">
-    <button type="button" class="primary" onclick="openAdvancedAdmin()">Advanced Admin</button>
-    <button type="button" class="primary" style="background:#0B1F3B" onclick="openCheckAvailabilityModal()">Check Availability</button>
-    <button type="button" class="primary" style="background:#166534" onclick="dashboardExportConfirmed()">Export Confirmed (.ics)</button>
-    <button type="button" class="primary secondary" onclick="loadAdminDashboard()">Refresh</button>
-  </div>
-  <p id="dash-status" class="small"></p>
-  <div style="border-top:1px solid #e5e7eb;margin-top:10px;padding-top:10px">
-    <div style="display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap">
-      <div><strong style="font-size:.85rem">Google Calendar Sync</strong><div id="calendar-sync-connection" class="small">Checking connection…</div></div>
-      <span id="calendar-sync-badge" class="status-pill status-submitted">Checking</span>
-    </div>
-    <div class="row" style="margin-top:8px">
-      <div class="half input-group"><label>Preview from</label><input id="calendar-preview-from" type="date"></div>
-      <div class="half input-group"><label>Preview to</label><input id="calendar-preview-to" type="date"></div>
-    </div>
-    <div class="dash-btn-row">
-      <button id="calendar-preview-btn" type="button" class="primary" onclick="previewGoogleCalendarShifts()">Preview Calendar Shifts</button>
-      <button id="calendar-import-drafts-btn" type="button" class="primary" style="background:#7c3aed" onclick="importSelectedCalendarDrafts()" disabled>Import Selected as Drafts</button>
-      <button id="calendar-direct-export-btn" type="button" class="primary" style="background:#166534" onclick="syncConfirmedToGoogle()">Sync Confirmed to Google</button>
-    </div>
-    <p id="calendar-sync-status" class="small"></p>
-    <div id="calendar-preview-wrap" class="table-scroll" style="height:180px;display:none;margin-top:7px">
-      <table id="calendar-preview-table"><thead><tr><th>Select</th><th>Date</th><th>Venue</th><th>Shift</th><th>Guard</th><th>Start</th><th>Calendar slot</th><th>OpsGuard</th></tr></thead><tbody></tbody></table>
-    </div>
-    <p class="small">Safety rule: only S1/S2/S3 events are read. Import Selected creates OpsGuard review drafts only; it never treats the short Calendar slot as the real shift end time. Export changes the existing calendar event title only and never changes its start/end time. Missing or ambiguous slots are skipped instead of creating duplicates.</p>
-    <div style="border-top:1px solid #e5e7eb;margin-top:9px;padding-top:8px">
-      <div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><strong style="font-size:.82rem">Calendar Import Drafts</strong><span id="calendar-draft-count" class="status-pill status-approved">0</span></div>
-      <div class="dash-btn-row"><button type="button" class="primary secondary" onclick="loadCalendarImportDrafts()">Refresh Drafts</button></div>
-      <div id="calendar-drafts-wrap" class="table-scroll" style="height:160px;margin-top:6px">
-        <table id="calendar-drafts-table"><thead><tr><th>Date</th><th>Venue</th><th>Shift</th><th>Guard</th><th>Start</th><th>Needs Review</th></tr></thead><tbody><tr><td colspan="6">No drafts loaded.</td></tr></tbody></table>
-      </div>
-    </div>
-  </div>
+<h3>Calendar &amp; Schedule</h3>
+<div class="dash-calendar-grid">
+<div class="dash-calendar-stat"><strong id="dash-confirmed">—</strong><span class="small">Confirmed</span></div>
+<div class="dash-calendar-stat"><strong id="dash-ready-export">—</strong><span class="small">Ready to export</span></div>
+<div class="dash-calendar-stat"><strong id="dash-exported">—</strong><span class="small">Exported</span></div>
 </div>
-</div>
+<div class="dash-btn-row">
 
-<div id="section-admin" class="card hidden">
-<h2 style="margin:0 0 4px">Advanced Admin</h2><p class="small">Detailed shift, guard, CSV and schedule controls.</p>
+<button class="primary" onclick="openCheckAvailabilityModal()" style="background:#0B1F3B" type="button">Build / Send Schedule</button>
+<button class="primary" onclick="dashboardExportConfirmed()" style="background:#166534" type="button">Export Confirmed (.ics)</button>
+<button class="primary secondary" onclick="loadAdminDashboard()" type="button">Refresh</button>
+</div>
+<p class="small" id="dash-status"></p>
+<div style="border-top:1px solid #e5e7eb;margin-top:10px;padding-top:10px">
+<div style="display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap">
+<div><strong style="font-size:.85rem">Google Calendar Sync</strong><div class="small" id="calendar-sync-connection">Checking connection…</div></div>
+<span class="status-pill status-submitted" id="calendar-sync-badge">Checking</span>
+</div>
+<div class="row" style="margin-top:8px">
+<div class="half input-group"><label>Preview from</label><input id="calendar-preview-from" type="date"/></div>
+<div class="half input-group"><label>Preview to</label><input id="calendar-preview-to" type="date"/></div>
+</div>
+<div class="dash-btn-row">
+<button class="primary" id="calendar-preview-btn" onclick="previewGoogleCalendarShifts()" type="button">Preview Calendar Shifts</button>
+<button class="primary" disabled="" id="calendar-import-drafts-btn" onclick="importSelectedCalendarDrafts()" style="background:#7c3aed" type="button">Import Selected as Drafts</button>
+<button class="primary" id="calendar-direct-export-btn" onclick="syncConfirmedToGoogle()" style="background:#166534" type="button">Sync Confirmed to Google</button>
+</div>
+<p class="small" id="calendar-sync-status"></p>
+<div class="table-scroll" id="calendar-preview-wrap" style="height:180px;display:none;margin-top:7px">
+<table id="calendar-preview-table"><thead><tr><th>Select</th><th>Date</th><th>Venue</th><th>Shift</th><th>Guard</th><th>Start</th><th>Calendar slot</th><th>OpsGuard</th></tr></thead><tbody></tbody></table>
+</div>
+<p class="small">Safety rule: only S1/S2/S3 events are read. Import Selected creates OpsGuard review drafts only; it never treats the short Calendar slot as the real shift end time. Export changes the existing calendar event title only and never changes its start/end time. Missing or ambiguous slots are skipped instead of creating duplicates.</p>
+<div style="border-top:1px solid #e5e7eb;margin-top:9px;padding-top:8px">
+<div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><strong style="font-size:.82rem">Calendar Import Drafts</strong><span class="status-pill status-approved" id="calendar-draft-count">0</span></div>
+<div class="dash-btn-row"><button class="primary secondary" onclick="loadCalendarImportDrafts()" type="button">Refresh Drafts</button></div>
+<div class="table-scroll" id="calendar-drafts-wrap" style="height:160px;margin-top:6px">
+<table id="calendar-drafts-table"><thead><tr><th>Date</th><th>Venue</th><th>Shift</th><th>Guard</th><th>Start</th><th>Needs Review</th></tr></thead><tbody><tr><td colspan="6">No drafts loaded.</td></tr></tbody></table>
+</div>
+</div>
+</div>
+</div>
+<div class="dash-section" id="dashboard-operations"><h3>Operations</h3><p class="small">All normal admin work is available here. The separate Advanced Admin screen is no longer needed for routine use.</p>
+
 <div class="row">
-<div class="third input-group"><label>Hourly rate ($)</label><input id="admin-rate" type="number" step=".01" value="20"></div>
+<div class="third input-group"><label>Hourly rate ($)</label><input id="admin-rate" step=".01" type="number" value="20"/></div>
 <div class="third input-group"><label>Guard</label><select id="admin-guard-filter"><option value="__all__">All guards</option></select></div>
 <div class="third input-group"><label>Venue</label><select id="admin-venue-filter"><option value="__all__">All venues</option><option value="Baby G">Baby G</option><option value="Garrison">Garrison</option><option value="Get Well">Get Well</option><option value="Jean Darlene">Jean Darlene</option><option value="St Anne's">St Anne's</option><option value="Standard Time">Standard Time</option><option value="Two Kats">Two Kats</option><option value="__other__">Other...</option></select></div>
 </div>
 <div class="row">
-<div class="third input-group"><label>Start date / From</label><input id="admin-from-date-filter" type="date" title="Example: 2026-06-15"></div>
-<div class="third input-group"><label>End date / To</label><input id="admin-to-date-filter" type="date" title="Example: 2026-06-30"></div>
-<div class="third input-group" style="justify-content:flex-end"><label>&nbsp;</label><button type="button" class="primary secondary" style="padding:8px 12px;white-space:nowrap" onclick="clearAdminDateFilters()">Clear dates</button></div>
+<div class="third input-group"><label>Start date / From</label><input id="admin-from-date-filter" title="Example: 2026-06-15" type="date"/></div>
+<div class="third input-group"><label>End date / To</label><input id="admin-to-date-filter" title="Example: 2026-06-30" type="date"/></div>
+<div class="third input-group" style="justify-content:flex-end"><label> </label><button class="primary secondary" onclick="clearAdminDateFilters()" style="padding:8px 12px;white-space:nowrap" type="button">Clear dates</button></div>
 </div>
 <div class="card" style="padding:8px;margin:4px 0 8px;background:#f9fafb">
-<h3 style="margin:0 0 4px;font-size:.86rem">Guard account management</h3>
-<p class="small" style="margin:0 0 6px">Passwords are no longer reset by an admin. Each user changes their password in Profile or uses Forgot password for an emailed reset link.</p>
+<h3 style="margin:0 0 4px;font-size:.86rem">Guard Schedule &amp; Account</h3>
+<p class="small" style="margin:0 0 6px">Choose a registered guard, then build and send their shifts. Manual shifts do not need to exist in Google Calendar first.</p>
 <div class="row">
 <div class="half input-group"><label>Selected guard account</label><select id="admin-user-manage"><option value="">Choose registered guard</option></select></div>
-</div>
+<button class="primary" onclick="openCheckAvailabilityModal()" type="button">Build / Send Schedule</button></div>
 <div class="row">
-<button type="button" class="primary" style="background:#991b1b" onclick="adminDeleteSelectedGuard()">Delete selected guard</button>
+<button class="primary" onclick="adminDeleteSelectedGuard()" style="background:#991b1b" type="button">Delete selected guard</button>
 </div>
-<p id="admin-management-status" class="small"></p>
+<p class="small" id="admin-management-status"></p>
 </div>
 <div class="card" style="padding:8px;margin:4px 0 8px;background:#f9fafb">
 <h3 style="margin:0 0 4px;font-size:.86rem">Schedule confirmations</h3>
 <p class="small" style="margin:0 0 6px">Confirmed shifts are locked for guards. Admin can delete a confirmed shift or clear its calendar export status.</p>
-<div class="row"><button type="button" class="primary" style="background:#0B1F3B" onclick="loadAdminScheduleConfirmations()">Refresh confirmations</button><button type="button" class="primary" style="background:#166534" onclick="exportAllConfirmedCalendar()">Export All Confirmed (.ics)</button></div>
+<div class="row"><button class="primary" onclick="loadAdminScheduleConfirmations()" style="background:#0B1F3B" type="button">Refresh confirmations</button><button class="primary" onclick="exportAllConfirmedCalendar()" style="background:#166534" type="button">Export All Confirmed (.ics)</button></div>
 <p class="small" style="margin:4px 0">Open one confirmed shift in Google Calendar, or download all confirmed/unexported shifts as one calendar file. Exported shifts are remembered so Export All will not duplicate them.</p>
-<p id="admin-schedule-confirmation-summary" class="small"></p>
+<p class="small" id="admin-schedule-confirmation-summary"></p>
 <p id="admin-confirmation-alert" role="status" style="display:none;font-weight:700;padding:10px;margin:6px 0;background:#dcfce7;color:#14532d;border-radius:8px"></p>
 <div class="table-scroll"><table id="admin-schedule-confirmations"><thead><tr><th>Guard</th><th>Venue</th><th>Shift</th><th>Date</th><th>Time</th><th>Status</th><th>Confirmed</th><th>Calendar</th><th>Admin</th></tr></thead><tbody><tr><td colspan="9">No confirmation data loaded.</td></tr></tbody></table></div>
 </div>
 <p class="small" style="margin:2px 0 8px">For a range, choose a Start date and End date, for example 2026-06-15 to 2026-06-30, then click Load shifts or Export CSV.</p>
 <div class="row">
 <button class="primary" onclick="refreshAdminGuardOptionsForCurrentRange().then(loadAllShifts)">Load shifts</button>
-<button type="button" class="primary" style="background:#0B1F3B" onclick="exportAdminCsvDownload()">Export CSV</button>
-<button class="primary" style="background:#0B1F3B" onclick="openCheckAvailabilityModal()">Check Availability</button>
+<button class="primary" onclick="exportAdminCsvDownload()" style="background:#0B1F3B" type="button">Export CSV</button>
+<button class="primary" onclick="openCheckAvailabilityModal()" style="background:#0B1F3B">Build / Send Schedule</button>
 </div>
 <div class="table-scroll" style="margin-top:6px">
 <table id="admin-shifts"><thead><tr><th>Guard</th><th>Date</th><th>Venue</th><th>Start</th><th>End</th><th>Hours</th><th>Pay</th><th>Approved</th><th>Paid</th><th>Status</th><th>Delete</th></tr></thead><tbody></tbody></table>
 </div>
-<p id="admin-total" class="small"></p><p id="csv-status" class="small"></p><p id="schedule-admin-status" class="small"></p>
-</div>
-</div>
+<p class="small" id="admin-total"></p><p class="small" id="csv-status"></p><p class="small" id="schedule-admin-status"></p>
+</div></div>
 
-<div id="modal-backdrop" class="modal-backdrop"></div>
-
-<div id="profile-modal" class="modal">
+</div>
+<div class="modal-backdrop" id="modal-backdrop"></div>
+<div class="modal" id="profile-modal">
 <h3>Profile</h3><small>Change your email address or password. Enter your current password before saving any change.</small>
-<div class="input-group" style="margin-top:8px"><label>Current email</label><input id="profile-current-email" type="email" disabled></div>
-<div class="input-group"><label>New email (optional)</label><input id="profile-new-email" type="email" placeholder="Leave blank to keep current email"></div>
-<div class="input-group"><label>Current password</label><div class="password-wrap"><input id="profile-current-password" type="password" placeholder="Current password"><button type="button" class="eye-btn" onclick="togglePasswordVisibility('profile-current-password', this)">Show</button></div></div>
-<div class="input-group"><label>New password (optional)</label><div class="password-wrap"><input id="profile-new-password" type="password" placeholder="At least 8 characters"><button type="button" class="eye-btn" onclick="togglePasswordVisibility('profile-new-password', this)">Show</button></div></div>
-<div class="input-group"><label>Confirm new password</label><div class="password-wrap"><input id="profile-confirm-password" type="password" placeholder="Re-enter new password"><button type="button" class="eye-btn" onclick="togglePasswordVisibility('profile-confirm-password', this)">Show</button></div></div>
+<div class="input-group" style="margin-top:8px"><label>Current email</label><input disabled="" id="profile-current-email" type="email"/></div>
+<div class="input-group"><label>New email (optional)</label><input id="profile-new-email" placeholder="Leave blank to keep current email" type="email"/></div>
+<div class="input-group"><label>Current password</label><div class="password-wrap"><input id="profile-current-password" placeholder="Current password" type="password"/><button class="eye-btn" onclick="togglePasswordVisibility('profile-current-password', this)" type="button">Show</button></div></div>
+<div class="input-group"><label>New password (optional)</label><div class="password-wrap"><input id="profile-new-password" placeholder="At least 8 characters" type="password"/><button class="eye-btn" onclick="togglePasswordVisibility('profile-new-password', this)" type="button">Show</button></div></div>
+<div class="input-group"><label>Confirm new password</label><div class="password-wrap"><input id="profile-confirm-password" placeholder="Re-enter new password" type="password"/><button class="eye-btn" onclick="togglePasswordVisibility('profile-confirm-password', this)" type="button">Show</button></div></div>
 <div class="actions"><button class="primary" onclick="saveProfileChanges()">Save changes</button><button class="primary secondary" onclick="closeProfileModal()">Close</button></div>
-<p id="profile-status" class="small"></p>
+<p class="small" id="profile-status"></p>
 </div>
-
-<div id="forgot-modal" class="modal">
+<div class="modal" id="forgot-modal">
 <h3>Forgot password</h3><small>Enter your OpsGuard email. We will email you a secure one-time password-reset link.</small>
-<div class="input-group" style="margin-top:8px"><label>Email</label><input id="forgot-email" type="email" placeholder="guard@example.com"></div>
+<div class="input-group" style="margin-top:8px"><label>Email</label><input id="forgot-email" placeholder="guard@example.com" type="email"/></div>
 <div class="actions"><button class="primary" onclick="sendForgotPassword()">Email reset link</button><button class="primary secondary" onclick="closeForgotPasswordModal()">Close</button></div>
-<p id="forgot-status" class="small"></p>
+<p class="small" id="forgot-status"></p>
 </div>
-
-<div id="reset-password-modal" class="modal">
+<div class="modal" id="reset-password-modal">
 <h3>Choose a new password</h3><small>This reset link is one-time use and expires automatically.</small>
-<div class="input-group" style="margin-top:8px"><label>New password</label><div class="password-wrap"><input id="reset-new-password" type="password" placeholder="At least 8 characters"><button type="button" class="eye-btn" onclick="togglePasswordVisibility('reset-new-password', this)">Show</button></div></div>
-<div class="input-group"><label>Confirm new password</label><div class="password-wrap"><input id="reset-confirm-password" type="password" placeholder="Re-enter new password"><button type="button" class="eye-btn" onclick="togglePasswordVisibility('reset-confirm-password', this)">Show</button></div></div>
+<div class="input-group" style="margin-top:8px"><label>New password</label><div class="password-wrap"><input id="reset-new-password" placeholder="At least 8 characters" type="password"/><button class="eye-btn" onclick="togglePasswordVisibility('reset-new-password', this)" type="button">Show</button></div></div>
+<div class="input-group"><label>Confirm new password</label><div class="password-wrap"><input id="reset-confirm-password" placeholder="Re-enter new password" type="password"/><button class="eye-btn" onclick="togglePasswordVisibility('reset-confirm-password', this)" type="button">Show</button></div></div>
 <div class="actions"><button class="primary" onclick="submitPasswordReset()">Reset password</button><button class="primary secondary" onclick="closeResetPasswordModal()">Close</button></div>
-<p id="reset-password-status" class="small"></p>
+<p class="small" id="reset-password-status"></p>
 </div>
-
-<div id="schedule-modal" class="modal">
-<h3>Check Availability and Build Schedule</h3><small>Shows guard availability if the API supports it and lets you pick days and times.</small>
-<div class="input-group" style="margin-top:8px"><label>Guard</label><input id="schedule-guard-display" type="text" disabled></div>
+<div class="modal" id="schedule-modal">
+<h3>Build / Send Guard Schedule</h3><small>Build and send shifts directly to this guard. A Google Calendar event is not required; Calendar linking can happen separately.</small>
+<div class="input-group" style="margin-top:8px"><label>Guard</label><input disabled="" id="schedule-guard-display" type="text"/></div>
 <div class="input-group"><label>Note to guard (optional)</label><textarea id="schedule-note" rows="2"></textarea></div>
 <div class="input-group"><label>Availability summary</label>
 <div id="schedule-summary-preview" style="border:1px solid #d1d5db;border-radius:9px;padding:6px 8px;font-size:.75rem;max-height:120px;overflow-y:auto;background:#f9fafb"></div>
@@ -214,7 +201,7 @@
 <div class="card" style="margin-top:6px;padding:8px">
 <h3 style="margin:0 0 3px;font-size:.86rem">Add working days for this guard</h3>
 <p class="small" style="margin:0 0 4px">Each added row becomes part of the schedule.</p>
-<div class="row"><div class="half input-group"><label>Date</label><input id="sched-date" type="date"></div><div class="half input-group"><label>Venue</label><select id="sched-venue"><option value="">Choose venue</option><option>Baby G</option><option>Garrison</option><option>Get Well</option><option>Jean Darlene</option><option>St Anne's</option><option>Standard Time</option><option>Two Kats</option></select></div></div>
+<div class="row"><div class="half input-group"><label>Date</label><input id="sched-date" type="date"/></div><div class="half input-group"><label>Venue</label><select id="sched-venue"><option value="">Choose venue</option><option>Baby G</option><option>Garrison</option><option>Get Well</option><option>Jean Darlene</option><option>St Anne's</option><option>Standard Time</option><option>Two Kats</option></select></div></div>
 <div class="row"><div class="half input-group"><label>Shift</label><select id="sched-shift-code"><option value="">Choose S1/S2/S3</option><option>S1</option><option>S2</option><option>S3</option></select></div></div>
 <div class="row">
 <div class="half input-group"><label>Start time</label><div style="display:flex;gap:4px"><select id="sched-start-hour"></select><select id="sched-start-min"></select><select id="sched-start-ampm"><option>AM</option><option>PM</option></select></div></div>
@@ -222,16 +209,15 @@
 </div>
 <div class="row" style="align-items:center;margin-top:4px">
 <button class="primary" onclick="addShiftToScheduleDraft()">Add to schedule</button>
-<button class="primary secondary" type="button" onclick="cancelScheduleBuild()">Cancel</button>
-<button class="primary" type="button" onclick="sendScheduleFromAdmin()">Send Schedule</button>
+<button class="primary secondary" onclick="cancelScheduleBuild()" type="button">Cancel</button>
+<button class="primary" onclick="sendScheduleFromAdmin()" type="button">Send Schedule</button>
 </div>
-<p id="schedule-add-status" class="small"></p>
-<div class="input-group" style="margin-top:4px"><label>Proposed schedule</label><textarea id="schedule-proposed-list" rows="4" disabled></textarea></div>
+<p class="small" id="schedule-add-status"></p>
+<div class="input-group" style="margin-top:4px"><label>Proposed schedule</label><textarea disabled="" id="schedule-proposed-list" rows="4"></textarea></div>
 </div>
 <div class="actions"><button class="primary secondary" onclick="closeScheduleModal()">Close</button></div>
-<p id="schedule-modal-status" class="small"></p>
+<p class="small" id="schedule-modal-status"></p>
 </div>
-
 <script>
 const API_BASE=window.location.origin+"/api";
 const OPSGUARD_ENV=(document.body.dataset.environment||"production").toLowerCase();
@@ -249,10 +235,9 @@ function showSection(id){
   if(id==="admin-dashboard"){
     if(currentUserRole!=="admin"){const st=document.getElementById("dash-status");if(st)st.textContent="Admin access is required.";return;}
     loadAdminDashboard();
-  }
-  if(id==="admin"){
-    if(currentUserRole!=="admin"){const st=document.getElementById("admin-management-status");if(st)st.textContent="Admin access is required.";return;}
-    loadAdminUsers();refreshAdminGuardOptionsForCurrentRange();loadAdminScheduleConfirmations();
+    loadAdminUsers();
+    refreshAdminGuardOptionsForCurrentRange();
+    loadAdminScheduleConfirmations();
   }
 }
 function toggleUserDropdown(){const dd=document.getElementById("user-dropdown");dd.style.display=dd.style.display==="block"?"none":"block"}
@@ -655,14 +640,7 @@ async function loadAdminFilterOptions(){await loadAdminUsers();await refreshAdmi
 function dashboardMoney(n){const v=Number(n)||0;return "$"+v.toFixed(2)}
 function dashboardShiftPay(s){return getDisplayHours(s)*getAdminHourlyRate()}
 function dashboardShiftLabel(s){return (getGuardLabel(s)||"Guard")+" · "+(s.date||"")+" · "+(s.venue||"")}
-function openAdvancedAdmin(){
-  showSection("admin");
-  clearAdminDateFilters();
-  const guard=document.getElementById("admin-guard-filter"),venue=document.getElementById("admin-venue-filter");
-  if(guard)guard.value="__all__";
-  if(venue)venue.value="__all__";
-  refreshAdminGuardOptionsForCurrentRange().then(loadAllShifts);
-}
+function openAdvancedAdmin(){showSection("admin-dashboard");setTimeout(()=>{const el=document.getElementById("dashboard-operations");if(el)el.scrollIntoView({behavior:"smooth",block:"start"});},100);}
 async function dashboardApproveShift(shiftId){
   if(!shiftId)return;
   try{
@@ -1266,7 +1244,7 @@ async function sendScheduleFromAdmin(){
   try{
     const payload={guard:g.name||g.email,guard_id:g.id||null,note,shifts:scheduleDraft.map(s=>({guard:g.name||g.email,date:s.date,start_time:s.start_time,end_time:s.end_time,venue:s.venue||"",shift_code:s.shift_code||"",calendar_id:s.calendar_id||"",google_event_id:s.google_event_id||null,calendar_start_time:s.calendar_start_time||null,calendar_end_time:s.calendar_end_time||null}))};
     await rawApi("/schedules",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
-    if(st)st.textContent="Schedule sent. It is awaiting the guard's confirmation.";
+    if(st)st.textContent="Schedule sent. It is awaiting the guard's confirmation. No Calendar event is required.";
     const adminSt=document.getElementById("schedule-admin-status");if(adminSt)adminSt.textContent="Schedule sent to "+(g.name||g.email)+" — awaiting confirmation.";
     scheduleDraft=[];renderScheduleDraft();loadAdminScheduleConfirmations();
   }catch(e){if(st)st.textContent="Schedule send failed: "+(e&&e.message?e.message:String(e));}
