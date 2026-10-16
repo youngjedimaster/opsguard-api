@@ -78,7 +78,7 @@
 </div>
 <div class="dash-section">
 <h3>Needs Attention</h3>
-<div class="dash-action-list" id="dash-attention-list"><div class="dash-empty">Loading dashboard…</div></div>
+<div class="dash-action-list" id="dash-attention-list" style="max-height:420px;overflow-y:auto;overscroll-behavior:contain;padding-right:4px"><div class="dash-empty">Loading dashboard…</div></div>
 </div>
 <div class="dash-section">
 <h3>Calendar &amp; Schedule</h3>
@@ -823,7 +823,7 @@ function renderAdminDashboard(shifts,schedules){
   list.innerHTML="";
   const attention=[...submitted.map(s=>({kind:"approve",s})),...ready.map(s=>({kind:"pay",s}))];
   if(!attention.length){list.innerHTML='<div class="dash-empty">Nothing needs action right now.</div>';return;}
-  attention.slice(0,8).forEach(item=>{
+  attention.forEach(item=>{
     const s=item.s,box=document.createElement("div");box.className="dash-action-item";
     const action=item.kind==="approve"?"Approve":"Mark Paid";
     const status=item.kind==="approve"?"Submitted":"Approved";
@@ -832,9 +832,6 @@ function renderAdminDashboard(shifts,schedules){
     btn.addEventListener("click",()=>item.kind==="approve"?dashboardApproveShift(s.id):dashboardMarkPaid(s.id));
     list.appendChild(box);
   });
-  if(attention.length>8){
-    const more=document.createElement("div");more.className="dash-empty";more.textContent="+"+(attention.length-8)+" more items. Open Advanced Admin for the full list.";list.appendChild(more);
-  }
 }
 async function loadAdminDashboard(){
   if(!authToken||currentUserRole!=="admin")return;
