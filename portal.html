@@ -1,10 +1,11 @@
-<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>OpsGuard Portal</title><style>:root{--bg:#0B1F3B;--bg2:#1F3C88;--radius:14px}*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f3f4f6;color:#111827}header{background:var(--bg);color:#fff;padding:12px 18px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;position:sticky;top:0;z-index:1000}header h1{font-size:1.1rem;margin:0}.nav-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap}.nav-btn{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);padding:6px 10px;color:#fff;border-radius:999px;font-size:.75rem;cursor:pointer}.nav-btn:hover{background:rgba(255,255,255,.18)}.user-menu-wrap{position:relative;display:none}.avatar-btn{width:34px;height:34px;border-radius:999px;display:grid;place-items:center;background:#fff;color:var(--bg);font-weight:800;font-size:.9rem;border:none;cursor:pointer}.user-dropdown{position:absolute;right:0;top:44px;background:#fff;color:#111827;border-radius:12px;min-width:190px;box-shadow:0 10px 30px rgba(0,0,0,.15);overflow:hidden;display:none}.ud-head{padding:8px 10px;border-bottom:1px solid #e5e7eb;font-size:.78rem;color:#374151;background:#f9fafb}.user-dropdown button{width:100%;text-align:left;padding:8px 10px;border:none;background:#fff;font-size:.8rem;cursor:pointer}.user-dropdown button:hover{background:#f3f4f6}.shell{max-width:1100px;margin:18px auto;padding:0 14px 60px}.card{background:#fff;border-radius:var(--radius);padding:12px 12px 16px;box-shadow:0 10px 30px rgba(11,31,59,.08);margin-bottom:12px}.row{display:flex;gap:10px;flex-wrap:wrap}.input-group{margin-bottom:8px;width:100%}label{display:block;font-weight:600;margin-bottom:2px;font-size:.78rem}input,select,textarea{width:100%;padding:6px 8px;border-radius:9px;border:1px solid #d1d5db;font-size:.8rem}button.primary{background:var(--bg2);border:none;color:#fff;padding:7px 11px;border-radius:999px;cursor:pointer;font-weight:600;font-size:.78rem}button.primary:hover{opacity:.95}.hidden{display:none}table{width:100%;border-collapse:collapse;font-size:.72rem}th,td{border-bottom:1px solid #e5e7eb;padding:5px 4px;text-align:left}th{font-weight:600;color:#4b5563}.table-scroll{height:120px;overflow-y:auto;overflow-x:hidden;border-radius:10px;border:1px solid #e5e7eb;background:#fff;margin-top:4px}.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;z-index:2000}.modal{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(520px,calc(100% - 24px));background:#fff;border-radius:16px;padding:12px;box-shadow:0 20px 60px rgba(0,0,0,.25);display:none;z-index:2001;max-height:90vh;overflow-y:auto}.modal h3{margin:0 0 4px;font-size:1rem}.modal small{color:#6b7280;font-size:.72rem}.modal .actions{display:flex;gap:8px;margin-top:6px;flex-wrap:wrap}.modal .actions .secondary{background:#0B1F3B}p.small{font-size:.7rem;margin-top:4px;color:#4b5563}.avail-line{padding:2px 4px;border-radius:6px;font-size:.75rem}.avail-line:hover{background:#e5e7eb}.icon-btn{background:transparent;border:1px solid #d1d5db;border-radius:999px;padding:3px 8px;cursor:pointer;font-size:.72rem}.icon-btn:hover{background:#f3f4f6}a{color:var(--bg2);text-decoration:none}a:hover{text-decoration:underline}.password-wrap{display:flex;gap:4px}.password-wrap input{flex:1}.eye-btn{min-width:58px;padding:0 10px;border:1px solid #d1d5db;background:#fff;border-radius:9px;cursor:pointer;font-size:.78rem;font-weight:700;color:#0B1F3B}@media(min-width:700px){.row>.half{width:calc(50% - 5px)}.row>.third{width:calc(33.333% - 7px)}}</style></head><body>
-<header><h1>OpsGuard Portal</h1><div class="nav-row">
+<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>OpsGuard Portal</title><style>:root{--bg:#0B1F3B;--bg2:#1F3C88;--radius:14px}*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f3f4f6;color:#111827}header{background:var(--bg);color:#fff;padding:12px 18px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;position:sticky;top:0;z-index:1000}header h1{font-size:1.1rem;margin:0}.env-badge{display:none;margin-left:8px;padding:3px 7px;border-radius:999px;background:#facc15;color:#422006;font-size:.68rem;font-weight:900;letter-spacing:.06em;vertical-align:middle}.nav-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap}.nav-btn{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);padding:6px 10px;color:#fff;border-radius:999px;font-size:.75rem;cursor:pointer}.nav-btn:hover{background:rgba(255,255,255,.18)}.user-menu-wrap{position:relative;display:none}.avatar-btn{width:34px;height:34px;border-radius:999px;display:grid;place-items:center;background:#fff;color:var(--bg);font-weight:800;font-size:.9rem;border:none;cursor:pointer}.user-dropdown{position:absolute;right:0;top:44px;background:#fff;color:#111827;border-radius:12px;min-width:190px;box-shadow:0 10px 30px rgba(0,0,0,.15);overflow:hidden;display:none}.ud-head{padding:8px 10px;border-bottom:1px solid #e5e7eb;font-size:.78rem;color:#374151;background:#f9fafb}.user-dropdown button{width:100%;text-align:left;padding:8px 10px;border:none;background:#fff;font-size:.8rem;cursor:pointer}.user-dropdown button:hover{background:#f3f4f6}.shell{max-width:1100px;margin:18px auto;padding:0 14px 60px}.card{background:#fff;border-radius:var(--radius);padding:12px 12px 16px;box-shadow:0 10px 30px rgba(11,31,59,.08);margin-bottom:12px}.row{display:flex;gap:10px;flex-wrap:wrap}.input-group{margin-bottom:8px;width:100%}label{display:block;font-weight:600;margin-bottom:2px;font-size:.78rem}input,select,textarea{width:100%;padding:6px 8px;border-radius:9px;border:1px solid #d1d5db;font-size:.8rem}button.primary{background:var(--bg2);border:none;color:#fff;padding:7px 11px;border-radius:999px;cursor:pointer;font-weight:600;font-size:.78rem}button.primary:hover{opacity:.95}.hidden{display:none}table{width:100%;border-collapse:collapse;font-size:.72rem}th,td{border-bottom:1px solid #e5e7eb;padding:5px 4px;text-align:left}th{font-weight:600;color:#4b5563}.table-scroll{height:120px;overflow-y:auto;overflow-x:hidden;border-radius:10px;border:1px solid #e5e7eb;background:#fff;margin-top:4px}.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;z-index:2000}.modal{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(520px,calc(100% - 24px));background:#fff;border-radius:16px;padding:12px;box-shadow:0 20px 60px rgba(0,0,0,.25);display:none;z-index:2001;max-height:90vh;overflow-y:auto}.modal h3{margin:0 0 4px;font-size:1rem}.modal small{color:#6b7280;font-size:.72rem}.modal .actions{display:flex;gap:8px;margin-top:6px;flex-wrap:wrap}.modal .actions .secondary{background:#0B1F3B}p.small{font-size:.7rem;margin-top:4px;color:#4b5563}.avail-line{padding:2px 4px;border-radius:6px;font-size:.75rem}.avail-line:hover{background:#e5e7eb}.icon-btn{background:transparent;border:1px solid #d1d5db;border-radius:999px;padding:3px 8px;cursor:pointer;font-size:.72rem}.icon-btn:hover{background:#f3f4f6}a{color:var(--bg2);text-decoration:none}a:hover{text-decoration:underline}.dash-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0}.dash-metric{border:1px solid #e5e7eb;border-radius:14px;padding:12px;background:#fff;min-height:96px}.dash-metric-label{font-size:.72rem;color:#4b5563;font-weight:700}.dash-metric-value{font-size:1.65rem;line-height:1.05;font-weight:900;color:#0B1F3B;margin-top:5px}.dash-metric-sub{font-size:.7rem;color:#6b7280;margin-top:4px}.dash-section{border:1px solid #e5e7eb;border-radius:14px;padding:11px;background:#f9fafb;margin-top:10px}.dash-section h3{margin:0 0 6px;font-size:.9rem}.dash-action-list{display:grid;gap:8px}.dash-action-item{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:9px}.dash-action-main{min-width:0}.dash-action-title{font-size:.78rem;font-weight:800}.dash-action-meta{font-size:.7rem;color:#6b7280;margin-top:2px}.dash-action-amount{font-size:.78rem;font-weight:800;white-space:nowrap}.dash-btn-row{display:flex;flex-wrap:wrap;gap:7px;margin-top:9px}.dash-empty{font-size:.75rem;color:#6b7280;padding:8px 2px}.dash-calendar-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.dash-calendar-stat{background:#fff;border-radius:10px;padding:8px;text-align:center;border:1px solid #e5e7eb}.dash-calendar-stat strong{display:block;font-size:1.05rem;color:#0B1F3B}.pay-list{display:grid;gap:10px;margin-top:8px}.pay-card{border:1px solid #e5e7eb;border-radius:12px;padding:10px;background:#fff}.pay-card-top{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}.pay-card-title{font-weight:800;font-size:.88rem}.pay-card-meta{font-size:.75rem;color:#4b5563;margin-top:3px}.status-pill{display:inline-block;border-radius:999px;padding:4px 8px;font-size:.7rem;font-weight:800;white-space:nowrap}.status-submitted{background:#fef3c7;color:#92400e}.status-approved{background:#dbeafe;color:#1e40af}.status-paid{background:#dcfce7;color:#166534}.pay-detail-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-top:8px;font-size:.74rem}.pay-detail{background:#f9fafb;border-radius:8px;padding:6px}.password-wrap{display:flex;gap:4px}.password-wrap input{flex:1}.eye-btn{min-width:58px;padding:0 10px;border:1px solid #d1d5db;background:#fff;border-radius:9px;cursor:pointer;font-size:.78rem;font-weight:700;color:#0B1F3B}@media(min-width:700px){.row>.half{width:calc(50% - 5px)}.row>.third{width:calc(33.333% - 7px)}.dash-grid{grid-template-columns:repeat(4,minmax(0,1fr))}.dash-action-list{grid-template-columns:repeat(2,minmax(0,1fr))}}</style></head><body data-environment="__OPSGUARD_ENV__">
+<header><h1>OpsGuard Portal <span id="env-badge" class="env-badge">STAGING</span></h1><div class="nav-row">
 <button class="nav-btn" onclick="showSection('login')">Login</button>
 <button class="nav-btn" onclick="showSection('submit')">Submit Hours</button>
 <button class="nav-btn" onclick="showSection('availability')">Availability</button>
 <button class="nav-btn" onclick="showSection('schedule')">Schedule</button>
-<button class="nav-btn" onclick="showSection('admin')">Admin</button>
+<button class="nav-btn" onclick="showSection('pay')">My Hours &amp; Pay</button>
+<button class="nav-btn" onclick="showSection('admin-dashboard')">Dashboard</button>
 <div id="user-menu-wrap" class="user-menu-wrap">
 <button id="avatar-btn" class="avatar-btn" onclick="toggleUserDropdown()" aria-label="User menu">U</button>
 <div id="user-dropdown" class="user-dropdown">
@@ -64,8 +65,47 @@
 <p id="my-schedule-status" class="small"></p>
 </div>
 
+<div id="section-pay" class="card hidden">
+<h2 style="margin:0 0 4px">My Hours &amp; Pay</h2>
+<p class="small">Track your submitted hours from review through payment. Approved and paid records are locked; contact an admin if a correction is needed.</p>
+<div id="my-pay-list" class="pay-list"><div class="pay-card"><div class="pay-card-meta">Login to see your hours and pay status.</div></div></div>
+<p id="my-pay-status" class="small"></p>
+</div>
+
+<div id="section-admin-dashboard" class="card hidden">
+<h2 style="margin:0 0 3px">Admin Dashboard</h2>
+<p class="small" style="margin-bottom:8px">Your OpsGuard action centre. Review hours, payments, confirmations and calendar status here. Detailed controls remain in Advanced Admin.</p>
+<div class="dash-grid">
+  <div class="dash-metric"><div class="dash-metric-label">Needs Approval</div><div id="dash-needs-approval" class="dash-metric-value">—</div><div id="dash-needs-approval-sub" class="dash-metric-sub">Submitted hours</div></div>
+  <div class="dash-metric"><div class="dash-metric-label">Ready to Pay</div><div id="dash-ready-pay" class="dash-metric-value">—</div><div id="dash-ready-pay-sub" class="dash-metric-sub">Approved, unpaid</div></div>
+  <div class="dash-metric"><div class="dash-metric-label">Paid</div><div id="dash-paid" class="dash-metric-value">—</div><div id="dash-paid-sub" class="dash-metric-sub">Paid records</div></div>
+  <div class="dash-metric"><div class="dash-metric-label">Awaiting Confirmation</div><div id="dash-awaiting-confirm" class="dash-metric-value">—</div><div id="dash-awaiting-confirm-sub" class="dash-metric-sub">Scheduled shifts</div></div>
+</div>
+
+<div class="dash-section">
+  <h3>Needs Attention</h3>
+  <div id="dash-attention-list" class="dash-action-list"><div class="dash-empty">Loading dashboard…</div></div>
+</div>
+
+<div class="dash-section">
+  <h3>Calendar &amp; Schedule</h3>
+  <div class="dash-calendar-grid">
+    <div class="dash-calendar-stat"><strong id="dash-confirmed">—</strong><span class="small">Confirmed</span></div>
+    <div class="dash-calendar-stat"><strong id="dash-ready-export">—</strong><span class="small">Ready to export</span></div>
+    <div class="dash-calendar-stat"><strong id="dash-exported">—</strong><span class="small">Exported</span></div>
+  </div>
+  <div class="dash-btn-row">
+    <button type="button" class="primary" onclick="openAdvancedAdmin()">Advanced Admin</button>
+    <button type="button" class="primary" style="background:#0B1F3B" onclick="openCheckAvailabilityModal()">Check Availability</button>
+    <button type="button" class="primary" style="background:#166534" onclick="dashboardExportConfirmed()">Export Confirmed (.ics)</button>
+    <button type="button" class="primary secondary" onclick="loadAdminDashboard()">Refresh</button>
+  </div>
+  <p id="dash-status" class="small"></p>
+</div>
+</div>
+
 <div id="section-admin" class="card hidden">
-<h2 style="margin:0 0 4px">Admin , All Shifts</h2><p class="small">Requires admin token.</p>
+<h2 style="margin:0 0 4px">Advanced Admin</h2><p class="small">Detailed shift, guard, CSV and schedule controls.</p>
 <div class="row">
 <div class="third input-group"><label>Hourly rate ($)</label><input id="admin-rate" type="number" step=".01" value="20"></div>
 <div class="third input-group"><label>Guard</label><select id="admin-guard-filter"><option value="__all__">All guards</option></select></div>
@@ -74,6 +114,7 @@
 <div class="row">
 <div class="third input-group"><label>Start date / From</label><input id="admin-from-date-filter" type="date" title="Example: 2026-06-15"></div>
 <div class="third input-group"><label>End date / To</label><input id="admin-to-date-filter" type="date" title="Example: 2026-06-30"></div>
+<div class="third input-group" style="justify-content:flex-end"><label>&nbsp;</label><button type="button" class="primary secondary" style="padding:8px 12px;white-space:nowrap" onclick="clearAdminDateFilters()">Clear dates</button></div>
 </div>
 <div class="card" style="padding:8px;margin:4px 0 8px;background:#f9fafb">
 <h3 style="margin:0 0 4px;font-size:.86rem">Guard account management</h3>
@@ -102,7 +143,7 @@
 <button class="primary" style="background:#0B1F3B" onclick="openCheckAvailabilityModal()">Check Availability</button>
 </div>
 <div class="table-scroll" style="margin-top:6px">
-<table id="admin-shifts"><thead><tr><th>Guard</th><th>Date</th><th>Venue</th><th>Start</th><th>End</th><th>Hours</th><th>Pay</th><th>Paid</th><th>Delete</th></tr></thead><tbody></tbody></table>
+<table id="admin-shifts"><thead><tr><th>Guard</th><th>Date</th><th>Venue</th><th>Start</th><th>End</th><th>Hours</th><th>Pay</th><th>Approved</th><th>Paid</th><th>Status</th><th>Delete</th></tr></thead><tbody></tbody></table>
 </div>
 <p id="admin-total" class="small"></p><p id="csv-status" class="small"></p><p id="schedule-admin-status" class="small"></p>
 </div>
@@ -165,15 +206,23 @@
 </div>
 
 <script>
-const API_BASE="https://opsguard-api.onrender.com/api";
+const API_BASE=window.location.origin+"/api";
+const OPSGUARD_ENV=(document.body.dataset.environment||"production").toLowerCase();
+const ENV_BADGE=document.getElementById("env-badge");
+if(ENV_BADGE&&OPSGUARD_ENV!=="production"){ENV_BADGE.style.display="inline-block";ENV_BADGE.textContent=OPSGUARD_ENV.toUpperCase();document.title="OpsGuard "+OPSGUARD_ENV.toUpperCase();}
 let authToken=null,currentUserEmail=null,currentUserName=null,currentUserRole=null,myShiftsCache=[],allShiftsCache=[],adminFilteredShifts=[],scheduleDraft=[],currentGuardAvailability=[],adminUserMap={},apiWarmPromise=null,adminConfirmationsInitialized=false,adminSeenConfirmedShifts=new Set(),adminScheduleConfirmationsCache=[];
 const FIXED_VENUES=["Baby G","Garrison","Get Well","Jean Darlene","St Anne's","Standard Time","Two Kats"];
 const VENUE_CALENDAR_IDS={"Baby G":"s374q7mjj2hoc77f71oml6n5uc@group.calendar.google.com","Garrison":"garrisonstaff@gmail.com","Jean Darlene":"78f673188cd9e7f1c76014eee634b0b5578f9da7f0657796fcb45e05080f45c3@group.calendar.google.com","St Anne's":"78f673188cd9e7f1c76014eee634b0b5578f9da7f0657796fcb45e05080f45c3@group.calendar.google.com"};
 
 function showSection(id){
-  ["login","submit","availability","schedule","admin"].forEach(s=>{const el=document.getElementById("section-"+s);if(el)el.classList.add("hidden")});
+  ["login","submit","availability","schedule","pay","admin-dashboard","admin"].forEach(s=>{const el=document.getElementById("section-"+s);if(el)el.classList.add("hidden")});
   const t=document.getElementById("section-"+id);if(t)t.classList.remove("hidden");
   if(id==="schedule"&&authToken)loadMySchedule();
+  if(id==="pay"&&authToken)loadMyShifts();
+  if(id==="admin-dashboard"){
+    if(currentUserRole!=="admin"){const st=document.getElementById("dash-status");if(st)st.textContent="Admin access is required.";return;}
+    loadAdminDashboard();
+  }
   if(id==="admin"){
     if(currentUserRole!=="admin"){const st=document.getElementById("admin-management-status");if(st)st.textContent="Admin access is required.";return;}
     loadAdminUsers();refreshAdminGuardOptionsForCurrentRange();loadAdminScheduleConfirmations();
@@ -228,12 +277,25 @@ async function deleteAvailabilityAnyRole(availId){
   if(!authToken)return alert("Login first.");if(!availId)return alert("Missing availability id.");if(!(await confirmAction("Delete this availability entry?")))return;const st=document.getElementById("avail-status");if(st)st.textContent="Deleting availability...";try{await rawApi("/availability/"+encodeURIComponent(availId),{method:"DELETE"});if(st)st.textContent="Availability deleted.";await loadMyAvailability();}catch(e){if(st)st.textContent="Delete failed: "+(e&&e.message?e.message:String(e));}
 }
 
+async function adminSetApproved(shiftId,approved){
+  if(!authToken)return alert("Login first.");
+  if(!shiftId)return alert("Missing shift id.");
+  try{
+    const updated=await rawApi("/shifts/"+encodeURIComponent(shiftId)+"/approved",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({approved:!!approved})});
+    allShiftsCache=(allShiftsCache||[]).map(s=>s.id===updated.id?({...s,...updated}):s);
+    renderAdminShifts({items:allShiftsCache});
+    const dash=document.getElementById("section-admin-dashboard");if(dash&&!dash.classList.contains("hidden"))loadAdminDashboard();
+  }catch(e){alert("Approval update failed: "+(e&&e.message?e.message:String(e)));await loadAllShifts();}
+}
 async function adminSetPaid(shiftId,paid){
   if(!authToken)return alert("Login first.");
   if(!shiftId)return alert("Missing shift id.");
-  const updated=await rawApi("/shifts/"+encodeURIComponent(shiftId)+"/paid",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({paid:!!paid})});
-  allShiftsCache=(allShiftsCache||[]).map(s=>s.id===updated.id?({...s,paid:updated.paid}):s);
-  renderAdminShifts();
+  try{
+    const updated=await rawApi("/shifts/"+encodeURIComponent(shiftId)+"/paid",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({paid:!!paid})});
+    allShiftsCache=(allShiftsCache||[]).map(s=>s.id===updated.id?({...s,...updated}):s);
+    renderAdminShifts({items:allShiftsCache});
+    const dash=document.getElementById("section-admin-dashboard");if(dash&&!dash.classList.contains("hidden"))loadAdminDashboard();
+  }catch(e){alert("Payment status update failed: "+(e&&e.message?e.message:String(e)));await loadAllShifts();}
 }
 
 function setLoggedInUI(email,name){
@@ -369,7 +431,7 @@ async function registerUser(){
 }
 async function login(){
   const email=document.getElementById("auth-email").value.trim(),password=document.getElementById("auth-password").value.trim(),stat=document.getElementById("auth-status"),btn=document.getElementById("login-btn");if(!email||!password){stat.textContent="Enter your email and password.";return;}stat.textContent="Logging in...";if(btn)btn.disabled=true;prewarmApi();
-  try{const body=new URLSearchParams();body.append("username",email);body.append("password",password);const res=await fetch(API_BASE+"/auth/login",{method:"POST",body,cache:"no-store"});if(!res.ok)throw new Error("Login failed");const data=await res.json();authToken=data.access_token;const u=data.user||{};currentUserEmail=u.email||email;currentUserName=u.name||null;currentUserRole=u.role||"guard";setLoggedInUI(currentUserEmail,currentUserName);saveSession();stat.textContent="Logged in.";showSection("submit");loadMyShifts();}catch(e){stat.textContent="Login failed. Check your email/password and try again.";}finally{if(btn)btn.disabled=false;}
+  try{const body=new URLSearchParams();body.append("username",email);body.append("password",password);const res=await fetch(API_BASE+"/auth/login",{method:"POST",body,cache:"no-store"});if(!res.ok)throw new Error("Login failed");const data=await res.json();authToken=data.access_token;const u=data.user||{};currentUserEmail=u.email||email;currentUserName=u.name||null;currentUserRole=u.role||"guard";setLoggedInUI(currentUserEmail,currentUserName);saveSession();stat.textContent="Logged in.";showSection(currentUserRole==="admin"?"admin-dashboard":"submit");loadMyShifts();}catch(e){stat.textContent="Login failed. Check your email/password and try again.";}finally{if(btn)btn.disabled=false;}
 }
 
 function initShiftTimeDropdowns(){
@@ -428,15 +490,32 @@ function parseShiftDateTime(s){
 }
 function parseScheduleRowDateTime(r){return parseShiftDateTime({date:r.date,start_time:r.start_time})}
 
+function shiftStatus(s){return s&&s.paid?"Paid":(s&&s.approved?"Approved":"Submitted")}
+function statusClass(status){return status==="Paid"?"status-paid":(status==="Approved"?"status-approved":"status-submitted")}
+function formatPayDate(v){if(!v)return "";try{return new Date(v).toLocaleDateString()}catch{return String(v)}}
+function renderMyHoursPay(items){
+  const list=document.getElementById("my-pay-list");if(!list)return;
+  const rows=[...(items||[])].sort((a,b)=>parseShiftDateTime(b)-parseShiftDateTime(a));
+  if(!rows.length){list.innerHTML='<div class="pay-card"><div class="pay-card-meta">No hours submitted yet.</div></div>';return;}
+  list.innerHTML="";
+  rows.forEach(s=>{
+    const status=shiftStatus(s),card=document.createElement("div");card.className="pay-card";
+    const paidInfo=status==="Paid"?(formatPayDate(s.paid_at)||"Paid"):"Not paid yet";
+    const ref=s.payment_reference?String(s.payment_reference):"";
+    card.innerHTML=`<div class="pay-card-top"><div><div class="pay-card-title">${s.date||""} · ${s.venue||""}</div><div class="pay-card-meta">${s.start_time||""} - ${s.end_time||""}</div></div><span class="status-pill ${statusClass(status)}">${status}</span></div><div class="pay-detail-grid"><div class="pay-detail"><strong>Hours</strong><br>${s.recalculated_hours??s.total_hours??""}</div><div class="pay-detail"><strong>Payment</strong><br>${paidInfo}</div>${ref?`<div class="pay-detail" style="grid-column:1/-1"><strong>Reference</strong><br>${ref}</div>`:""}</div>`;
+    list.appendChild(card);
+  });
+}
 function renderMyShifts(){
   const tbody=document.querySelector("#my-shifts-table tbody");if(!tbody)return;
   const items=[...myShiftsCache].sort((a,b)=>parseShiftDateTime(b)-parseShiftDateTime(a));
-  tbody.innerHTML="";if(!items.length){tbody.innerHTML="<tr><td colspan='6'>No shifts yet.</td></tr>";return;}
+  tbody.innerHTML="";if(!items.length){tbody.innerHTML="<tr><td colspan='6'>No shifts yet.</td></tr>";renderMyHoursPay(items);return;}
   items.forEach(s=>{
-    const tr=document.createElement("tr");
-    tr.innerHTML=`<td>${s.date||""}</td><td>${s.venue||""}</td><td>${s.start_time||""}</td><td>${s.end_time||""}</td><td>${s.total_hours??""}</td><td style="text-align:center;">${s.id?`<button type="button" class="icon-btn" onclick="deleteShiftAnyRole('${s.id}')">🗑</button>`:""}</td>`;
+    const tr=document.createElement("tr"),locked=!!(s.approved||s.paid);
+    tr.innerHTML=`<td>${s.date||""}</td><td>${s.venue||""}</td><td>${s.start_time||""}</td><td>${s.end_time||""}</td><td>${s.total_hours??""}</td><td style="text-align:center;">${s.id&&!locked?`<button type="button" class="icon-btn" onclick="deleteShiftAnyRole('${s.id}')">🗑</button>`:locked?"Locked":""}</td>`;
     tbody.appendChild(tr);
   });
+  renderMyHoursPay(items);
 }
 
 async function submitShift(){
@@ -546,6 +625,100 @@ async function refreshAdminGuardOptionsForCurrentRange(){if(!authToken||currentU
 async function loadAdminFilterOptions(){await loadAdminUsers();await refreshAdminGuardOptionsForCurrentRange();}
 
 
+function dashboardMoney(n){const v=Number(n)||0;return "$"+v.toFixed(2)}
+function dashboardShiftPay(s){return getDisplayHours(s)*getAdminHourlyRate()}
+function dashboardShiftLabel(s){return (getGuardLabel(s)||"Guard")+" · "+(s.date||"")+" · "+(s.venue||"")}
+function openAdvancedAdmin(){
+  showSection("admin");
+  clearAdminDateFilters();
+  const guard=document.getElementById("admin-guard-filter"),venue=document.getElementById("admin-venue-filter");
+  if(guard)guard.value="__all__";
+  if(venue)venue.value="__all__";
+  refreshAdminGuardOptionsForCurrentRange().then(loadAllShifts);
+}
+async function dashboardApproveShift(shiftId){
+  if(!shiftId)return;
+  try{
+    await rawApi("/shifts/"+encodeURIComponent(shiftId)+"/approved",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({approved:true})});
+    await loadAdminDashboard();
+  }catch(e){alert("Approval failed: "+(e&&e.message?e.message:String(e)));}
+}
+async function dashboardMarkPaid(shiftId){
+  if(!shiftId)return;
+  if(!(await confirmAction("Mark this approved hours record as paid?","Mark Paid")))return;
+  try{
+    await rawApi("/shifts/"+encodeURIComponent(shiftId)+"/paid",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({paid:true})});
+    await loadAdminDashboard();
+  }catch(e){alert("Payment status update failed: "+(e&&e.message?e.message:String(e)));}
+}
+async function dashboardExportConfirmed(){
+  try{await exportAllConfirmedCalendar();setTimeout(()=>loadAdminDashboard(),500);}catch(e){const st=document.getElementById("dash-status");if(st)st.textContent="Calendar export could not be started.";}
+}
+function renderAdminDashboard(shifts,schedules){
+  const rows=Array.isArray(shifts)?shifts:[];
+  const scheduleRows=Array.isArray(schedules)?schedules:[];
+  const submitted=rows.filter(s=>!s.approved&&!s.paid);
+  const ready=rows.filter(s=>s.approved&&!s.paid);
+  const paid=rows.filter(s=>s.paid);
+  const sum=(items)=>items.reduce((a,s)=>a+dashboardShiftPay(s),0);
+  const hours=(items)=>items.reduce((a,s)=>a+getDisplayHours(s),0);
+  let confirmed=0,pending=0,exported=0,readyExport=0;
+  scheduleRows.forEach(sch=>(sch.shifts||[]).forEach(sh=>{
+    const ok=(sch.status==="confirmed"||sh.status==="confirmed");
+    if(ok){confirmed++;if(sh.calendar_exported_at)exported++;else readyExport++;}else pending++;
+  }));
+  const set=(id,val)=>{const el=document.getElementById(id);if(el)el.textContent=val;};
+  set("dash-needs-approval",String(submitted.length));
+  set("dash-needs-approval-sub",hours(submitted).toFixed(1)+" hrs · "+dashboardMoney(sum(submitted)));
+  set("dash-ready-pay",String(ready.length));
+  set("dash-ready-pay-sub",hours(ready).toFixed(1)+" hrs · "+dashboardMoney(sum(ready)));
+  set("dash-paid",String(paid.length));
+  set("dash-paid-sub",dashboardMoney(sum(paid))+" recorded paid");
+  set("dash-awaiting-confirm",String(pending));
+  set("dash-awaiting-confirm-sub",pending===1?"1 scheduled shift":"Scheduled shifts");
+  set("dash-confirmed",String(confirmed));
+  set("dash-ready-export",String(readyExport));
+  set("dash-exported",String(exported));
+
+  const list=document.getElementById("dash-attention-list");
+  if(!list)return;
+  list.innerHTML="";
+  const attention=[...submitted.map(s=>({kind:"approve",s})),...ready.map(s=>({kind:"pay",s}))];
+  if(!attention.length){list.innerHTML='<div class="dash-empty">Nothing needs action right now.</div>';return;}
+  attention.slice(0,8).forEach(item=>{
+    const s=item.s,box=document.createElement("div");box.className="dash-action-item";
+    const action=item.kind==="approve"?"Approve":"Mark Paid";
+    const status=item.kind==="approve"?"Submitted":"Approved";
+    box.innerHTML='<div class="dash-action-main"><div class="dash-action-title">'+dashboardShiftLabel(s)+'</div><div class="dash-action-meta">'+status+' · '+getDisplayHours(s)+' hrs</div></div><div style="text-align:right"><div class="dash-action-amount">'+dashboardMoney(dashboardShiftPay(s))+'</div><button type="button" class="primary" style="margin-top:5px;'+(item.kind==="pay"?"background:#166534":"")+'">'+action+'</button></div>';
+    const btn=box.querySelector("button");
+    btn.addEventListener("click",()=>item.kind==="approve"?dashboardApproveShift(s.id):dashboardMarkPaid(s.id));
+    list.appendChild(box);
+  });
+  if(attention.length>8){
+    const more=document.createElement("div");more.className="dash-empty";more.textContent="+"+(attention.length-8)+" more items. Open Advanced Admin for the full list.";list.appendChild(more);
+  }
+}
+async function loadAdminDashboard(){
+  if(!authToken||currentUserRole!=="admin")return;
+  const st=document.getElementById("dash-status");if(st)st.textContent="Refreshing…";
+  try{
+    const rate=getAdminHourlyRate();
+    const [shiftData,scheduleData]=await Promise.all([
+      rawApi("/shifts?hourly_rate="+encodeURIComponent(rate),{method:"GET",silent:true}),
+      rawApi("/schedules",{method:"GET",silent:true})
+    ]);
+    const shifts=Array.isArray(shiftData&&shiftData.items)?shiftData.items:[];
+    const schedules=Array.isArray(scheduleData)?scheduleData:[];
+    allShiftsCache=shifts;
+    adminScheduleConfirmationsCache=schedules;
+    renderAdminDashboard(shifts,schedules);
+    if(st)st.textContent="Updated just now.";
+  }catch(e){
+    if(st)st.textContent="Could not refresh dashboard.";
+    const list=document.getElementById("dash-attention-list");if(list)list.innerHTML='<div class="dash-empty">Dashboard data could not be loaded.</div>';
+  }
+}
+
 function getAdminHourlyRate(){
   return Number(document.getElementById("admin-rate").value)||20;
 }
@@ -562,7 +735,7 @@ function renderAdminShifts(data){
   tbody.innerHTML="";adminFilteredShifts=[];
   const payload=data||{};
   const rows=Array.isArray(payload.items)?payload.items:(Array.isArray(allShiftsCache)?allShiftsCache:[]);
-  if(!rows.length){tbody.innerHTML="<tr><td colspan='9'>No matches.</td></tr>";totalEl.textContent="";return;}
+  if(!rows.length){tbody.innerHTML="<tr><td colspan='11'>No matches.</td></tr>";totalEl.textContent="";return;}
   rows.sort((a,b)=>{
     const ga=String(getGuardLabel(a)||"").toLowerCase(),gb=String(getGuardLabel(b)||"").toLowerCase();
     if(ga!==gb)return ga.localeCompare(gb);
@@ -576,13 +749,28 @@ function renderAdminShifts(data){
     totalHours+=hours;totalPayroll+=pay;
     if(s.paid)paidPayroll+=pay;else unpaidPayroll+=pay;
     const tr=document.createElement("tr");
+    const status=shiftStatus(s);
     tr.innerHTML=
       `<td>${getGuardLabel(s)}</td><td>${s.date||""}</td><td>${s.venue||""}</td><td>${s.start_time||""}</td><td>${s.end_time||""}</td><td>${hours}</td><td>$${pay.toFixed(2)}</td>`+
-      `<td style="text-align:center;">${s.id?`<input type="checkbox" ${s.paid?"checked":""} onchange="adminSetPaid('${s.id}',this.checked)">`:""}</td>`+
+      `<td style="text-align:center;">${s.id?`<input type="checkbox" ${s.approved?"checked":""} onchange="adminSetApproved('${s.id}',this.checked)">`:""}</td>`+
+      `<td style="text-align:center;">${s.id?`<input type="checkbox" ${s.paid?"checked":""} ${!s.approved&&!s.paid?"disabled title='Approve first'":""} onchange="adminSetPaid('${s.id}',this.checked)">`:""}</td>`+
+      `<td><span class="status-pill ${statusClass(status)}">${status}</span></td>`+
       `<td style="text-align:center;">${s.id?`<button type="button" class="icon-btn" onclick="deleteShiftAnyRole('${s.id}')">🗑</button>`:""}</td>`;
     tbody.appendChild(tr);
   });
   totalEl.textContent=`Total shifts: ${rows.length} | Total hours: ${totalHours.toFixed(2)} | Total payout: $${totalPayroll.toFixed(2)} | Paid: $${paidPayroll.toFixed(2)} | Unpaid: $${unpaidPayroll.toFixed(2)}`;
+}
+
+function clearAdminDateFilters(){
+  const from=document.getElementById("admin-from-date-filter");
+  const to=document.getElementById("admin-to-date-filter");
+  if(from)from.value="";
+  if(to)to.value="";
+  const total=document.getElementById("admin-total");
+  if(total)total.textContent="Date filters cleared. Click Load shifts to show all dates.";
+  if(authToken&&typeof refreshAdminGuardOptionsForCurrentRange==="function"){
+    refreshAdminGuardOptionsForCurrentRange().catch(()=>{});
+  }
 }
 
 async function loadAllShifts(){
@@ -1115,6 +1303,11 @@ function wireAdminFilters(){
 }
 initShiftTimeDropdowns();initAvailabilityTimeDropdowns();initBulkAvailabilitySelectors();initScheduleTimeDropdowns();
 wireAuthButtons();wireAdminFilters();ensureFixedAdminVenueOptions();toggleOtherVenueInput();prewarmApi();restoreSession();initPasswordResetLink();
-setInterval(function(){const a=document.getElementById("section-admin");if(authToken&&currentUserRole==="admin"&&a&&!a.classList.contains("hidden"))loadAdminScheduleConfirmations();},30000);
+setInterval(function(){
+  if(!authToken||currentUserRole!=="admin")return;
+  const a=document.getElementById("section-admin"),d=document.getElementById("section-admin-dashboard");
+  if(a&&!a.classList.contains("hidden"))loadAdminScheduleConfirmations();
+  if(d&&!d.classList.contains("hidden"))loadAdminDashboard();
+},30000);
 </script>
 </body></html>

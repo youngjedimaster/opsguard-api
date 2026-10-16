@@ -3,6 +3,7 @@ from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     APP_NAME: str = "OpsGuard API"
+    APP_ENV: str = "production"
     MONGODB_URI: str = "mongodb://localhost:27017"
     MONGODB_DB: str = "opsguard"
     JWT_SECRET: str = "CHANGE_THIS_TO_SOMETHING_SECRET"

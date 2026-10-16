@@ -15,6 +15,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import BaseModel, EmailStr
 
 from database import get_db
+from config import settings
 from models import UserCreate, UserOut, Token
 from auth import hash_password, verify_password, create_access_token
 from deps import get_current_user, get_admin_user
@@ -41,7 +42,8 @@ class ResetPasswordIn(BaseModel):
 
 
 RESET_TTL_MINUTES = int(os.getenv("PASSWORD_RESET_TTL_MINUTES", "30"))
-RESET_BASE_URL = os.getenv("PASSWORD_RESET_BASE_URL", "https://opsguard-api.onrender.com/portal")
+_default_reset_base = (os.getenv("RENDER_EXTERNAL_URL") or "https://opsguard-api.onrender.com").rstrip("/") + "/portal"
+RESET_BASE_URL = os.getenv("PASSWORD_RESET_BASE_URL", _default_reset_base)
 
 
 def _smtp_configured() -> bool:
@@ -132,6 +134,20 @@ async def login(form: OAuth2PasswordRequestForm = Depends(), db=Depends(get_db))
     user = await db.users.find_one({"email": form.username.lower().strip()})
     if not user or not verify_password(form.password, user["password_hash"]):
         raise HTTPException(status_code=400, detail="Invalid credentials")
+
+    # Staging-only bootstrap: if no admin exists yet, promote only the
+    # earliest-created staging account after that account successfully logs in.
+    # This never runs in production.
+    if str(getattr(settings, "APP_ENV", "production")).lower() == "staging":
+        existing_admin = await db.users.find_one({"role": "admin"})
+        if not existing_admin:
+            first_user = await db.users.find_one({}, sort=[("created_at", 1), ("_id", 1)])
+            if first_user and first_user.get("_id") == user.get("_id"):
+                await db.users.update_one(
+                    {"_id": user["_id"]},
+                    {"$set": {"role": "admin", "updated_at": datetime.utcnow()}},
+                )
+                user["role"] = "admin"
 
     token = create_access_token({"sub": str(user["_id"])})
     return {

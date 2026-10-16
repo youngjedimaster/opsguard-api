@@ -24,8 +24,13 @@ FIXED_VENUES = ["Baby G", "Garrison", "Get Well", "Jean Darlene", "St Anne's", "
 FIXED_VENUE_ALIASES = FIXED_VENUES + ["St Annes", "St. Anne's", "St. Annes"]
 
 
+class ApprovalUpdate(BaseModel):
+    approved: bool
+
+
 class PaidUpdate(BaseModel):
     paid: bool
+    payment_reference: Optional[str] = None
 
 
 def _clean_text(value: Any) -> str:
@@ -146,7 +151,12 @@ def serialize_shift(
         "hourly_rate": _money(hourly_rate),
         "pay": recalculated_pay,
         "notes": doc.get("notes"),
+        "approved": bool(doc.get("approved", False)),
+        "approved_at": doc.get("approved_at").isoformat() if isinstance(doc.get("approved_at"), datetime) else doc.get("approved_at"),
         "paid": bool(doc.get("paid", False)),
+        "paid_at": doc.get("paid_at").isoformat() if isinstance(doc.get("paid_at"), datetime) else doc.get("paid_at"),
+        "payment_reference": doc.get("payment_reference"),
+        "status": "Paid" if bool(doc.get("paid", False)) else ("Approved" if bool(doc.get("approved", False)) else "Submitted"),
         "created_at": created_at.isoformat() if isinstance(created_at, datetime) else created_at,
         "updated_at": updated_at.isoformat() if isinstance(updated_at, datetime) else updated_at,
     }
@@ -305,7 +315,12 @@ async def create_shift(
         "end_time": shift.end_time,
         "total_hours": recalculated_hours,
         "notes": shift.notes,
+        "approved": False,
+        "approved_at": None,
+        "approved_by_admin_id": None,
         "paid": False,
+        "paid_at": None,
+        "payment_reference": None,
         "created_at": datetime.utcnow(),
     }
 
@@ -370,7 +385,7 @@ def _build_csv_bytes(items: list[dict], hourly_rate: float) -> bytes:
 
     writer.writerow([
         "Guard","Date","Venue","Start","End","StoredHours","RecalculatedHours",
-        "HourlyRate","Payout","Paid","Notes",
+        "HourlyRate","Payout","Approved","Paid","PaidAt","PaymentReference","Notes",
     ])
     for item in items:
         writer.writerow([
@@ -383,7 +398,10 @@ def _build_csv_bytes(items: list[dict], hourly_rate: float) -> bytes:
             item.get("recalculated_hours") or 0,
             item.get("hourly_rate") or hourly_rate,
             item.get("pay") or 0,
+            "Yes" if item.get("approved") else "No",
             "Yes" if item.get("paid") else "No",
+            item.get("paid_at") or "",
+            item.get("payment_reference") or "",
             item.get("notes") or "",
         ])
 
@@ -508,6 +526,42 @@ async def download_csv_export_token(
     return _csv_response(_build_csv_bytes(items, hourly_rate))
 
 
+@router.post("/{shift_id}/approved")
+async def set_shift_approved(
+    shift_id: str,
+    payload: ApprovalUpdate,
+    admin=Depends(get_admin_user),
+    db=Depends(get_db),
+):
+    if not ObjectId.is_valid(shift_id):
+        raise HTTPException(status_code=400, detail="Invalid shift id")
+
+    now = datetime.utcnow()
+    update_fields = {
+        "approved": bool(payload.approved),
+        "approved_at": now if payload.approved else None,
+        "approved_by_admin_id": str(admin["_id"]) if payload.approved else None,
+        "updated_at": now,
+    }
+    if not payload.approved:
+        update_fields.update({
+            "paid": False,
+            "paid_at": None,
+            "payment_reference": None,
+        })
+
+    res = await db.shifts.update_one(
+        {"_id": ObjectId(shift_id)},
+        {"$set": update_fields},
+    )
+    if res.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Shift not found")
+
+    user_lookup = await _load_users_lookup(db)
+    doc = await db.shifts.find_one({"_id": ObjectId(shift_id)})
+    return serialize_shift(doc, user_lookup)
+
+
 @router.post("/{shift_id}/paid")
 async def set_shift_paid(
     shift_id: str,
@@ -518,12 +572,24 @@ async def set_shift_paid(
     if not ObjectId.is_valid(shift_id):
         raise HTTPException(status_code=400, detail="Invalid shift id")
 
-    res = await db.shifts.update_one(
-        {"_id": ObjectId(shift_id)},
-        {"$set": {"paid": bool(payload.paid), "updated_at": datetime.utcnow()}},
-    )
-    if res.matched_count == 0:
+    doc = await db.shifts.find_one({"_id": ObjectId(shift_id)})
+    if not doc:
         raise HTTPException(status_code=404, detail="Shift not found")
+    if payload.paid and not bool(doc.get("approved", False)):
+        raise HTTPException(status_code=409, detail="Approve this hours record before marking it paid")
+
+    now = datetime.utcnow()
+    reference = _clean_text(payload.payment_reference)[:160] or None
+    update_fields = {
+        "paid": bool(payload.paid),
+        "paid_at": now if payload.paid else None,
+        "payment_reference": reference if payload.paid else None,
+        "updated_at": now,
+    }
+    await db.shifts.update_one(
+        {"_id": ObjectId(shift_id)},
+        {"$set": update_fields},
+    )
 
     user_lookup = await _load_users_lookup(db)
     doc = await db.shifts.find_one({"_id": ObjectId(shift_id)})
@@ -546,6 +612,8 @@ async def delete_shift(
     is_admin = bool(user.get("is_admin")) or bool(user.get("admin")) or (user.get("role") == "admin")
     if not is_admin and str(doc.get("user_id")) != str(user.get("_id")):
         raise HTTPException(status_code=403, detail="Not allowed")
+    if not is_admin and (bool(doc.get("approved", False)) or bool(doc.get("paid", False))):
+        raise HTTPException(status_code=409, detail="Approved or paid hours are locked. Contact an admin to correct them.")
 
     result = await db.shifts.delete_one({"_id": ObjectId(shift_id)})
     if result.deleted_count != 1:
