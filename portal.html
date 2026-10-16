@@ -112,7 +112,7 @@
 <div class="table-scroll" id="calendar-preview-wrap" style="height:180px;display:none;margin-top:7px">
 <table id="calendar-preview-table"><thead><tr><th>Select</th><th>Date</th><th>Venue</th><th>Shift</th><th>Guard</th><th>Start</th><th>Calendar slot</th><th>OpsGuard</th></tr></thead><tbody></tbody></table>
 </div>
-<p class="small">Safety rule: only S1/S2/S3 events are read. Import Selected creates OpsGuard review drafts only; it never treats the short Calendar slot as the real shift end time. Export changes the existing calendar event title only and never changes its start/end time. Missing or ambiguous slots are skipped instead of creating duplicates.</p>
+<p class="small">Safety rule: only S1/S2/S3 events are read. Import Selected creates OpsGuard review drafts only. Sync Confirmed to Google only updates existing matching events and never changes their times. Create Calendar Event is separate: for a confirmed manual shift it uses the OpsGuard start/end time, checks for an existing matching slot first, and will not create a duplicate when a conflicting slot is found.</p>
 <div style="border-top:1px solid #e5e7eb;margin-top:9px;padding-top:8px">
 <div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><strong style="font-size:.82rem">Calendar Import Drafts</strong><span class="status-pill status-approved" id="calendar-draft-count">0</span></div>
 <div class="dash-btn-row"><button class="primary secondary" onclick="loadCalendarImportDrafts()" type="button">Refresh Drafts</button></div>
@@ -147,9 +147,9 @@
 </div>
 <div class="card" style="padding:8px;margin:4px 0 8px;background:#f9fafb">
 <h3 style="margin:0 0 4px;font-size:.86rem">Schedule confirmations</h3>
-<p class="small" style="margin:0 0 6px">Confirmed shifts are locked for guards. Admin can delete a confirmed shift or clear its calendar export status.</p>
+<p class="small" style="margin:0 0 6px">Confirmed shifts are locked for guards. If a confirmed manual shift has no Google event yet, use Create Calendar Event. This is separate from syncing or exporting existing Calendar slots.</p>
 <div class="row"><button class="primary" onclick="loadAdminScheduleConfirmations()" style="background:#0B1F3B" type="button">Refresh confirmations</button><button class="primary" onclick="exportAllConfirmedCalendar()" style="background:#166534" type="button">Export All Confirmed (.ics)</button></div>
-<p class="small" style="margin:4px 0">Open one confirmed shift in Google Calendar, or download all confirmed/unexported shifts as one calendar file. Exported shifts are remembered so Export All will not duplicate them.</p>
+<p class="small" style="margin:4px 0">Create Calendar Event directly creates a missing event after a guard confirms. Open Calendar Template and Export All Confirmed (.ics) remain separate manual export options.</p>
 <p class="small" id="admin-schedule-confirmation-summary"></p>
 <p id="admin-confirmation-alert" role="status" style="display:none;font-weight:700;padding:10px;margin:6px 0;background:#dcfce7;color:#14532d;border-radius:8px"></p>
 <div class="table-scroll"><table id="admin-schedule-confirmations"><thead><tr><th>Guard</th><th>Venue</th><th>Shift</th><th>Date</th><th>Time</th><th>Status</th><th>Confirmed</th><th>Calendar</th><th>Admin</th></tr></thead><tbody><tr><td colspan="9">No confirmation data loaded.</td></tr></tbody></table></div>
@@ -1322,6 +1322,34 @@ function googleCalendarUrl(guard,sh){
 async function markCalendarExported(scheduleId,shiftIndex,method){
   return rawApi("/schedules/"+encodeURIComponent(scheduleId)+"/shifts/"+shiftIndex+"/calendar-exported",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({method:method||"google",exported_at:new Date().toISOString()}) ,silent:true});
 }
+async function createCalendarEventForShift(scheduleId,shiftIndex){
+  const sch=adminScheduleConfirmationsCache.find(x=>String(x.id)===String(scheduleId));
+  if(!sch)return alert("Schedule not found. Refresh confirmations.");
+  const sh=(sch.shifts||[])[shiftIndex];
+  if(!sh)return alert("Shift not found.");
+  if(!(sch.status==="confirmed"||sh.status==="confirmed"))return alert("Only confirmed shifts can create Calendar events.");
+  const label=(sh.venue||"Venue")+" "+(sh.shift_code||"")+" on "+(sh.date||"")+" "+(sh.start_time||"")+" - "+(sh.end_time||"");
+  if(!(await confirmAction("Create a Google Calendar event for "+label+"? OpsGuard will check for an existing matching event first. If one already exists, it will link/update that event instead of creating a duplicate.","Create event")))return;
+  const summary=document.getElementById("admin-schedule-confirmation-summary");
+  if(summary)summary.textContent="Checking Google Calendar before creating the event…";
+  try{
+    const data=await rawApi("/calendar-sync/create/"+encodeURIComponent(scheduleId)+"/shifts/"+shiftIndex,{method:"POST",silent:true});
+    if(data.action==="created"){
+      if(summary)summary.textContent="Calendar event created and linked to this OpsGuard shift.";
+    }else if(data.action==="linked_existing"){
+      if(summary)summary.textContent="A matching Calendar event already existed. OpsGuard linked it instead of creating a duplicate.";
+    }else{
+      if(summary)summary.textContent="This shift is already linked to a Calendar event.";
+    }
+    await loadAdminScheduleConfirmations();
+    await loadAdminDashboard();
+  }catch(e){
+    const message=e&&e.message?e.message:String(e);
+    if(summary)summary.textContent="Calendar event was not created: "+message;
+    alert("Calendar event was not created: "+message);
+  }
+}
+
 async function exportConfirmedShiftToGoogle(scheduleId,shiftIndex){
   const sch=adminScheduleConfirmationsCache.find(x=>String(x.id)===String(scheduleId));if(!sch)return alert("Schedule not found. Refresh confirmations.");
   const sh=(sch.shifts||[])[shiftIndex];if(!sh)return alert("Shift not found.");
@@ -1387,10 +1415,19 @@ async function loadAdminScheduleConfirmations(){
         const tr=document.createElement("tr");
         if(isConfirmed)tr.style.background="#ecfdf5";
         let calStatus="—";
-        if(isConfirmed&&!sh.calendar_exported_at)calStatus="<button type='button' class='primary calendar-open' style='white-space:nowrap'>Open in Google Calendar</button>";
-        if(isConfirmed&&sh.calendar_exported_at)calStatus="<span style='font-weight:700;color:#166534'>EXPORTED ✓</span><div class='small'>"+formatScheduleTimestamp(sh.calendar_exported_at)+"</div><button type='button' class='primary secondary calendar-clear' style='margin-top:4px;white-space:nowrap'>Clear Export</button>";
+        if(isConfirmed){
+          const calParts=[];
+          if(!sh.google_event_id)calParts.push("<button type='button' class='primary calendar-create' style='background:#166534;white-space:nowrap'>Create Calendar Event</button>");
+          if(!sh.calendar_exported_at)calParts.push("<button type='button' class='primary secondary calendar-open' style='margin-top:4px;white-space:nowrap'>Open Calendar Template</button>");
+          if(sh.calendar_exported_at){
+            const label=sh.google_event_id?"ON CALENDAR ✓":"EXPORTED ✓";
+            calParts.push("<span style='font-weight:700;color:#166534'>"+label+"</span><div class='small'>"+formatScheduleTimestamp(sh.calendar_exported_at)+"</div><button type='button' class='primary secondary calendar-clear' style='margin-top:4px;white-space:nowrap'>Clear Export</button>");
+          }
+          calStatus=calParts.join("<div style='height:4px'></div>")||"—";
+        }
         const adminAction="<button type='button' class='primary admin-delete-shift' style='background:#991b1b;white-space:nowrap'>Delete Shift</button>";
         tr.innerHTML="<td>"+(sch.guard||"")+"</td><td>"+(sh.venue||"—")+"</td><td>"+(sh.shift_code||"—")+"</td><td>"+(sh.date||"")+"</td><td>"+(sh.start_time||"")+" – "+(sh.end_time||"")+"</td><td style='font-weight:700'>"+(isConfirmed?"CONFIRMED ✓ — LOCKED FOR GUARD":"Awaiting guard")+"</td><td>"+(isConfirmed?formatScheduleTimestamp(sh.confirmed_at||sch.confirmed_at):"")+"</td><td>"+calStatus+"</td><td>"+adminAction+"</td>";
+        const createBtn=tr.querySelector(".calendar-create");if(createBtn)createBtn.addEventListener("click",()=>createCalendarEventForShift(sch.id,index));
         const openBtn=tr.querySelector(".calendar-open");if(openBtn)openBtn.addEventListener("click",()=>exportConfirmedShiftToGoogle(sch.id,index));
         const clearBtn=tr.querySelector(".calendar-clear");if(clearBtn)clearBtn.addEventListener("click",()=>clearCalendarExportStatus(sch.id,index));
         const deleteBtn=tr.querySelector(".admin-delete-shift");if(deleteBtn)deleteBtn.addEventListener("click",()=>adminDeleteScheduledShift(sch.id,index,sch.guard,sh));

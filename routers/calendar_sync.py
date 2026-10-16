@@ -522,24 +522,74 @@ async def _get_calendar_event(calendar_id: str, event_id: str) -> dict:
     raise RuntimeError("Calendar event could not be read")
 
 
+def _next_page_token(obj: Any) -> str:
+    seen: set[int] = set()
+
+    def walk(value: Any) -> str:
+        ident = id(value)
+        if ident in seen:
+            return ""
+        seen.add(ident)
+        if isinstance(value, dict):
+            token = value.get("nextPageToken")
+            if token:
+                return str(token)
+            for key in ("data", "response_data", "event_data", "result", "response"):
+                if key in value:
+                    found = walk(value[key])
+                    if found:
+                        return found
+            for child in value.values():
+                found = walk(child)
+                if found:
+                    return found
+        elif isinstance(value, list):
+            for child in value:
+                found = walk(child)
+                if found:
+                    return found
+        return ""
+
+    return walk(obj)
+
+
 async def _list_calendar_events(calendar_id: str, from_date: date, to_date: date) -> list[dict]:
+    """Read all events in the local-date window without letting large calendars overflow MCP responses."""
     tz = ZoneInfo(str(getattr(settings, "CALENDAR_TIMEZONE", "America/Toronto") or "America/Toronto"))
     start = datetime.combine(from_date, time.min, tzinfo=tz)
     end = datetime.combine(to_date + timedelta(days=1), time.min, tzinfo=tz)
-    payload = await _execute(
-        "GOOGLECALENDAR_EVENTS_LIST",
-        {
+    fields = "items(id,status,summary,start,end,location),nextPageToken"
+    events: list[dict] = []
+    page_token = ""
+    seen_tokens: set[str] = set()
+
+    for _ in range(40):
+        args = {
             "calendarId": calendar_id,
             "timeMin": start.isoformat(),
             "timeMax": end.isoformat(),
             "timeZone": str(tz.key),
             "singleEvents": True,
             "orderBy": "startTime",
-            "maxResults": 2500,
+            "maxResults": 250,
             "showDeleted": False,
-        },
-    )
-    return _event_items(payload)
+            "fields": fields,
+        }
+        if page_token:
+            args["pageToken"] = page_token
+        payload = await _execute("GOOGLECALENDAR_EVENTS_LIST", args)
+        events.extend(_event_items(payload))
+        next_token = _next_page_token(payload)
+        if not next_token:
+            break
+        if next_token in seen_tokens:
+            raise RuntimeError("Calendar pagination returned a repeated page token")
+        seen_tokens.add(next_token)
+        page_token = next_token
+    else:
+        raise RuntimeError("Calendar pagination exceeded the safety limit")
+
+    return events
 
 
 async def _existing_google_ids(db) -> set[tuple[str, str]]:
@@ -579,7 +629,8 @@ async def calendar_sync_status(admin=Depends(get_admin_user), db=Depends(get_db)
         "timezone": str(getattr(settings, "CALENDAR_TIMEZONE", "America/Toronto") or "America/Toronto"),
         "calendars": calendars,
         "import_rule": "Read S1/S2/S3 only. Garrison and Baby G are fixed calendars; Titan Security is classified into known OpsGuard venues from title/location and unrelated events are ignored.",
-        "export_rule": "Patch the title of an existing matching calendar event only; never alter calendar times or auto-create a missing event.",
+        "export_rule": "Sync Confirmed to Google patches the title of an existing matching event only and never changes its times.",
+        "creation_rule": "Create Calendar Event is a separate confirmed-shift action. It checks for an existing same venue/code/date/time event first, links that event instead of duplicating it, and only creates a new event when no conflicting slot exists.",
     }
 
 
@@ -746,6 +797,270 @@ async def import_calendar_drafts(
     return {"imported": imported, "skipped": skipped}
 
 
+def _creation_title(venue: str, shift_code: str, guard: str) -> str:
+    if venue == "St Anne's":
+        return f"{shift_code}:St Anne's - {guard}"
+    if venue == "Get Well":
+        return f"{shift_code}:Getwell - {guard}"
+    if venue == "Standard Time":
+        return f"{shift_code}:ST - {guard}"
+    if venue == "Jean Darlene":
+        return f"{shift_code}:JD - {guard}"
+    if venue == "Two Kats":
+        return f"{shift_code}:Two Kats - {guard}"
+    return f"{shift_code}:{guard}"
+
+
+def _parse_schedule_clock(value: Any) -> time:
+    text = str(value or "").strip().upper()
+    for fmt in ("%I:%M %p", "%I %p"):
+        try:
+            return datetime.strptime(text, fmt).time()
+        except ValueError:
+            pass
+    raise HTTPException(status_code=409, detail=f"Invalid shift time: {text or 'missing'}")
+
+
+def _schedule_shift_datetimes(shift: dict) -> tuple[datetime, datetime]:
+    date_text = str(shift.get("date") or "").strip()
+    if not date_text:
+        raise HTTPException(status_code=409, detail="Shift date is missing")
+    try:
+        day = date.fromisoformat(date_text)
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail="Shift date is invalid") from exc
+
+    start_clock = _parse_schedule_clock(shift.get("start_time"))
+    end_clock = _parse_schedule_clock(shift.get("end_time"))
+    tz = ZoneInfo(str(getattr(settings, "CALENDAR_TIMEZONE", "America/Toronto") or "America/Toronto"))
+    start_dt = datetime.combine(day, start_clock, tzinfo=tz)
+    end_dt = datetime.combine(day, end_clock, tzinfo=tz)
+    if end_dt <= start_dt:
+        end_dt += timedelta(days=1)
+    if end_dt - start_dt > timedelta(hours=24):
+        raise HTTPException(status_code=409, detail="Shift duration is longer than 24 hours")
+    return start_dt, end_dt
+
+
+def _created_event_record(obj: Any) -> dict:
+    seen: set[int] = set()
+
+    def walk(value: Any) -> dict:
+        ident = id(value)
+        if ident in seen:
+            return {}
+        seen.add(ident)
+        if isinstance(value, dict):
+            if value.get("id") or value.get("event_id"):
+                if any(k in value for k in ("summary", "start", "end", "htmlLink", "iCalUID")):
+                    return value
+            for key in ("data", "response_data", "event_data", "result", "response"):
+                if key in value:
+                    found = walk(value[key])
+                    if found:
+                        return found
+            for child in value.values():
+                found = walk(child)
+                if found:
+                    return found
+        elif isinstance(value, list):
+            for child in value:
+                found = walk(child)
+                if found:
+                    return found
+        return {}
+
+    return walk(obj)
+
+
+async def _save_calendar_link(
+    db,
+    schedule_doc: dict,
+    shift_index: int,
+    *,
+    calendar_id: str,
+    event_id: str,
+    start_raw: str,
+    end_raw: str,
+    method: str,
+) -> None:
+    now = datetime.utcnow()
+    await db.schedules.update_one(
+        {"_id": schedule_doc["_id"]},
+        {"$set": {
+            f"shifts.{shift_index}.calendar_id": calendar_id,
+            f"shifts.{shift_index}.google_event_id": event_id,
+            f"shifts.{shift_index}.calendar_start_time": start_raw,
+            f"shifts.{shift_index}.calendar_end_time": end_raw,
+            f"shifts.{shift_index}.calendar_exported_at": now,
+            f"shifts.{shift_index}.calendar_export_method": method,
+            "updated_at": now,
+        }},
+    )
+
+
+async def _create_or_link_calendar_event(db, schedule_doc: dict, shift_index: int) -> dict:
+    shifts = schedule_doc.get("shifts") or []
+    if not 0 <= shift_index < len(shifts):
+        raise HTTPException(status_code=404, detail="Shift not found in schedule")
+    shift = shifts[shift_index]
+    confirmed = (schedule_doc.get("status") == "confirmed") or (shift.get("status") == "confirmed")
+    if not confirmed:
+        raise HTTPException(status_code=409, detail="Only confirmed shifts can create a Google Calendar event")
+
+    existing_event_id = str(shift.get("google_event_id") or "").strip()
+    if existing_event_id:
+        return {
+            "action": "already_linked",
+            "schedule_id": str(schedule_doc["_id"]),
+            "shift_index": shift_index,
+            "calendar_id": str(shift.get("calendar_id") or ""),
+            "google_event_id": existing_event_id,
+        }
+
+    guard = str(schedule_doc.get("guard") or shift.get("guard") or "").strip()
+    venue = str(shift.get("venue") or "").strip()
+    shift_code = str(shift.get("shift_code") or "").strip().upper()
+    if not guard:
+        raise HTTPException(status_code=409, detail="Guard name is missing")
+    if not venue:
+        raise HTTPException(status_code=409, detail="Venue is missing")
+    if shift_code not in {"S1", "S2", "S3"}:
+        raise HTTPException(status_code=409, detail="Create Calendar Event requires S1, S2 or S3")
+
+    calendar_id = _calendar_map().get(venue, "")
+    if not calendar_id:
+        raise HTTPException(status_code=409, detail=f"No Google Calendar is mapped for {venue}")
+
+    start_dt, end_dt = _schedule_shift_datetimes(shift)
+    day = start_dt.date()
+    events = await _list_calendar_events(calendar_id, day, day)
+    same_slot: list[dict] = []
+    exact_time: list[dict] = []
+    tz = start_dt.tzinfo
+
+    for event in events:
+        match = SHIFT_TITLE_RE.match(_event_summary(event))
+        if not match or match.group(1).upper() != shift_code:
+            continue
+        event_venue = _event_venue(event, calendar_id)
+        if event_venue != venue:
+            continue
+        same_slot.append(event)
+        start_raw, _ = _event_bounds(event)
+        event_start = _parse_dt(start_raw, tz)
+        if event_start and event_start.astimezone(tz).replace(second=0, microsecond=0) == start_dt.replace(second=0, microsecond=0):
+            exact_time.append(event)
+
+    if len(exact_time) > 1:
+        raise HTTPException(
+            status_code=409,
+            detail=f"More than one matching {shift_code} event already exists for {venue} at {shift.get('start_time')}; no event was created.",
+        )
+
+    title = _creation_title(venue, shift_code, guard)
+
+    if len(exact_time) == 1:
+        event = exact_time[0]
+        event_id = _event_id(event)
+        if not event_id:
+            raise HTTPException(status_code=409, detail="Existing matching Calendar event has no event id")
+        current_title = _event_summary(event)
+        if current_title != title:
+            await _execute(
+                "GOOGLECALENDAR_PATCH_EVENT",
+                {
+                    "calendar_id": calendar_id,
+                    "event_id": event_id,
+                    "summary": title,
+                    "send_updates": "none",
+                },
+            )
+        start_raw, end_raw = _event_bounds(event)
+        await _save_calendar_link(
+            db,
+            schedule_doc,
+            shift_index,
+            calendar_id=calendar_id,
+            event_id=event_id,
+            start_raw=start_raw or start_dt.isoformat(),
+            end_raw=end_raw or end_dt.isoformat(),
+            method="composio-link-existing-via-create",
+        )
+        return {
+            "action": "linked_existing",
+            "schedule_id": str(schedule_doc["_id"]),
+            "shift_index": shift_index,
+            "calendar_id": calendar_id,
+            "google_event_id": event_id,
+            "title": title,
+            "changed_title": current_title != title,
+            "times_changed": False,
+        }
+
+    if same_slot:
+        existing_times = []
+        for event in same_slot[:5]:
+            start_raw, _ = _event_bounds(event)
+            event_start = _parse_dt(start_raw, tz)
+            if event_start:
+                existing_times.append(_format_time(event_start.astimezone(tz)))
+        time_note = ", ".join(existing_times) if existing_times else "another time"
+        raise HTTPException(
+            status_code=409,
+            detail=f"A {shift_code} Calendar event already exists for {venue} on {shift.get('date')} at {time_note}. Review that event before creating another one.",
+        )
+
+    payload = await _execute(
+        "GOOGLECALENDAR_CREATE_EVENT",
+        {
+            "calendar_id": calendar_id,
+            "summary": title,
+            "location": venue,
+            "description": "Confirmed OpsGuard shift",
+            "start_datetime": start_dt.isoformat(),
+            "end_datetime": end_dt.isoformat(),
+            "timezone": str(getattr(start_dt.tzinfo, "key", "America/Toronto")),
+            "send_updates": "none",
+            "create_meeting_room": False,
+            "exclude_organizer": True,
+            "transparency": "opaque",
+            "extended_properties": {
+                "private": {
+                    "opsguard_schedule_id": str(schedule_doc["_id"]),
+                    "opsguard_shift_index": str(shift_index),
+                }
+            },
+        },
+    )
+    event = _created_event_record(payload)
+    event_id = _event_id(event)
+    if not event_id:
+        raise RuntimeError("Google Calendar event was created but no event id was returned")
+
+    start_raw, end_raw = _event_bounds(event)
+    await _save_calendar_link(
+        db,
+        schedule_doc,
+        shift_index,
+        calendar_id=calendar_id,
+        event_id=event_id,
+        start_raw=start_raw or start_dt.isoformat(),
+        end_raw=end_raw or end_dt.isoformat(),
+        method="composio-create-event",
+    )
+    return {
+        "action": "created",
+        "schedule_id": str(schedule_doc["_id"]),
+        "shift_index": shift_index,
+        "calendar_id": calendar_id,
+        "google_event_id": event_id,
+        "title": title,
+        "start": start_raw or start_dt.isoformat(),
+        "end": end_raw or end_dt.isoformat(),
+    }
+
+
 async def _find_existing_calendar_slot(shift: dict, guard: str) -> tuple[dict, str]:
     calendar_id = str(shift.get("calendar_id") or "").strip()
     if not calendar_id:
@@ -872,6 +1187,24 @@ async def _export_one(db, schedule_doc: dict, shift_index: int) -> dict:
         "changed_title": current_title != target_title,
         "times_changed": False,
     }
+
+
+@router.post("/create/{schedule_id}/shifts/{shift_index}")
+async def create_confirmed_shift_calendar_event(
+    schedule_id: str,
+    shift_index: int,
+    admin=Depends(get_admin_user),
+    db=Depends(get_db),
+):
+    """Separate action: create a missing Google event for one confirmed OpsGuard shift."""
+    if not _configured():
+        raise HTTPException(status_code=503, detail="Calendar connection is not configured in staging")
+    if not ObjectId.is_valid(schedule_id):
+        raise HTTPException(status_code=400, detail="Invalid schedule id")
+    doc = await db.schedules.find_one({"_id": ObjectId(schedule_id)})
+    if not doc:
+        raise HTTPException(status_code=404, detail="Schedule not found")
+    return await _create_or_link_calendar_event(db, doc, shift_index)
 
 
 @router.post("/export/{schedule_id}/shifts/{shift_index}")
