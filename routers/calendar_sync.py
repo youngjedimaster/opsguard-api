@@ -722,60 +722,59 @@ async def calendar_sync_status(admin=Depends(get_admin_user), db=Depends(get_db)
 
 
 async def _list_calendar_preview_events(calendar_id: str, from_date: date, to_date: date) -> list[dict]:
-    """Preview reader that avoids cross-day pagination loss in consumer MCP.
+    """Read preview events without collapsing simultaneous Titan shifts.
 
-    Each local date is read independently. Distinct Calendar events are merged
-    only by Google event ID, so two S1/S2/etc. shifts on the same date remain
-    separate rows.
+    The normal read is performed one local day at a time. For the shared Titan
+    Security calendar, additional venue/title searches recover events that can
+    be omitted from a broad list when several shifts share the same start time.
+    All results are merged only by Google event ID.
     """
     if to_date < from_date:
         return []
+
     total_days = (to_date - from_date).days + 1
     days = [from_date + timedelta(days=i) for i in range(total_days)]
     semaphore = asyncio.Semaphore(4)
 
     async def read_day(day: date) -> list[dict]:
         async with semaphore:
-            base = await _list_calendar_events(calendar_id, day, day)
-
-            titan = str(getattr(settings, "CALENDAR_TITAN_SECURITY_ID", "") or "").strip()
-            if calendar_id != titan:
-                return base
-
-            # Composio's broad Titan list can omit simultaneous events sharing the
-            # same venue/start time. If St Anne's appears at all on the day, run a
-            # venue-filtered query too; Google returns each S-numbered event with
-            # its own event ID (e.g. S1/S2/S3/S4/S5 at the same 9:30 PM start).
-            has_st_annes = any(
-                "st anne" in f"{_event_summary(event)} {_event_location(event)}".lower()
-                for event in base
-            )
-            if not has_st_annes:
-                return base
-
-            targeted = await _list_calendar_events(calendar_id, day, day, query="St Anne's")
-            merged: list[dict] = []
-            seen_ids: set[str] = set()
-            for event in base + targeted:
-                event_id = _event_id(event)
-                if event_id and event_id in seen_ids:
-                    continue
-                if event_id:
-                    seen_ids.add(event_id)
-                merged.append(event)
-            return merged
+            return await _list_calendar_events(calendar_id, day, day)
 
     batches = await asyncio.gather(*(read_day(day) for day in days))
+
+    all_events: list[dict] = []
+    for batch in batches:
+        all_events.extend(batch)
+
+    titan = str(getattr(settings, "CALENDAR_TITAN_SECURITY_ID", "") or "").strip()
+    if calendar_id == titan:
+        # Titan is one shared calendar for several venues. Query each known title
+        # marker across the requested range so simultaneous shifts such as
+        # St Anne's S1-S5 and Jean Darlene S1 are independently recovered.
+        search_terms = ["St Anne's", "JD", "Getwell", "Standard Time", "Two Kats"]
+
+        async def targeted(term: str) -> list[dict]:
+            async with semaphore:
+                return await _list_calendar_events(
+                    calendar_id,
+                    from_date,
+                    to_date,
+                    query=term,
+                )
+
+        targeted_batches = await asyncio.gather(*(targeted(term) for term in search_terms))
+        for batch in targeted_batches:
+            all_events.extend(batch)
+
     merged: list[dict] = []
     seen_ids: set[str] = set()
-    for batch in batches:
-        for event in batch:
-            event_id = _event_id(event)
-            if event_id and event_id in seen_ids:
-                continue
-            if event_id:
-                seen_ids.add(event_id)
-            merged.append(event)
+    for event in all_events:
+        event_id = _event_id(event)
+        if event_id and event_id in seen_ids:
+            continue
+        if event_id:
+            seen_ids.add(event_id)
+        merged.append(event)
     return merged
 
 
