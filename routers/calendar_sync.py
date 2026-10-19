@@ -307,6 +307,14 @@ def _extract_mcp_tool_text(payload: dict) -> dict:
         raise RuntimeError("Composio Connect did not return a tool result")
     if result.get("isError"):
         raise RuntimeError("Composio Connect tool execution failed")
+
+    # Prefer MCP structuredContent when provided. It is the canonical structured
+    # tool result and avoids relying on potentially partial/truncated text blocks.
+    structured = result.get("structuredContent")
+    if isinstance(structured, dict):
+        return structured
+
+    parsed_text: list[dict] = []
     for item in result.get("content") or []:
         if not isinstance(item, dict) or item.get("type") != "text":
             continue
@@ -318,11 +326,13 @@ def _extract_mcp_tool_text(payload: dict) -> dict:
         except json.JSONDecodeError:
             continue
         if isinstance(parsed, dict):
-            return parsed
-    # Some MCP servers may return structuredContent directly.
-    structured = result.get("structuredContent")
-    if isinstance(structured, dict):
-        return structured
+            parsed_text.append(parsed)
+
+    if parsed_text:
+        # If the server emits multiple JSON text blocks, the final one is the
+        # most complete tool result.
+        return parsed_text[-1]
+
     raise RuntimeError("Composio Connect returned no structured tool data")
 
 
