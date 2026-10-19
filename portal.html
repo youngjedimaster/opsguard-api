@@ -277,7 +277,7 @@ function clearSession(){try{sessionStorage.removeItem("opsguard_session")}catch{
 async function restoreSession(){let saved=null;try{saved=JSON.parse(sessionStorage.getItem("opsguard_session")||"null")}catch{}if(!saved||!saved.token)return;authToken=saved.token;currentUserEmail=saved.email||null;currentUserName=saved.name||null;currentUserRole=saved.role||null;setLoggedInUI(currentUserEmail,currentUserName);showSection("submit");try{const me=await rawApi("/auth/me",{method:"GET",silent:true});if(me){currentUserEmail=me.email||currentUserEmail;currentUserName=me.name||currentUserName;currentUserRole=me.role||currentUserRole;setLoggedInUI(currentUserEmail,currentUserName);saveSession();loadMyShifts();}}catch{authToken=null;currentUserEmail=null;currentUserName=null;currentUserRole=null;clearSession();setLoggedInUI(null,null);showSection("login");}}
 
 async function rawApi(path,opts){
-  const o={...(opts||{})};o.headers={...(o.headers||{})};const silent=!!o.silent;delete o.silent;if(authToken)o.headers.Authorization="Bearer "+authToken;const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),30000);o.signal=controller.signal;o.cache=o.cache||"no-store";
+  const o={...(opts||{})};o.headers={...(o.headers||{})};const silent=!!o.silent;delete o.silent;const timeoutMs=Math.max(1000,Number(o.timeoutMs)||30000);delete o.timeoutMs;if(authToken)o.headers.Authorization="Bearer "+authToken;const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),timeoutMs);o.signal=controller.signal;o.cache=o.cache||"no-store";
   try{const res=await fetch(API_BASE+path,o);const text=await res.text();if(!res.ok){const err=new Error(text||("HTTP "+res.status));err.status=res.status;if(!silent)console.warn("OpsGuard request failed",path,res.status,text);throw err;}try{return text?JSON.parse(text):null}catch{return text}}finally{clearTimeout(timer)}
 }
 
@@ -915,9 +915,9 @@ async function loadCalendarImportDrafts(){
 async function previewGoogleCalendarShifts(){
   const st=document.getElementById("calendar-sync-status"),from=document.getElementById("calendar-preview-from")?.value||"",to=document.getElementById("calendar-preview-to")?.value||"";
   if(!from||!to){if(st)st.textContent="Choose both preview dates.";return;}
-  if(st)st.textContent="Reading S-numbered shifts from Google Calendar…";
+  if(st)st.textContent="Reading all S-numbered shifts from Google Calendar… This can take up to a minute.";
   try{
-    const data=await rawApi("/calendar-sync/preview",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({from_date:from,to_date:to}),silent:true});
+    const data=await rawApi("/calendar-sync/preview",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({from_date:from,to_date:to}),silent:true,timeoutMs:120000});
     renderCalendarPreview(data.items||[]);
     const sourceSummary=(data.sources||[]).map(s=>s.source+": "+(s.shifts_found||0)).join(" | ");
     if(st)st.textContent=(data.count||0)+" S-numbered calendar shifts found"+(sourceSummary?" — "+sourceSummary:"")+". Calendar slot end times are reference only; OpsGuard end time may be left TBD."+(data.errors&&data.errors.length?" Some calendars returned an error.":"");
