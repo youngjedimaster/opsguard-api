@@ -115,10 +115,10 @@
 <p class="small">Safety rule: only S1/S2/S3 events are read. Import Selected creates OpsGuard review drafts only. Sync Confirmed to Google only updates existing matching events and never changes their times. Create Calendar Event is separate: for a confirmed manual shift it uses the OpsGuard start/end time, checks for an existing matching slot first, and will not create a duplicate when a conflicting slot is found.</p>
 <div style="border-top:1px solid #e5e7eb;margin-top:9px;padding-top:8px">
 <div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><strong style="font-size:.82rem">Calendar Import Drafts</strong><span class="status-pill status-approved" id="calendar-draft-count">0</span></div>
-<div class="dash-btn-row"><button class="primary secondary" onclick="loadCalendarImportDrafts()" type="button">Refresh Drafts</button></div>
-<p class="small" style="margin:5px 0">For each imported shift, choose the registered guard and enter the real OpsGuard end time. Send to Guard creates the pending OpsGuard assignment only; it does not change Google Calendar.</p>
-<div class="table-scroll" id="calendar-drafts-wrap" style="height:230px;margin-top:6px">
-<table id="calendar-drafts-table"><thead><tr><th>Date</th><th>Venue</th><th>Shift</th><th>Calendar guard</th><th>Start</th><th>Assign to guard</th><th>Real end time</th><th>Review</th><th>Action</th></tr></thead><tbody><tr><td colspan="9">No drafts loaded.</td></tr></tbody></table>
+<div class="dash-btn-row"><button class="primary secondary" onclick="loadCalendarImportDrafts()" type="button">Refresh Drafts</button><button class="primary" onclick="sendSelectedCalendarDrafts()" type="button">Send Selected Drafts</button></div>
+<p class="small" style="margin:5px 0">Assign each imported shift to its guard and enter the real end time. Select several rows and send them together. This creates OpsGuard assignments only and does not change Google Calendar.</p>
+<div class="table-scroll" id="calendar-drafts-wrap" style="height:260px;margin-top:6px">
+<table id="calendar-drafts-table"><thead><tr><th>Select</th><th>Date</th><th>Venue</th><th>Shift</th><th>Calendar guard</th><th>Start</th><th>Assign to guard</th><th>Real end time</th><th>Review</th><th>Action</th></tr></thead><tbody><tr><td colspan="10">No drafts loaded.</td></tr></tbody></table>
 </div>
 </div>
 </div>
@@ -136,15 +136,16 @@
 <div class="third input-group" style="justify-content:flex-end"><label> </label><button class="primary secondary" onclick="clearAdminDateFilters()" style="padding:8px 12px;white-space:nowrap" type="button">Clear dates</button></div>
 </div>
 <div class="card" style="padding:8px;margin:4px 0 8px;background:#f9fafb">
-<h3 style="margin:0 0 4px;font-size:.86rem">Guard Schedule &amp; Account</h3>
-<p class="small" style="margin:0 0 6px">Choose from all registered guard accounts, then build and send shifts. This roster does not change with date or venue filters. Manual shifts do not need to exist in Google Calendar first.</p>
-<div class="row">
-<div class="half input-group"><label>Selected guard account (all registered guards)</label><select id="admin-user-manage"><option value="">Choose registered guard</option></select></div>
-<button class="primary" onclick="openCheckAvailabilityModal()" type="button">Build / Send Schedule</button></div>
-<div class="row">
-<button class="primary" onclick="adminDeleteSelectedGuard()" style="background:#991b1b" type="button">Delete selected guard</button>
+<h3 style="margin:0 0 4px;font-size:.86rem">Build &amp; Send Schedules</h3>
+<p class="small" style="margin:0 0 6px">Choose one or more registered guards, build the shifts once, then send to everyone selected. Date and venue filters do not change this roster.</p>
+<div class="input-group"><label>Schedule recipients</label>
+<div id="admin-schedule-guard-list" style="border:1px solid #d1d5db;border-radius:9px;padding:7px;max-height:180px;overflow-y:auto;background:#fff"><span class="small">Loading registered guards…</span></div>
 </div>
+<div class="row"><button class="primary" onclick="openCheckAvailabilityModal()" type="button">Build / Send Schedule</button><button class="primary secondary" onclick="clearScheduleGuardSelection()" type="button">Clear guard selection</button></div>
 <p class="small" id="admin-management-status"></p>
+<div style="border-top:1px solid #e5e7eb;margin-top:8px;padding-top:7px">
+<div class="row"><div class="half input-group"><label>Guard account management</label><select id="admin-user-manage"><option value="">Choose registered guard</option></select></div><button class="primary" onclick="adminDeleteSelectedGuard()" style="background:#991b1b" type="button">Delete selected guard</button></div>
+</div>
 </div>
 <div class="card" style="padding:8px;margin:4px 0 8px;background:#f9fafb">
 <h3 style="margin:0 0 4px;font-size:.86rem">Schedule confirmations</h3>
@@ -193,14 +194,14 @@
 <p class="small" id="reset-password-status"></p>
 </div>
 <div class="modal" id="schedule-modal">
-<h3>Build / Send Guard Schedule</h3><small>Build and send shifts directly to this guard. A Google Calendar event is not required; Calendar linking can happen separately.</small>
-<div class="input-group" style="margin-top:8px"><label>Guard</label><input disabled="" id="schedule-guard-display" type="text"/></div>
-<div class="input-group"><label>Note to guard (optional)</label><textarea id="schedule-note" rows="2"></textarea></div>
+<h3>Build / Send Schedule</h3><small>Select one or more guards, build the shifts once, then send. A Google Calendar event is not required.</small>
+<div class="input-group" style="margin-top:8px"><label>Send to guards</label><div id="schedule-modal-guard-list" style="border:1px solid #d1d5db;border-radius:9px;padding:7px;max-height:160px;overflow-y:auto;background:#fff"><span class="small">Loading registered guards…</span></div></div>
+<div class="input-group"><label>Note to guards (optional)</label><textarea id="schedule-note" rows="2"></textarea></div>
 <div class="input-group"><label>Availability summary</label>
 <div id="schedule-summary-preview" style="border:1px solid #d1d5db;border-radius:9px;padding:6px 8px;font-size:.75rem;max-height:120px;overflow-y:auto;background:#f9fafb"></div>
 <p class="small">Click a line above to add it to the proposed schedule.</p></div>
 <div class="card" style="margin-top:6px;padding:8px">
-<h3 style="margin:0 0 3px;font-size:.86rem">Add working days for this guard</h3>
+<h3 style="margin:0 0 3px;font-size:.86rem">Add working days</h3>
 <p class="small" style="margin:0 0 4px">Each added row becomes part of the schedule.</p>
 <div class="row"><div class="half input-group"><label>Date</label><input id="sched-date" type="date"/></div><div class="half input-group"><label>Venue</label><select id="sched-venue"><option value="">Choose venue</option><option>Baby G</option><option>Garrison</option><option>Get Well</option><option>Jean Darlene</option><option>St Anne's</option><option>Standard Time</option><option>Two Kats</option></select></div></div>
 <div class="row"><div class="half input-group"><label>Shift</label><select id="sched-shift-code"><option value="">Choose S1/S2/S3</option><option>S1</option><option>S2</option><option>S3</option></select></div></div>
@@ -211,7 +212,7 @@
 <div class="row" style="align-items:center;margin-top:4px">
 <button class="primary" onclick="addShiftToScheduleDraft()">Add to schedule</button>
 <button class="primary secondary" onclick="cancelScheduleBuild()" type="button">Cancel</button>
-<button class="primary" onclick="sendScheduleFromAdmin()" type="button">Send Schedule</button>
+<button class="primary" onclick="sendScheduleFromAdmin()" type="button">Send to Selected Guards</button>
 </div>
 <p class="small" id="schedule-add-status"></p>
 <div class="input-group" style="margin-top:4px"><label>Proposed schedule</label><textarea disabled="" id="schedule-proposed-list" rows="4"></textarea></div>
@@ -224,7 +225,7 @@ const API_BASE=window.location.origin+"/api";
 const OPSGUARD_ENV=(document.body.dataset.environment||"production").toLowerCase();
 const ENV_BADGE=document.getElementById("env-badge");
 if(ENV_BADGE&&OPSGUARD_ENV!=="production"){ENV_BADGE.style.display="inline-block";ENV_BADGE.textContent=OPSGUARD_ENV.toUpperCase();document.title="OpsGuard "+OPSGUARD_ENV.toUpperCase();}
-let authToken=null,currentUserEmail=null,currentUserName=null,currentUserRole=null,myShiftsCache=[],allShiftsCache=[],adminFilteredShifts=[],scheduleDraft=[],currentGuardAvailability=[],adminUserMap={},apiWarmPromise=null,adminConfirmationsInitialized=false,adminSeenConfirmedShifts=new Set(),adminScheduleConfirmationsCache=[];
+let authToken=null,currentUserEmail=null,currentUserName=null,currentUserRole=null,myShiftsCache=[],allShiftsCache=[],adminFilteredShifts=[],scheduleDraft=[],currentGuardAvailability=[],adminUserMap={},scheduleSelectedGuardIds=new Set(),calendarDraftRowsCache=[],apiWarmPromise=null,adminConfirmationsInitialized=false,adminSeenConfirmedShifts=new Set(),adminScheduleConfirmationsCache=[];
 const FIXED_VENUES=["Baby G","Garrison","Get Well","Jean Darlene","St Anne's","Standard Time","Two Kats"];
 const VENUE_CALENDAR_IDS={"Baby G":"s374q7mjj2hoc77f71oml6n5uc@group.calendar.google.com","Garrison":"garrisonstaff@gmail.com","Jean Darlene":"78f673188cd9e7f1c76014eee634b0b5578f9da7f0657796fcb45e05080f45c3@group.calendar.google.com","St Anne's":"78f673188cd9e7f1c76014eee634b0b5578f9da7f0657796fcb45e05080f45c3@group.calendar.google.com","Get Well":"78f673188cd9e7f1c76014eee634b0b5578f9da7f0657796fcb45e05080f45c3@group.calendar.google.com","Standard Time":"78f673188cd9e7f1c76014eee634b0b5578f9da7f0657796fcb45e05080f45c3@group.calendar.google.com","Two Kats":"78f673188cd9e7f1c76014eee634b0b5578f9da7f0657796fcb45e05080f45c3@group.calendar.google.com"};
 
@@ -632,32 +633,59 @@ function buildAdminShiftQuery(){
 function preserveSelectedOptions(){const guardSel=document.getElementById("admin-guard-filter"),venueSel=document.getElementById("admin-venue-filter");return {guard:guardSel?guardSel.value:"__all__",venue:venueSel?venueSel.value:"__all__"};}
 function setSelectOptions(selectEl,values,allValue,allLabel,keepValue){if(!selectEl)return;const current=keepValue||selectEl.value||allValue;selectEl.innerHTML="";const allOpt=document.createElement("option");allOpt.value=allValue;allOpt.textContent=allLabel;selectEl.appendChild(allOpt);[...new Set(values.filter(Boolean))].sort((a,b)=>String(a).localeCompare(String(b))).forEach(v=>{const o=document.createElement("option");o.value=v;o.textContent=v;selectEl.appendChild(o);});selectEl.value=[...selectEl.options].some(o=>o.value===current)?current:allValue;}
 function ensureFixedAdminVenueOptions(){const sel=document.getElementById("admin-venue-filter");if(!sel)return;const keep=sel.value||"__all__";sel.innerHTML='<option value="__all__">All venues</option>';FIXED_VENUES.forEach(v=>{const o=document.createElement("option");o.value=v;o.textContent=v;sel.appendChild(o)});const other=document.createElement("option");other.value="__other__";other.textContent="Other...";sel.appendChild(other);if([...sel.options].some(o=>o.value===keep))sel.value=keep;}
+function scheduleGuardLabel(u){
+  const name=String((u&&u.name)||"").trim(),email=String((u&&u.email)||"").trim();
+  return name?(email?name+" ("+email+")":name):(email||String((u&&u.id)||"Guard"));
+}
+function scheduleGuardListMarkup(){
+  const guards=Object.values(adminUserMap||{}).sort((a,b)=>scheduleGuardLabel(a).localeCompare(scheduleGuardLabel(b)));
+  if(!guards.length)return '<div class="small">No registered guard accounts exist in this environment.</div>';
+  const esc=s=>String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+  return guards.map(u=>{
+    const id=String(u.id||""),checked=scheduleSelectedGuardIds.has(id)?" checked":"";
+    return '<label style="display:flex;align-items:center;gap:7px;padding:6px 3px;border-bottom:1px solid #f3f4f6"><input class="schedule-guard-check" type="checkbox" value="'+esc(id)+'"'+checked+'><span>'+esc(scheduleGuardLabel(u))+'</span></label>';
+  }).join("");
+}
+function renderScheduleGuardPickers(){
+  ["admin-schedule-guard-list","schedule-modal-guard-list"].forEach(id=>{
+    const box=document.getElementById(id);if(!box)return;
+    box.innerHTML=scheduleGuardListMarkup();
+    box.querySelectorAll(".schedule-guard-check").forEach(cb=>cb.addEventListener("change",()=>{
+      if(cb.checked)scheduleSelectedGuardIds.add(cb.value);else scheduleSelectedGuardIds.delete(cb.value);
+      renderScheduleGuardPickers();
+    }));
+  });
+}
+function clearScheduleGuardSelection(){scheduleSelectedGuardIds.clear();renderScheduleGuardPickers();}
+function selectedScheduleGuards(){
+  return [...scheduleSelectedGuardIds].map(id=>{
+    const u=adminUserMap[id]||{};
+    return {id,name:u.name||u.label||u.email||id,email:u.email||""};
+  }).filter(g=>g.id);
+}
+function selectedScheduleGuard(){return selectedScheduleGuards()[0]||null;}
 async function loadAdminUsers(){
   if(!authToken||currentUserRole!=="admin")return;
-  const manage=document.getElementById("admin-user-manage");
-  const st=document.getElementById("admin-management-status");
+  const manage=document.getElementById("admin-user-manage"),st=document.getElementById("admin-management-status");
   const previous=manage?manage.value:"";
   try{
-    // Load the complete registered-user roster, then exclude explicit admins.
-    // Legacy guard accounts may not have a stored role field; the API serializes those as guards.
     const data=await rawApi("/auth/users",{method:"GET",silent:true});
-    const guards=(data.items||[])
-      .filter(u=>String(u.role||"guard").toLowerCase()!=="admin")
-      .sort((a,b)=>String(a.name||a.email||"").localeCompare(String(b.name||b.email||"")));
-    adminUserMap={};
-    if(!manage)return;
-    manage.innerHTML="<option value=''>Choose registered guard</option>";
-    guards.forEach(u=>{
-      adminUserMap[u.id]=u;
-      const o=document.createElement("option");
-      o.value=u.id;
-      o.textContent=(u.name||u.email)+(u.email?" ("+u.email+")":"");
-      manage.appendChild(o);
-    });
-    if(previous&&[...manage.options].some(o=>o.value===previous))manage.value=previous;
-    if(st)st.textContent=guards.length+" registered guard account"+(guards.length===1?"":"s")+" loaded. This list is independent of date and venue filters.";
+    const raw=Array.isArray(data)?data:(Array.isArray(data&&data.items)?data.items:[]);
+    const guards=raw.filter(u=>String(u.role||"guard").toLowerCase()!=="admin").sort((a,b)=>scheduleGuardLabel(a).localeCompare(scheduleGuardLabel(b)));
+    adminUserMap={};guards.forEach(u=>{if(u&&u.id)adminUserMap[String(u.id)]=u;});
+    scheduleSelectedGuardIds=new Set([...scheduleSelectedGuardIds].filter(id=>adminUserMap[id]));
+    if(manage){
+      manage.innerHTML="<option value=''>Choose registered guard</option>";
+      guards.forEach(u=>{const o=document.createElement("option");o.value=u.id;o.textContent=scheduleGuardLabel(u);manage.appendChild(o);});
+      if(previous&&[...manage.options].some(o=>o.value===previous))manage.value=previous;
+    }
+    renderScheduleGuardPickers();
+    if(st)st.textContent=guards.length
+      ?guards.length+" registered guard account"+(guards.length===1?"":"s")+" loaded."
+      :"0 registered guard accounts in this environment. Staging uses an isolated user database; production guard accounts are not copied here.";
   }catch(e){
-    if(st)st.textContent="Could not load all registered guard accounts.";
+    adminUserMap={};scheduleSelectedGuardIds.clear();renderScheduleGuardPickers();
+    if(st)st.textContent="Could not load registered guard accounts: "+(e&&e.message?e.message:String(e));
   }
 }
 
@@ -810,6 +838,34 @@ async function discardCalendarImportDraft(draftId,row){
     await loadCalendarSyncStatus();
   }catch(e){if(st)st.textContent="Could not discard Calendar draft: "+(e&&e.message?e.message:String(e));}
 }
+async function sendSelectedCalendarDrafts(){
+  const st=document.getElementById("calendar-sync-status"),tbody=document.querySelector("#calendar-drafts-table tbody");
+  if(!tbody)return;
+  const selected=[...tbody.querySelectorAll("tr")].filter(tr=>tr.querySelector(".calendar-draft-pick")?.checked);
+  if(!selected.length){if(st)st.textContent="Select one or more Calendar draft rows first.";return;}
+  const jobs=[];
+  for(const tr of selected){
+    const draftId=tr.dataset.draftId||"",row=calendarDraftRowsCache.find(r=>String(r.id)===String(draftId))||{};
+    const guardSel=tr.querySelector(".calendar-draft-guard"),endInput=tr.querySelector(".calendar-draft-end");
+    const guardId=guardSel?guardSel.value:"",endTime=calendarDraftTimeToDisplay(endInput?endInput.value:"");
+    if(!guardId){if(st)st.textContent="Choose a registered guard for every selected draft.";return;}
+    if(!endTime){if(st)st.textContent="Enter the real end time for every selected draft.";return;}
+    jobs.push({draftId,row,guardId,endTime});
+  }
+  if(!(await confirmAction("Send "+jobs.length+" selected Calendar draft"+(jobs.length===1?"":"s")+" to their assigned guards? Google Calendar will not be changed.","Send Selected Drafts")))return;
+  if(st)st.textContent="Sending "+jobs.length+" Calendar draft"+(jobs.length===1?"":"s")+"…";
+  const results=[];
+  for(const job of jobs){
+    try{
+      await rawApi("/calendar-sync/drafts/"+encodeURIComponent(job.draftId)+"/promote",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({guard_id:job.guardId,end_time:job.endTime,note:"Imported from Google Calendar"}),silent:true});
+      results.push({job,ok:true});
+    }catch(e){results.push({job,ok:false,error:e&&e.message?e.message:String(e)});}
+  }
+  const sent=results.filter(r=>r.ok),failed=results.filter(r=>!r.ok);
+  if(st)st.textContent=sent.length+" draft"+(sent.length===1?"":"s")+" sent to guards"+(failed.length?"; "+failed.length+" failed.":". Google Calendar was not changed.");
+  await loadCalendarImportDrafts();await loadAdminScheduleConfirmations();await loadAdminDashboard();
+  if(failed.length)alert("Some drafts could not be sent:\n"+failed.map(r=>(r.job.row.venue||"Draft")+" "+(r.job.row.shift_code||"")+": "+r.error).join("\n"));
+}
 async function loadCalendarImportDrafts(){
   const tbody=document.querySelector("#calendar-drafts-table tbody"),count=document.getElementById("calendar-draft-count");
   if(!tbody)return;
@@ -817,11 +873,13 @@ async function loadCalendarImportDrafts(){
     if(!Object.keys(adminUserMap||{}).length)await loadAdminUsers();
     const data=await rawApi("/calendar-sync/drafts",{method:"GET",silent:true});
     const rows=Array.isArray(data.items)?data.items:[];
+    calendarDraftRowsCache=rows;
     if(count)count.textContent=String(rows.length);
     tbody.innerHTML="";
-    if(!rows.length){tbody.innerHTML="<tr><td colspan='9'>No Calendar import drafts awaiting review.</td></tr>";return;}
+    if(!rows.length){tbody.innerHTML="<tr><td colspan='10'>No Calendar import drafts awaiting review.</td></tr>";return;}
     rows.forEach(row=>{
-      const tr=document.createElement("tr");
+      const tr=document.createElement("tr");tr.dataset.draftId=row.id||"";
+      const pickTd=document.createElement("td"),pick=document.createElement("input");pick.type="checkbox";pick.className="calendar-draft-pick";pick.value=row.id||"";pickTd.appendChild(pick);tr.appendChild(pickTd);
       [row.date||"",row.venue||"",row.shift_code||"",row.guard||"Unassigned",row.start_time||""].forEach((text,i)=>{
         const td=document.createElement("td");
         if(i===2){const strong=document.createElement("strong");strong.textContent=text;td.appendChild(strong);}else td.textContent=text;
@@ -852,7 +910,7 @@ async function loadCalendarImportDrafts(){
     });
   }catch(e){
     if(count)count.textContent="!";
-    tbody.innerHTML="<tr><td colspan='9'>Drafts could not be loaded.</td></tr>";
+    calendarDraftRowsCache=[];tbody.innerHTML="<tr><td colspan='10'>Drafts could not be loaded.</td></tr>";
   }
 }
 async function previewGoogleCalendarShifts(){
@@ -1295,28 +1353,34 @@ function renderScheduleDraft(){
 async function openCheckAvailabilityModal(){
   const adminSt=document.getElementById("schedule-admin-status");if(adminSt)adminSt.textContent="";
   if(!authToken)return alert("Login first.");
-  let g=selectedScheduleGuard();
-  if(!g){
-    await loadAdminFilterOptions();
-    g=selectedScheduleGuard();
-  }
-  if(!g){if(adminSt)adminSt.textContent="Choose a registered guard under Guard Schedule & Account first.";return;}
+  if(!Object.keys(adminUserMap||{}).length)await loadAdminUsers();
   scheduleDraft=[];currentGuardAvailability=[];
-  const display=document.getElementById("schedule-guard-display");if(display)display.value=g.name||g.email||"";
   const note=document.getElementById("schedule-note");if(note)note.value="";
-  const modalSt=document.getElementById("schedule-modal-status");if(modalSt)modalSt.textContent="Loading availability...";
+  const modalSt=document.getElementById("schedule-modal-status");if(modalSt)modalSt.textContent="";
   const addSt=document.getElementById("schedule-add-status");if(addSt)addSt.textContent="";
-  renderScheduleDraft();renderScheduleAvailability();
+  renderScheduleGuardPickers();renderScheduleDraft();renderScheduleAvailability();
   document.getElementById("modal-backdrop").style.display="block";
   document.getElementById("schedule-modal").style.display="block";
   document.getElementById("profile-modal").style.display="none";
   document.getElementById("forgot-modal").style.display="none";
+  const guards=selectedScheduleGuards();
+  if(!guards.length){
+    currentGuardAvailability=[];renderScheduleAvailability();
+    if(modalSt)modalSt.textContent=Object.keys(adminUserMap||{}).length?"Choose one or more guards above.":"No registered guard accounts exist in this staging environment.";
+    return;
+  }
+  if(guards.length>1){
+    currentGuardAvailability=[];renderScheduleAvailability();
+    if(modalSt)modalSt.textContent=guards.length+" guards selected. Build the schedule manually; availability is shown only when one guard is selected.";
+    return;
+  }
+  const g=guards[0];
   try{
     const guardQuery=g.email||g.name;
     const data=await rawApi("/availability/admin?guard="+encodeURIComponent(guardQuery)+"&month="+encodeURIComponent(scheduleMonth()),{method:"GET"});
     currentGuardAvailability=Array.isArray(data)?data:(data&&data.items)||[];
     renderScheduleAvailability();
-    if(modalSt)modalSt.textContent="Availability loaded for "+scheduleMonth()+". Click an available line to prefill a shift.";
+    if(modalSt)modalSt.textContent="Availability loaded for "+(g.name||g.email)+" for "+scheduleMonth()+".";
   }catch(e){
     currentGuardAvailability=[];renderScheduleAvailability();
     if(modalSt)modalSt.textContent="Could not load availability: "+(e&&e.message?e.message:String(e));
@@ -1342,19 +1406,25 @@ function addShiftToScheduleDraft(){
 function cancelScheduleBuild(){scheduleDraft=[];renderScheduleDraft();closeScheduleModal();}
 async function sendScheduleFromAdmin(){
   if(!authToken)return alert("Login first.");
-  const g=selectedScheduleGuard();
-  const st=document.getElementById("schedule-modal-status");
-  if(!g||!g.id){if(st)st.textContent="Choose a registered guard in Selected guard account before sending.";return;}
+  const guards=selectedScheduleGuards(),st=document.getElementById("schedule-modal-status");
+  if(!guards.length){if(st)st.textContent="Choose at least one registered guard.";return;}
   if(!scheduleDraft.length){if(st)st.textContent="Add at least one working day before sending.";return;}
   const note=(document.getElementById("schedule-note")||{}).value||"";
-  if(st)st.textContent="Sending schedule...";
-  try{
-    const payload={guard:g.name||g.email,guard_id:g.id||null,note,shifts:scheduleDraft.map(s=>({guard:g.name||g.email,date:s.date,start_time:s.start_time,end_time:s.end_time,venue:s.venue||"",shift_code:s.shift_code||"",calendar_id:s.calendar_id||"",google_event_id:s.google_event_id||null,calendar_start_time:s.calendar_start_time||null,calendar_end_time:s.calendar_end_time||null}))};
-    await rawApi("/schedules",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
-    if(st)st.textContent="Schedule sent. It is awaiting the guard's confirmation. No Calendar event is required.";
-    const adminSt=document.getElementById("schedule-admin-status");if(adminSt)adminSt.textContent="Schedule sent to "+(g.name||g.email)+" — awaiting confirmation.";
-    scheduleDraft=[];renderScheduleDraft();loadAdminScheduleConfirmations();
-  }catch(e){if(st)st.textContent="Schedule send failed: "+(e&&e.message?e.message:String(e));}
+  if(!(await confirmAction("Send this "+scheduleDraft.length+"-shift schedule to "+guards.length+" selected guard"+(guards.length===1?"":"s")+"? Each guard receives their own OpsGuard schedule.","Send Schedules")))return;
+  if(st)st.textContent="Sending "+guards.length+" schedule"+(guards.length===1?"":"s")+"…";
+  const results=[];
+  for(const g of guards){
+    try{
+      const payload={guard:g.name||g.email,guard_id:g.id||null,note,shifts:scheduleDraft.map(s=>({guard:g.name||g.email,date:s.date,start_time:s.start_time,end_time:s.end_time,venue:s.venue||"",shift_code:s.shift_code||"",calendar_id:s.calendar_id||"",google_event_id:s.google_event_id||null,calendar_start_time:s.calendar_start_time||null,calendar_end_time:s.calendar_end_time||null}))};
+      await rawApi("/schedules",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload),silent:true});
+      results.push({guard:g,ok:true});
+    }catch(e){results.push({guard:g,ok:false,error:e&&e.message?e.message:String(e)});}
+  }
+  const sent=results.filter(r=>r.ok),failed=results.filter(r=>!r.ok);
+  if(st)st.textContent=sent.length+" guard schedule"+(sent.length===1?"":"s")+" sent"+(failed.length?"; "+failed.length+" failed.":" and awaiting confirmation.");
+  const adminSt=document.getElementById("schedule-admin-status");if(adminSt)adminSt.textContent=sent.length+" schedule"+(sent.length===1?"":"s")+" sent"+(failed.length?" · "+failed.length+" failed":"")+".";
+  if(sent.length){scheduleDraft=[];renderScheduleDraft();await loadAdminScheduleConfirmations();await loadAdminDashboard();}
+  if(failed.length)alert("Some schedules could not be sent:\n"+failed.map(r=>(r.guard.name||r.guard.email)+": "+r.error).join("\n"));
 }
 async function confirmScheduleShift(scheduleId, shiftIndex){
   const st=document.getElementById("my-schedule-status");
