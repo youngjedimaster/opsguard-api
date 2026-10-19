@@ -116,8 +116,9 @@
 <div style="border-top:1px solid #e5e7eb;margin-top:9px;padding-top:8px">
 <div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><strong style="font-size:.82rem">Calendar Import Drafts</strong><span class="status-pill status-approved" id="calendar-draft-count">0</span></div>
 <div class="dash-btn-row"><button class="primary secondary" onclick="loadCalendarImportDrafts()" type="button">Refresh Drafts</button></div>
-<div class="table-scroll" id="calendar-drafts-wrap" style="height:160px;margin-top:6px">
-<table id="calendar-drafts-table"><thead><tr><th>Date</th><th>Venue</th><th>Shift</th><th>Guard</th><th>Start</th><th>Needs Review</th></tr></thead><tbody><tr><td colspan="6">No drafts loaded.</td></tr></tbody></table>
+<p class="small" style="margin:5px 0">For each imported shift, choose the registered guard and enter the real OpsGuard end time. Send to Guard creates the pending OpsGuard assignment only; it does not change Google Calendar.</p>
+<div class="table-scroll" id="calendar-drafts-wrap" style="height:230px;margin-top:6px">
+<table id="calendar-drafts-table"><thead><tr><th>Date</th><th>Venue</th><th>Shift</th><th>Calendar guard</th><th>Start</th><th>Assign to guard</th><th>Real end time</th><th>Review</th><th>Action</th></tr></thead><tbody><tr><td colspan="9">No drafts loaded.</td></tr></tbody></table>
 </div>
 </div>
 </div>
@@ -751,24 +752,107 @@ async function importSelectedCalendarDrafts(){
     await loadCalendarSyncStatus();
   }catch(e){if(st)st.textContent="Draft import failed: "+(e&&e.message?e.message:String(e));}
 }
+function calendarDraftTimeToDisplay(value){
+  const text=String(value||"").trim();
+  if(!text)return "";
+  const parts=text.split(":");
+  if(parts.length<2)return "";
+  let h=Number(parts[0]),min=Number(parts[1]);
+  if(!Number.isFinite(h)||!Number.isFinite(min))return "";
+  const ap=h>=12?"PM":"AM";h=h%12||12;
+  return h+":"+String(min).padStart(2,"0")+" "+ap;
+}
+function calendarDraftGuardOptions(selectedId,calendarGuard){
+  const sel=document.createElement("select");
+  sel.className="calendar-draft-guard";
+  sel.style.minWidth="170px";
+  const blank=document.createElement("option");blank.value="";blank.textContent="Choose registered guard";sel.appendChild(blank);
+  const users=Object.values(adminUserMap||{}).sort((a,b)=>String(a.name||a.email||"").localeCompare(String(b.name||b.email||"")));
+  users.forEach(u=>{
+    const o=document.createElement("option");
+    o.value=String(u.id||"");
+    o.textContent=(u.name||u.email||"")+(u.email?" ("+u.email+")":"");
+    sel.appendChild(o);
+  });
+  let wanted=String(selectedId||"");
+  if(!wanted&&calendarGuard){
+    const match=users.find(u=>String(u.name||"").trim().toLowerCase()===String(calendarGuard).trim().toLowerCase());
+    if(match)wanted=String(match.id||"");
+  }
+  if(wanted&&[...sel.options].some(o=>o.value===wanted))sel.value=wanted;
+  return sel;
+}
+async function promoteCalendarImportDraft(draftId,tr,row){
+  const st=document.getElementById("calendar-sync-status");
+  const guardSel=tr.querySelector(".calendar-draft-guard"),endInput=tr.querySelector(".calendar-draft-end");
+  const guardId=guardSel?guardSel.value:"",endTime=calendarDraftTimeToDisplay(endInput?endInput.value:"");
+  if(!guardId){if(st)st.textContent="Choose a registered guard for the Calendar draft.";return;}
+  if(!endTime){if(st)st.textContent="Enter the real OpsGuard end time before sending the draft.";return;}
+  const guardLabel=guardSel.options[guardSel.selectedIndex]?.textContent||"selected guard";
+  if(!(await confirmAction("Send "+(row.venue||"")+" "+(row.shift_code||"")+" on "+(row.date||"")+" "+(row.start_time||"")+" - "+endTime+" to "+guardLabel+"? This creates the OpsGuard assignment only; Google Calendar will not be changed.","Send to Guard")))return;
+  if(st)st.textContent="Creating OpsGuard schedule from Calendar draft…";
+  try{
+    const data=await rawApi("/calendar-sync/drafts/"+encodeURIComponent(draftId)+"/promote",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({guard_id:guardId,end_time:endTime,note:"Imported from Google Calendar"}),silent:true});
+    if(st)st.textContent="Schedule sent to "+(data.guard||"guard")+" and is awaiting confirmation. Google Calendar was not changed.";
+    await loadCalendarImportDrafts();
+    await loadAdminScheduleConfirmations();
+    await loadAdminDashboard();
+  }catch(e){if(st)st.textContent="Could not send Calendar draft: "+(e&&e.message?e.message:String(e));}
+}
+async function discardCalendarImportDraft(draftId,row){
+  const st=document.getElementById("calendar-sync-status");
+  if(!(await confirmAction("Discard this Calendar import draft for "+(row.venue||"")+" "+(row.shift_code||"")+" on "+(row.date||"")+"? This does not change Google Calendar.","Discard Draft")))return;
+  try{
+    await rawApi("/calendar-sync/drafts/"+encodeURIComponent(draftId)+"/discard",{method:"POST",silent:true});
+    if(st)st.textContent="Calendar draft discarded. Google Calendar was not changed.";
+    await loadCalendarImportDrafts();
+    await previewGoogleCalendarShifts();
+    await loadCalendarSyncStatus();
+  }catch(e){if(st)st.textContent="Could not discard Calendar draft: "+(e&&e.message?e.message:String(e));}
+}
 async function loadCalendarImportDrafts(){
   const tbody=document.querySelector("#calendar-drafts-table tbody"),count=document.getElementById("calendar-draft-count");
   if(!tbody)return;
   try{
+    if(!Object.keys(adminUserMap||{}).length)await loadAdminUsers();
     const data=await rawApi("/calendar-sync/drafts",{method:"GET",silent:true});
     const rows=Array.isArray(data.items)?data.items:[];
     if(count)count.textContent=String(rows.length);
     tbody.innerHTML="";
-    if(!rows.length){tbody.innerHTML="<tr><td colspan='6'>No Calendar import drafts awaiting review.</td></tr>";return;}
+    if(!rows.length){tbody.innerHTML="<tr><td colspan='9'>No Calendar import drafts awaiting review.</td></tr>";return;}
     rows.forEach(row=>{
       const tr=document.createElement("tr");
-      const review=[row.needs_guard_review?"guard":"",row.needs_end_time_review?"end time":""].filter(Boolean).join(" + ")||"Ready";
-      tr.innerHTML="<td>"+(row.date||"")+"</td><td>"+(row.venue||"")+"</td><td><strong>"+(row.shift_code||"")+"</strong></td><td>"+(row.guard||"Unassigned")+"</td><td>"+(row.start_time||"")+"</td><td>"+review+"</td>";
+      [row.date||"",row.venue||"",row.shift_code||"",row.guard||"Unassigned",row.start_time||""].forEach((text,i)=>{
+        const td=document.createElement("td");
+        if(i===2){const strong=document.createElement("strong");strong.textContent=text;td.appendChild(strong);}else td.textContent=text;
+        tr.appendChild(td);
+      });
+
+      const guardTd=document.createElement("td");
+      guardTd.appendChild(calendarDraftGuardOptions(row.matched_guard_id,row.guard));
+      tr.appendChild(guardTd);
+
+      const endTd=document.createElement("td");
+      const endInput=document.createElement("input");
+      endInput.type="time";endInput.className="calendar-draft-end";endInput.step="300";endInput.style.minWidth="105px";
+      endTd.appendChild(endInput);tr.appendChild(endTd);
+
+      const reviewTd=document.createElement("td");
+      reviewTd.textContent=[row.needs_guard_review?"guard":"",row.needs_end_time_review?"end time":""].filter(Boolean).join(" + ")||"Ready";
+      tr.appendChild(reviewTd);
+
+      const actionTd=document.createElement("td");
+      actionTd.style.whiteSpace="nowrap";
+      const send=document.createElement("button");send.type="button";send.className="primary";send.textContent="Send to Guard";
+      send.addEventListener("click",()=>promoteCalendarImportDraft(row.id,tr,row));
+      const discard=document.createElement("button");discard.type="button";discard.className="primary secondary";discard.style.marginLeft="4px";discard.textContent="Discard";
+      discard.addEventListener("click",()=>discardCalendarImportDraft(row.id,row));
+      actionTd.appendChild(send);actionTd.appendChild(discard);tr.appendChild(actionTd);
       tbody.appendChild(tr);
     });
   }catch(e){
     if(count)count.textContent="!";
-    tbody.innerHTML="<tr><td colspan='6'>Drafts could not be loaded.</td></tr>";
+    tbody.innerHTML="<tr><td colspan='9'>Drafts could not be loaded.</td></tr>";
   }
 }
 async function previewGoogleCalendarShifts(){
@@ -788,7 +872,7 @@ async function syncConfirmedToGoogle(){
   try{
     const data=await rawApi("/calendar-sync/export-confirmed",{method:"POST",silent:true});
     const done=(data.exported||[]).length,skipped=(data.skipped||[]).length;
-    if(st)st.textContent="Google sync finished: "+done+" updated/linked, "+skipped+" skipped."+(skipped?" Open Advanced Admin if a shift needs review.":"");
+    if(st)st.textContent="Google sync finished: "+done+" updated/linked, "+skipped+" skipped."+(skipped?" Review skipped shifts in Schedule confirmations and Calendar Import Drafts.":"");
     await loadAdminDashboard();
   }catch(e){if(st)st.textContent="Google sync failed: "+(e&&e.message?e.message:String(e));}
 }

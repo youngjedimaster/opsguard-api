@@ -37,6 +37,12 @@ class ImportDraftRequest(BaseModel):
     items: list[ImportDraftItem]
 
 
+class PromoteDraftRequest(BaseModel):
+    guard_id: str
+    end_time: str
+    note: str = ""
+
+
 def _calendar_map() -> dict[str, str]:
     titan = str(getattr(settings, "CALENDAR_TITAN_SECURITY_ID", "") or "").strip()
     return {
@@ -760,9 +766,11 @@ async def import_calendar_drafts(
             guard_text = str(row.get("guard") or "").strip()
             guard_user = None
             if guard_text:
-                guard_user = await db.users.find_one(
-                    {"role": "guard", "name": {"$regex": f"^{re.escape(guard_text)}$", "$options": "i"}}
+                candidate = await db.users.find_one(
+                    {"name": {"$regex": f"^{re.escape(guard_text)}$", "$options": "i"}}
                 )
+                if candidate and str(candidate.get("role") or "guard").lower() != "admin":
+                    guard_user = candidate
 
             now = datetime.utcnow()
             doc = {
@@ -795,6 +803,179 @@ async def import_calendar_drafts(
             skipped.append({"calendar_id": calendar_id, "google_event_id": event_id, "reason": str(exc)[:500]})
 
     return {"imported": imported, "skipped": skipped}
+
+
+@router.post("/drafts/{draft_id}/promote")
+async def promote_calendar_import_draft(
+    draft_id: str,
+    payload: PromoteDraftRequest,
+    admin=Depends(get_admin_user),
+    db=Depends(get_db),
+):
+    """Turn one reviewed Calendar draft into a pending OpsGuard schedule without writing to Google."""
+    if not ObjectId.is_valid(draft_id):
+        raise HTTPException(status_code=400, detail="Invalid Calendar draft id")
+    guard_id = str(payload.guard_id or "").strip()
+    if not ObjectId.is_valid(guard_id):
+        raise HTTPException(status_code=400, detail="Choose a registered guard")
+
+    guard_user = await db.users.find_one({"_id": ObjectId(guard_id)})
+    if not guard_user or str(guard_user.get("role") or "guard").lower() == "admin":
+        raise HTTPException(status_code=404, detail="Selected guard account not found")
+
+    draft = await db.calendar_imports.find_one({"_id": ObjectId(draft_id), "status": "review"})
+    if not draft:
+        raise HTTPException(status_code=404, detail="Calendar draft is no longer awaiting review")
+
+    calendar_id = str(draft.get("calendar_id") or "").strip()
+    event_id = str(draft.get("google_event_id") or "").strip()
+    if not calendar_id or not event_id:
+        raise HTTPException(status_code=409, detail="Calendar draft is missing its Google event link")
+
+    linked = await db.schedules.find_one(
+        {"shifts": {"$elemMatch": {"calendar_id": calendar_id, "google_event_id": event_id}}},
+        {"_id": 1},
+    )
+    if linked:
+        await db.calendar_imports.update_one(
+            {"_id": draft["_id"]},
+            {"$set": {
+                "status": "promoted",
+                "schedule_id": linked["_id"],
+                "promoted_at": datetime.utcnow(),
+                "updated_at": datetime.utcnow(),
+            }},
+        )
+        raise HTTPException(status_code=409, detail="This Calendar event is already linked to an OpsGuard schedule")
+
+    date_text = str(draft.get("date") or "").strip()
+    venue = str(draft.get("venue") or "").strip()
+    shift_code = str(draft.get("shift_code") or "").strip().upper()
+    start_time = str(draft.get("start_time") or "").strip()
+    end_time = str(payload.end_time or "").strip().upper()
+
+    if not date_text or not venue or shift_code not in {"S1", "S2", "S3"} or not start_time:
+        raise HTTPException(status_code=409, detail="Draft is missing a valid date, venue, shift code or start time")
+    try:
+        date.fromisoformat(date_text)
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail="Draft date is invalid") from exc
+
+    # Validate the clocks and overnight duration using the same logic as direct Calendar creation.
+    start_clock = _parse_schedule_clock(start_time)
+    end_clock = _parse_schedule_clock(end_time)
+    tz = ZoneInfo(str(getattr(settings, "CALENDAR_TIMEZONE", "America/Toronto") or "America/Toronto"))
+    start_dt = datetime.combine(date.fromisoformat(date_text), start_clock, tzinfo=tz)
+    end_dt = datetime.combine(date.fromisoformat(date_text), end_clock, tzinfo=tz)
+    if end_dt <= start_dt:
+        end_dt += timedelta(days=1)
+    if end_dt - start_dt > timedelta(hours=24):
+        raise HTTPException(status_code=409, detail="Shift duration is longer than 24 hours")
+
+    # Claim the draft so a double-tap cannot create two schedules.
+    now = datetime.utcnow()
+    claim = await db.calendar_imports.update_one(
+        {"_id": draft["_id"], "status": "review"},
+        {"$set": {"status": "promoting", "updated_at": now}},
+    )
+    if claim.modified_count != 1:
+        raise HTTPException(status_code=409, detail="Calendar draft is already being processed")
+
+    guard_name = str(guard_user.get("name") or guard_user.get("email") or "").strip()
+    if not guard_name:
+        await db.calendar_imports.update_one(
+            {"_id": draft["_id"], "status": "promoting"},
+            {"$set": {"status": "review", "updated_at": datetime.utcnow()}},
+        )
+        raise HTTPException(status_code=409, detail="Selected guard account has no name or email")
+
+    note = str(payload.note or "").strip()
+    schedule_doc = {
+        "guard": guard_name,
+        "guard_id": str(guard_user["_id"]),
+        "note": note or "Imported from Google Calendar",
+        "shifts": [{
+            "date": date_text,
+            "venue": venue,
+            "shift_code": shift_code,
+            "start_time": start_time,
+            "end_time": end_time,
+            "calendar_id": calendar_id,
+            "google_event_id": event_id,
+            "calendar_start_time": draft.get("calendar_start_time"),
+            "calendar_end_time": draft.get("calendar_end_time"),
+            "calendar_exported_at": None,
+            "calendar_export_method": None,
+            "status": "pending",
+            "confirmed_at": None,
+        }],
+        "created_at": now,
+        "created_by_admin_id": str(admin["_id"]),
+        "status": "pending",
+        "confirmed_at": None,
+        "confirmed_by_guard_id": None,
+        "source": "calendar_import_draft",
+        "calendar_import_draft_id": str(draft["_id"]),
+    }
+
+    try:
+        result = await db.schedules.insert_one(schedule_doc)
+    except Exception:
+        await db.calendar_imports.update_one(
+            {"_id": draft["_id"], "status": "promoting"},
+            {"$set": {"status": "review", "updated_at": datetime.utcnow()}},
+        )
+        raise
+
+    await db.calendar_imports.update_one(
+        {"_id": draft["_id"], "status": "promoting"},
+        {"$set": {
+            "status": "promoted",
+            "schedule_id": result.inserted_id,
+            "selected_guard_id": guard_user["_id"],
+            "selected_guard": guard_name,
+            "end_time": end_time,
+            "needs_guard_review": False,
+            "needs_end_time_review": False,
+            "promoted_at": datetime.utcnow(),
+            "updated_at": datetime.utcnow(),
+        }},
+    )
+    return {
+        "status": "promoted",
+        "draft_id": draft_id,
+        "schedule_id": str(result.inserted_id),
+        "guard": guard_name,
+        "date": date_text,
+        "venue": venue,
+        "shift_code": shift_code,
+        "start_time": start_time,
+        "end_time": end_time,
+        "google_calendar_changed": False,
+    }
+
+
+@router.post("/drafts/{draft_id}/discard")
+async def discard_calendar_import_draft(
+    draft_id: str,
+    admin=Depends(get_admin_user),
+    db=Depends(get_db),
+):
+    if not ObjectId.is_valid(draft_id):
+        raise HTTPException(status_code=400, detail="Invalid Calendar draft id")
+    now = datetime.utcnow()
+    result = await db.calendar_imports.update_one(
+        {"_id": ObjectId(draft_id), "status": "review"},
+        {"$set": {
+            "status": "discarded",
+            "discarded_at": now,
+            "discarded_by_admin_id": str(admin["_id"]),
+            "updated_at": now,
+        }},
+    )
+    if result.modified_count != 1:
+        raise HTTPException(status_code=404, detail="Calendar draft is no longer awaiting review")
+    return {"status": "discarded", "draft_id": draft_id}
 
 
 def _creation_title(venue: str, shift_code: str, guard: str) -> str:
