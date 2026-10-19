@@ -80,18 +80,33 @@ def _infer_titan_security_venue(event: dict) -> str | None:
     title = _event_summary(event)
     location = _event_location(event)
     hay = f"{title} {location}".lower()
-    if "st anne" in hay or "st  anne" in hay:
+
+    if "st anne" in hay:
         return "St Anne's"
     if "getwell" in hay or "get well" in hay:
         return "Get Well"
-    if "standard time" in hay or re.search(r"^\s*S[1-9]\d*\s*:\s*ST", title, re.IGNORECASE):
+    if "standard time" in hay or re.search(r"^\s*S[1-9]\d*\s*:\s*ST\b", title, re.IGNORECASE):
         return "Standard Time"
-    if re.search(r"^\s*S[1-9]\d*\s*:\s*JD", title, re.IGNORECASE) or "jean darlene" in hay:
+    if re.search(r"^\s*S[1-9]\d*\s*:\s*JD\b", title, re.IGNORECASE) or "jean darlene" in hay:
         return "Jean Darlene"
     if "two kats" in hay or "2 kats" in hay:
         return "Two Kats"
-    return None
 
+    # Titan labels are not fixed. A valid S-numbered event may be Festival,
+    # a special event, or a future venue not known to OpsGuard yet.
+    if location:
+        return location.strip()
+
+    match = SHIFT_TITLE_RE.match(title)
+    if match:
+        remainder = str(match.group(2) or "").strip()
+        if remainder:
+            label = re.split(r"\s+-\s*", remainder, maxsplit=1)[0].strip(" :-")
+            if label:
+                return label
+
+    # Keep a valid Titan S-numbered event even when it has no venue label.
+    return "Titan Security"
 
 def _strip_venue_prefix(remainder: str, venue: str) -> str:
     text = str(remainder or "").strip()
@@ -127,8 +142,14 @@ def _event_guard(event: dict, venue: str | None = None) -> str:
     venue = venue or ""
     if venue in {"St Anne's", "Get Well", "Standard Time", "Jean Darlene", "Two Kats"}:
         remainder = _strip_venue_prefix(remainder, venue)
+    elif venue and venue != "Titan Security":
+        remainder = re.sub(
+            rf"^\s*{re.escape(venue)}\s*(?:[-:]\s*)?",
+            "",
+            remainder,
+            flags=re.IGNORECASE,
+        ).strip()
     return remainder.strip()
-
 
 def _assignment_title(event: dict, venue: str, shift_code: str, guard: str) -> str:
     current = _event_summary(event)
