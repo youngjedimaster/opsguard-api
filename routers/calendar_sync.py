@@ -651,16 +651,24 @@ async def preview_calendar_shifts(
     if (payload.to_date - payload.from_date).days > 62:
         raise HTTPException(status_code=400, detail="Preview range is limited to 63 days")
     if not _configured():
-        raise HTTPException(status_code=503, detail="Calendar connection is not configured in staging")
+        raise HTTPException(status_code=503, detail="Calendar connection is not configured")
 
     tz = ZoneInfo(str(getattr(settings, "CALENDAR_TIMEZONE", "America/Toronto") or "America/Toronto"))
     existing = await _existing_google_ids(db)
     out: list[dict] = []
     errors: list[dict] = []
+    sources: list[dict] = []
     for source in _calendar_sources():
         calendar_id = source["calendar_id"]
         if not calendar_id:
+            sources.append({
+                "source": source["name"],
+                "configured": False,
+                "events_read": 0,
+                "shifts_found": 0,
+            })
             continue
+        source_rows = 0
         try:
             events = await _list_calendar_events(calendar_id, payload.from_date, payload.to_date)
             for event in events:
@@ -670,13 +678,29 @@ async def preview_calendar_shifts(
                 row["calendar_source"] = source["name"]
                 row["already_in_opsguard"] = (calendar_id, row["google_event_id"]) in existing
                 out.append(row)
+                source_rows += 1
+            sources.append({
+                "source": source["name"],
+                "configured": True,
+                "events_read": len(events),
+                "shifts_found": source_rows,
+            })
         except Exception as exc:
-            errors.append({"calendar": source["name"], "error": str(exc)[:500]})
+            message = str(exc)[:500]
+            errors.append({"calendar": source["name"], "error": message})
+            sources.append({
+                "source": source["name"],
+                "configured": True,
+                "events_read": 0,
+                "shifts_found": 0,
+                "error": message,
+            })
 
     out.sort(key=lambda x: (x.get("date") or "", x.get("venue") or "", x.get("start_time") or "", x.get("shift_code") or ""))
     return {
         "items": out,
         "count": len(out),
+        "sources": sources,
         "errors": errors,
         "note": "Calendar event end times are shown for reference only. Short calendar slots are flagged for end-time review before creating an OpsGuard schedule.",
     }
@@ -731,7 +755,7 @@ async def import_calendar_drafts(
     db=Depends(get_db),
 ):
     if not _configured():
-        raise HTTPException(status_code=503, detail="Calendar connection is not configured in staging")
+        raise HTTPException(status_code=503, detail="Calendar connection is not configured")
     if not payload.items:
         raise HTTPException(status_code=400, detail="Select at least one calendar shift")
     if len(payload.items) > 100:
@@ -1379,7 +1403,7 @@ async def create_confirmed_shift_calendar_event(
 ):
     """Separate action: create a missing Google event for one confirmed OpsGuard shift."""
     if not _configured():
-        raise HTTPException(status_code=503, detail="Calendar connection is not configured in staging")
+        raise HTTPException(status_code=503, detail="Calendar connection is not configured")
     if not ObjectId.is_valid(schedule_id):
         raise HTTPException(status_code=400, detail="Invalid schedule id")
     doc = await db.schedules.find_one({"_id": ObjectId(schedule_id)})
@@ -1396,7 +1420,7 @@ async def export_confirmed_shift(
     db=Depends(get_db),
 ):
     if not _configured():
-        raise HTTPException(status_code=503, detail="Calendar connection is not configured in staging")
+        raise HTTPException(status_code=503, detail="Calendar connection is not configured")
     if not ObjectId.is_valid(schedule_id):
         raise HTTPException(status_code=400, detail="Invalid schedule id")
     doc = await db.schedules.find_one({"_id": ObjectId(schedule_id)})
@@ -1411,7 +1435,7 @@ async def export_all_confirmed(
     db=Depends(get_db),
 ):
     if not _configured():
-        raise HTTPException(status_code=503, detail="Calendar connection is not configured in staging")
+        raise HTTPException(status_code=503, detail="Calendar connection is not configured")
 
     exported: list[dict] = []
     skipped: list[dict] = []
