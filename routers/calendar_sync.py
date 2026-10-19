@@ -748,10 +748,9 @@ async def _list_calendar_preview_events(calendar_id: str, from_date: date, to_da
 
     titan = str(getattr(settings, "CALENDAR_TITAN_SECURITY_ID", "") or "").strip()
     if calendar_id == titan:
-        # Titan is one shared calendar for several venues. Query each known title
-        # marker across the requested range so simultaneous shifts such as
-        # St Anne's S1-S5 and Jean Darlene S1 are independently recovered.
-        search_terms = ["St Anne's", "JD", "Getwell", "Standard Time", "Two Kats"]
+        # Titan venue labels can change, so recover by S-code rather than venue name.
+        # Query S1-S20 across the requested range and merge strictly by event ID.
+        search_terms = [f"S{i}" for i in range(1, 21)]
 
         async def targeted(term: str) -> list[dict]:
             async with semaphore:
