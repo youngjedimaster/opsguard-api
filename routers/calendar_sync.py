@@ -20,7 +20,11 @@ from deps import get_admin_user
 
 router = APIRouter(prefix="/api/calendar-sync", tags=["calendar-sync"])
 
-SHIFT_TITLE_RE = re.compile(r"^\s*(S[123])\s*(?::\s*(.+?))?\s*$", re.IGNORECASE)
+SHIFT_TITLE_RE = re.compile(r"^\s*(S[1-9]\d*)\s*(?::\s*(.+?))?\s*$", re.IGNORECASE)
+
+def _valid_shift_code(value: Any) -> bool:
+    return bool(re.fullmatch(r"S[1-9]\d*", str(value or "").strip().upper()))
+
 
 
 class PreviewRequest(BaseModel):
@@ -80,9 +84,9 @@ def _infer_titan_security_venue(event: dict) -> str | None:
         return "St Anne's"
     if "getwell" in hay or "get well" in hay:
         return "Get Well"
-    if "standard time" in hay or re.search(r"^\s*S[123]\s*:\s*ST", title, re.IGNORECASE):
+    if "standard time" in hay or re.search(r"^\s*S[1-9]\d*\s*:\s*ST", title, re.IGNORECASE):
         return "Standard Time"
-    if re.search(r"^\s*S[123]\s*:\s*JD", title, re.IGNORECASE) or "jean darlene" in hay:
+    if re.search(r"^\s*S[1-9]\d*\s*:\s*JD", title, re.IGNORECASE) or "jean darlene" in hay:
         return "Jean Darlene"
     if "two kats" in hay or "2 kats" in hay:
         return "Two Kats"
@@ -634,7 +638,7 @@ async def calendar_sync_status(admin=Depends(get_admin_user), db=Depends(get_db)
         "account_configured": bool(str(getattr(settings, "COMPOSIO_CALENDAR_ACCOUNT", "") or "").strip()),
         "timezone": str(getattr(settings, "CALENDAR_TIMEZONE", "America/Toronto") or "America/Toronto"),
         "calendars": calendars,
-        "import_rule": "Read S1/S2/S3 only. Garrison and Baby G are fixed calendars; Titan Security is classified into known OpsGuard venues from title/location and unrelated events are ignored.",
+        "import_rule": "Read all S-numbered security shifts. Garrison and Baby G are fixed calendars; Titan Security is classified into known OpsGuard venues from title/location and unrelated events are ignored.",
         "export_rule": "Sync Confirmed to Google patches the title of an existing matching event only and never changes its times.",
         "creation_rule": "Create Calendar Event is a separate confirmed-shift action. It checks for an existing same venue/code/date/time event first, links that event instead of duplicating it, and only creates a new event when no conflicting slot exists.",
     }
@@ -797,7 +801,7 @@ async def import_calendar_drafts(
             event = await _get_calendar_event(calendar_id, event_id)
             row = _normalize_shift_event(event, None, calendar_id, tz)
             if not row:
-                skipped.append({"calendar_id": calendar_id, "google_event_id": event_id, "reason": "Event is not a timed S1/S2/S3 shift with a recognized venue"})
+                skipped.append({"calendar_id": calendar_id, "google_event_id": event_id, "reason": "Event is not a timed S-numbered shift with a recognized venue"})
                 continue
 
             guard_text = str(row.get("guard") or "").strip()
@@ -891,7 +895,7 @@ async def promote_calendar_import_draft(
     start_time = str(draft.get("start_time") or "").strip()
     end_time = str(payload.end_time or "").strip().upper()
 
-    if not date_text or not venue or shift_code not in {"S1", "S2", "S3"} or not start_time:
+    if not date_text or not venue or not _valid_shift_code(shift_code) or not start_time:
         raise HTTPException(status_code=409, detail="Draft is missing a valid date, venue, shift code or start time")
     try:
         date.fromisoformat(date_text)
@@ -1147,8 +1151,8 @@ async def _create_or_link_calendar_event(db, schedule_doc: dict, shift_index: in
         raise HTTPException(status_code=409, detail="Guard name is missing")
     if not venue:
         raise HTTPException(status_code=409, detail="Venue is missing")
-    if shift_code not in {"S1", "S2", "S3"}:
-        raise HTTPException(status_code=409, detail="Create Calendar Event requires S1, S2 or S3")
+    if not _valid_shift_code(shift_code):
+        raise HTTPException(status_code=409, detail="Create Calendar Event requires an S-numbered shift code")
 
     calendar_id = _calendar_map().get(venue, "")
     if not calendar_id:
@@ -1296,8 +1300,8 @@ async def _find_existing_calendar_slot(shift: dict, guard: str) -> tuple[dict, s
 
     shift_code = str(shift.get("shift_code") or "").strip().upper()
     date_text = str(shift.get("date") or "").strip()
-    if shift_code not in {"S1", "S2", "S3"} or not date_text:
-        raise HTTPException(status_code=409, detail="Shift needs a date and S1/S2/S3 code before calendar export")
+    if not _valid_shift_code(shift_code) or not date_text:
+        raise HTTPException(status_code=409, detail="Shift needs a date and S-numbered code before calendar export")
 
     try:
         day = date.fromisoformat(date_text)
@@ -1366,8 +1370,8 @@ async def _export_one(db, schedule_doc: dict, shift_index: int) -> dict:
     shift_code = str(shift.get("shift_code") or "").strip().upper()
     if not guard:
         raise HTTPException(status_code=409, detail="Guard name is missing")
-    if shift_code not in {"S1", "S2", "S3"}:
-        raise HTTPException(status_code=409, detail="Only S1/S2/S3 shifts can sync to Google Calendar")
+    if not _valid_shift_code(shift_code):
+        raise HTTPException(status_code=409, detail="Only S-numbered shifts can sync to Google Calendar")
 
     event, calendar_id = await _find_existing_calendar_slot(shift, guard)
     event_id = _event_id(event)

@@ -112,7 +112,7 @@
 <div class="table-scroll" id="calendar-preview-wrap" style="height:180px;display:none;margin-top:7px">
 <table id="calendar-preview-table"><thead><tr><th>Select</th><th>Date</th><th>Venue</th><th>Shift</th><th>Guard</th><th>Start</th><th>Calendar slot</th><th>OpsGuard</th></tr></thead><tbody></tbody></table>
 </div>
-<p class="small">Safety rule: only S1/S2/S3 events are read. Import Selected creates OpsGuard review drafts only. Sync Confirmed to Google only updates existing matching events and never changes their times. Create Calendar Event is separate: for a confirmed manual shift it uses the OpsGuard start/end time, checks for an existing matching slot first, and will not create a duplicate when a conflicting slot is found.</p>
+<p class="small">Safety rule: all S-numbered security events are read. Import Selected creates OpsGuard review drafts only. Sync Confirmed to Google only updates existing matching events and never changes their times. Create Calendar Event is separate: for a confirmed manual shift it uses the OpsGuard start/end time, checks for an existing matching slot first, and will not create a duplicate when a conflicting slot is found.</p>
 <div style="border-top:1px solid #e5e7eb;margin-top:9px;padding-top:8px">
 <div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><strong style="font-size:.82rem">Calendar Import Drafts</strong><span class="status-pill status-approved" id="calendar-draft-count">0</span></div>
 <div class="dash-btn-row"><button class="primary secondary" onclick="loadCalendarImportDrafts()" type="button">Refresh Drafts</button><button class="primary" onclick="sendSelectedCalendarDrafts()" type="button">Send Selected Drafts</button></div>
@@ -204,7 +204,7 @@
 <h3 style="margin:0 0 3px;font-size:.86rem">Add working days</h3>
 <p class="small" style="margin:0 0 4px">Each added row becomes part of the schedule.</p>
 <div class="row"><div class="half input-group"><label>Date</label><input id="sched-date" type="date"/></div><div class="half input-group"><label>Venue</label><select id="sched-venue"><option value="">Choose venue</option><option>Baby G</option><option>Garrison</option><option>Get Well</option><option>Jean Darlene</option><option>St Anne's</option><option>Standard Time</option><option>Two Kats</option></select></div></div>
-<div class="row"><div class="half input-group"><label>Shift</label><select id="sched-shift-code"><option value="">Choose S1/S2/S3</option><option>S1</option><option>S2</option><option>S3</option></select></div></div>
+<div class="row"><div class="half input-group"><label>Shift</label><input id="sched-shift-code" list="sched-shift-code-options" placeholder="S1" maxlength="4" autocomplete="off"/><datalist id="sched-shift-code-options"><option value="S1"></option><option value="S2"></option><option value="S3"></option><option value="S4"></option><option value="S5"></option><option value="S6"></option><option value="S7"></option><option value="S8"></option><option value="S9"></option><option value="S10"></option></datalist></div></div>
 <div class="row">
 <div class="half input-group"><label>Start time</label><div style="display:flex;gap:4px"><select id="sched-start-hour"></select><select id="sched-start-min"></select><select id="sched-start-ampm"><option>AM</option><option>PM</option></select></div></div>
 <div class="half input-group"><label>End time (optional)</label><div style="display:flex;gap:4px"><select id="sched-end-hour"></select><select id="sched-end-min"></select><select id="sched-end-ampm"><option>AM</option><option>PM</option></select></div></div>
@@ -751,7 +751,7 @@ function renderCalendarPreview(items){
   calendarPreviewCache=Array.isArray(items)?items:[];
   wrap.style.display="block";tbody.innerHTML="";
   if(importBtn)importBtn.disabled=true;
-  if(!calendarPreviewCache.length){tbody.innerHTML="<tr><td colspan='8'>No S1/S2/S3 calendar shifts found in this range.</td></tr>";return;}
+  if(!calendarPreviewCache.length){tbody.innerHTML="<tr><td colspan='8'>No S-numbered calendar shifts found in this range.</td></tr>";return;}
   calendarPreviewCache.forEach((row,index)=>{
     const tr=document.createElement("tr");
     const slot=(row.calendar_duration_minutes==null?"Unknown":row.calendar_duration_minutes+" min")+(row.requires_end_time_review?" ⚠":"");
@@ -915,17 +915,17 @@ async function loadCalendarImportDrafts(){
 async function previewGoogleCalendarShifts(){
   const st=document.getElementById("calendar-sync-status"),from=document.getElementById("calendar-preview-from")?.value||"",to=document.getElementById("calendar-preview-to")?.value||"";
   if(!from||!to){if(st)st.textContent="Choose both preview dates.";return;}
-  if(st)st.textContent="Reading S1/S2/S3 shifts from Google Calendar…";
+  if(st)st.textContent="Reading S-numbered shifts from Google Calendar…";
   try{
     const data=await rawApi("/calendar-sync/preview",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({from_date:from,to_date:to}),silent:true});
     renderCalendarPreview(data.items||[]);
     const sourceSummary=(data.sources||[]).map(s=>s.source+": "+(s.shifts_found||0)).join(" | ");
-    if(st)st.textContent=(data.count||0)+" S1/S2/S3 calendar shifts found"+(sourceSummary?" — "+sourceSummary:"")+". Calendar slot end times are reference only; OpsGuard end time may be left TBD."+(data.errors&&data.errors.length?" Some calendars returned an error.":"");
+    if(st)st.textContent=(data.count||0)+" S-numbered calendar shifts found"+(sourceSummary?" — "+sourceSummary:"")+". Calendar slot end times are reference only; OpsGuard end time may be left TBD."+(data.errors&&data.errors.length?" Some calendars returned an error.":"");
   }catch(e){if(st)st.textContent="Calendar preview failed: "+(e&&e.message?e.message:String(e));}
 }
 async function syncConfirmedToGoogle(){
   const st=document.getElementById("calendar-sync-status");
-  if(!(await confirmAction("Sync confirmed OpsGuard assignments to the existing Google Calendar S1/S2/S3 slots? Only event titles will change; calendar times will not be changed and missing slots will not be created.","Sync to Google")))return;
+  if(!(await confirmAction("Sync confirmed OpsGuard assignments to the existing Google Calendar S-numbered slots? Only event titles will change; calendar times will not be changed and missing slots will not be created.","Sync to Google")))return;
   if(st)st.textContent="Syncing confirmed assignments…";
   try{
     const data=await rawApi("/calendar-sync/export-confirmed",{method:"POST",silent:true});
@@ -1392,10 +1392,11 @@ function addShiftToScheduleDraft(){
   const eh=(document.getElementById("sched-end-hour")||{}).value||"",em=(document.getElementById("sched-end-min")||{}).value||"00",eap=(document.getElementById("sched-end-ampm")||{}).value||"PM";
   const st=document.getElementById("schedule-add-status");
   const venue=(document.getElementById("sched-venue")||{}).value||"";
-  const shiftCode=(document.getElementById("sched-shift-code")||{}).value||"";
+  const shiftCode=((document.getElementById("sched-shift-code")||{}).value||"").trim().toUpperCase();
   if(!date){if(st)st.textContent="Choose a date first.";return;}
   if(!venue){if(st)st.textContent="Choose the venue.";return;}
-  if(!shiftCode){if(st)st.textContent="Choose S1, S2 or S3.";return;}
+  if(!shiftCode){if(st)st.textContent="Enter a shift code, for example S1 or S5.";return;}
+  if(!/^S[1-9]\d*$/.test(shiftCode)){if(st)st.textContent="Shift code must be S followed by a number.";return;}
   const startStr=sh+":"+sm+" "+sap,endStr=eh?(eh+":"+em+" "+eap):"";
   if(scheduleDraft.some(s=>s.date===date&&s.start_time===startStr&&s.end_time===endStr&&s.venue===venue&&s.shift_code===shiftCode)){if(st)st.textContent="That shift is already in the proposed schedule.";return;}
   scheduleDraft.push({date,start_time:startStr,end_time:endStr,venue:venue,shift_code:shiftCode,calendar_id:VENUE_CALENDAR_IDS[venue]||""});
