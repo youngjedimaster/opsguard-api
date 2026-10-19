@@ -570,10 +570,14 @@ async def _list_calendar_events(calendar_id: str, from_date: date, to_date: date
     end = datetime.combine(to_date + timedelta(days=1), time.min, tzinfo=tz)
     fields = "items(id,status,summary,start,end,location),nextPageToken"
     events: list[dict] = []
+    seen_event_ids: set[str] = set()
     page_token = ""
     seen_tokens: set[str] = set()
 
-    for _ in range(40):
+    # Keep each Calendar tool response deliberately small. Consumer MCP responses
+    # can be clipped when a page is too large, which previously caused late events
+    # on busy dates to disappear from OpsGuard preview.
+    for _ in range(80):
         args = {
             "calendarId": calendar_id,
             "timeMin": start.isoformat(),
@@ -581,14 +585,20 @@ async def _list_calendar_events(calendar_id: str, from_date: date, to_date: date
             "timeZone": str(tz.key),
             "singleEvents": True,
             "orderBy": "startTime",
-            "maxResults": 250,
+            "maxResults": 8,
             "showDeleted": False,
             "fields": fields,
         }
         if page_token:
             args["pageToken"] = page_token
         payload = await _execute("GOOGLECALENDAR_EVENTS_LIST", args)
-        events.extend(_event_items(payload))
+        for event in _event_items(payload):
+            event_id = _event_id(event)
+            if event_id and event_id in seen_event_ids:
+                continue
+            if event_id:
+                seen_event_ids.add(event_id)
+            events.append(event)
         next_token = _next_page_token(payload)
         if not next_token:
             break
