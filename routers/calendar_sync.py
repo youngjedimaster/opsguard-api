@@ -670,10 +670,23 @@ async def preview_calendar_shifts(
             continue
         source_rows = 0
         try:
-            events = await _list_calendar_events(calendar_id, payload.from_date, payload.to_date)
+            # Over-fetch one additional local day, then enforce the requested inclusive
+            # date range after normalization. This avoids Calendar/MCP boundary quirks
+            # that can otherwise omit events occurring on the selected "to" date.
+            events = await _list_calendar_events(
+                calendar_id,
+                payload.from_date,
+                payload.to_date + timedelta(days=1),
+            )
             for event in events:
                 row = _normalize_shift_event(event, source["fixed_venue"], calendar_id, tz)
                 if not row:
+                    continue
+                try:
+                    row_date = date.fromisoformat(str(row.get("date") or ""))
+                except ValueError:
+                    continue
+                if row_date < payload.from_date or row_date > payload.to_date:
                     continue
                 row["calendar_source"] = source["name"]
                 row["already_in_opsguard"] = (calendar_id, row["google_event_id"]) in existing
