@@ -231,6 +231,7 @@ def _parse_http_payload(raw: str, content_type: str = "") -> dict:
     if not text:
         return {}
     if "text/event-stream" in (content_type or "").lower() or text.startswith("event:") or text.startswith("data:"):
+        messages: list[dict] = []
         for block in re.split(r"\r?\n\r?\n", text):
             data_lines = []
             for line in block.splitlines():
@@ -239,12 +240,25 @@ def _parse_http_payload(raw: str, content_type: str = "") -> dict:
             if not data_lines:
                 continue
             candidate = "\n".join(data_lines).strip()
-            if candidate and candidate != "[DONE]":
-                try:
-                    return json.loads(candidate)
-                except json.JSONDecodeError:
-                    continue
-        raise RuntimeError("Calendar MCP returned an unreadable event-stream response")
+            if not candidate or candidate == "[DONE]":
+                continue
+            try:
+                parsed = json.loads(candidate)
+            except json.JSONDecodeError:
+                continue
+            if isinstance(parsed, dict):
+                messages.append(parsed)
+
+        if not messages:
+            raise RuntimeError("Calendar MCP returned an unreadable event-stream response")
+
+        # Streamable MCP can emit progress/notification messages before the
+        # final tool response. Always choose the final JSON-RPC result/error.
+        for message in reversed(messages):
+            if "result" in message or "error" in message:
+                return message
+        return messages[-1]
+
     try:
         return json.loads(text)
     except json.JSONDecodeError as exc:
