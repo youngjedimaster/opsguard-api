@@ -564,52 +564,93 @@ def _next_page_token(obj: Any) -> str:
 
 
 async def _list_calendar_events(calendar_id: str, from_date: date, to_date: date) -> list[dict]:
-    """Read all events in the local-date window without letting large calendars overflow MCP responses."""
+    """Read every Calendar event in the inclusive local-date window.
+
+    Composio consumer-MCP responses can occasionally arrive clipped without a
+    nextPageToken even when Google has more events. We first use normal small
+    page-token pagination. If a terminal page is suspiciously full, split the
+    date window and retry each half, then merge only by Google event ID.
+    """
     tz = ZoneInfo(str(getattr(settings, "CALENDAR_TIMEZONE", "America/Toronto") or "America/Toronto"))
-    start = datetime.combine(from_date, time.min, tzinfo=tz)
-    end = datetime.combine(to_date + timedelta(days=1), time.min, tzinfo=tz)
     fields = "items(id,status,summary,start,end,location),nextPageToken"
-    events: list[dict] = []
-    seen_event_ids: set[str] = set()
-    page_token = ""
-    seen_tokens: set[str] = set()
+    page_size = 8
 
-    # Keep each Calendar tool response deliberately small. Consumer MCP responses
-    # can be clipped when a page is too large, which previously caused late events
-    # on busy dates to disappear from OpsGuard preview.
-    for _ in range(80):
-        args = {
-            "calendarId": calendar_id,
-            "timeMin": start.isoformat(),
-            "timeMax": end.isoformat(),
-            "timeZone": str(tz.key),
-            "singleEvents": True,
-            "orderBy": "startTime",
-            "maxResults": 8,
-            "showDeleted": False,
-            "fields": fields,
-        }
-        if page_token:
-            args["pageToken"] = page_token
-        payload = await _execute("GOOGLECALENDAR_EVENTS_LIST", args)
-        for event in _event_items(payload):
-            event_id = _event_id(event)
-            if event_id and event_id in seen_event_ids:
-                continue
-            if event_id:
-                seen_event_ids.add(event_id)
-            events.append(event)
-        next_token = _next_page_token(payload)
-        if not next_token:
-            break
-        if next_token in seen_tokens:
-            raise RuntimeError("Calendar pagination returned a repeated page token")
-        seen_tokens.add(next_token)
-        page_token = next_token
-    else:
-        raise RuntimeError("Calendar pagination exceeded the safety limit")
+    async def read_window(window_start: date, window_end: date, depth: int = 0) -> list[dict]:
+        start = datetime.combine(window_start, time.min, tzinfo=tz)
+        end = datetime.combine(window_end + timedelta(days=1), time.min, tzinfo=tz)
+        events: list[dict] = []
+        seen_event_ids: set[str] = set()
+        page_token = ""
+        seen_tokens: set[str] = set()
+        terminal_page_count = 0
+        terminal_had_token = False
 
-    return events
+        for _ in range(80):
+            args = {
+                "calendarId": calendar_id,
+                "timeMin": start.isoformat(),
+                "timeMax": end.isoformat(),
+                "timeZone": str(tz.key),
+                "singleEvents": True,
+                "orderBy": "startTime",
+                "maxResults": page_size,
+                "showDeleted": False,
+                "fields": fields,
+            }
+            if page_token:
+                args["pageToken"] = page_token
+            payload = await _execute("GOOGLECALENDAR_EVENTS_LIST", args)
+            page_items = _event_items(payload)
+            for event in page_items:
+                event_id = _event_id(event)
+                if event_id and event_id in seen_event_ids:
+                    continue
+                if event_id:
+                    seen_event_ids.add(event_id)
+                events.append(event)
+
+            next_token = _next_page_token(payload)
+            terminal_page_count = len(page_items)
+            terminal_had_token = bool(next_token)
+            if not next_token:
+                break
+            if next_token in seen_tokens:
+                raise RuntimeError("Calendar pagination returned a repeated page token")
+            seen_tokens.add(next_token)
+            page_token = next_token
+        else:
+            raise RuntimeError("Calendar pagination exceeded the safety limit")
+
+        # A page at/above the requested page size with no continuation token can
+        # indicate the consumer MCP response was clipped. Split and retry until
+        # the window is small enough to be unambiguous. One-day windows are the
+        # floor; OpsGuard never merges distinct same-day events.
+        if (
+            not terminal_had_token
+            and terminal_page_count >= page_size
+            and window_start < window_end
+            and depth < 8
+        ):
+            span_days = (window_end - window_start).days
+            midpoint = window_start + timedelta(days=span_days // 2)
+            left, right = await asyncio.gather(
+                read_window(window_start, midpoint, depth + 1),
+                read_window(midpoint + timedelta(days=1), window_end, depth + 1),
+            )
+            merged: list[dict] = []
+            merged_ids: set[str] = set()
+            for event in left + right:
+                event_id = _event_id(event)
+                if event_id and event_id in merged_ids:
+                    continue
+                if event_id:
+                    merged_ids.add(event_id)
+                merged.append(event)
+            return merged
+
+        return events
+
+    return await read_window(from_date, to_date)
 
 
 async def _existing_google_ids(db) -> set[tuple[str, str]]:
@@ -690,7 +731,7 @@ async def preview_calendar_shifts(
             events = await _list_calendar_events(
                 calendar_id,
                 payload.from_date,
-                payload.to_date + timedelta(days=1),
+                payload.to_date,
             )
             for event in events:
                 row = _normalize_shift_event(event, source["fixed_venue"], calendar_id, tz)
