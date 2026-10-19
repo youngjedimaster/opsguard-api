@@ -577,7 +577,7 @@ def _next_page_token(obj: Any) -> str:
     return walk(obj)
 
 
-async def _list_calendar_events(calendar_id: str, from_date: date, to_date: date) -> list[dict]:
+async def _list_calendar_events(calendar_id: str, from_date: date, to_date: date, query: str = "") -> list[dict]:
     """Read every Calendar event in the inclusive local-date window.
 
     Composio consumer-MCP responses can occasionally arrive clipped without a
@@ -613,6 +613,8 @@ async def _list_calendar_events(calendar_id: str, from_date: date, to_date: date
             }
             if page_token:
                 args["pageToken"] = page_token
+            if query:
+                args["query"] = query
             payload = await _execute("GOOGLECALENDAR_EVENTS_LIST", args)
             page_items = _event_items(payload)
             for event in page_items:
@@ -724,7 +726,34 @@ async def _list_calendar_preview_events(calendar_id: str, from_date: date, to_da
 
     async def read_day(day: date) -> list[dict]:
         async with semaphore:
-            return await _list_calendar_events(calendar_id, day, day)
+            base = await _list_calendar_events(calendar_id, day, day)
+
+            titan = str(getattr(settings, "CALENDAR_TITAN_SECURITY_ID", "") or "").strip()
+            if calendar_id != titan:
+                return base
+
+            # Composio's broad Titan list can omit simultaneous events sharing the
+            # same venue/start time. If St Anne's appears at all on the day, run a
+            # venue-filtered query too; Google returns each S-numbered event with
+            # its own event ID (e.g. S1/S2/S3/S4/S5 at the same 9:30 PM start).
+            has_st_annes = any(
+                "st anne" in f"{_event_summary(event)} {_event_location(event)}".lower()
+                for event in base
+            )
+            if not has_st_annes:
+                return base
+
+            targeted = await _list_calendar_events(calendar_id, day, day, query="St Anne's")
+            merged: list[dict] = []
+            seen_ids: set[str] = set()
+            for event in base + targeted:
+                event_id = _event_id(event)
+                if event_id and event_id in seen_ids:
+                    continue
+                if event_id:
+                    seen_ids.add(event_id)
+                merged.append(event)
+            return merged
 
     batches = await asyncio.gather(*(read_day(day) for day in days))
     merged: list[dict] = []
