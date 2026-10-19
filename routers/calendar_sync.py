@@ -695,6 +695,37 @@ async def calendar_sync_status(admin=Depends(get_admin_user), db=Depends(get_db)
     }
 
 
+async def _list_calendar_preview_events(calendar_id: str, from_date: date, to_date: date) -> list[dict]:
+    """Preview reader that avoids cross-day pagination loss in consumer MCP.
+
+    Each local date is read independently. Distinct Calendar events are merged
+    only by Google event ID, so two S1/S2/etc. shifts on the same date remain
+    separate rows.
+    """
+    if to_date < from_date:
+        return []
+    total_days = (to_date - from_date).days + 1
+    days = [from_date + timedelta(days=i) for i in range(total_days)]
+    semaphore = asyncio.Semaphore(4)
+
+    async def read_day(day: date) -> list[dict]:
+        async with semaphore:
+            return await _list_calendar_events(calendar_id, day, day)
+
+    batches = await asyncio.gather(*(read_day(day) for day in days))
+    merged: list[dict] = []
+    seen_ids: set[str] = set()
+    for batch in batches:
+        for event in batch:
+            event_id = _event_id(event)
+            if event_id and event_id in seen_ids:
+                continue
+            if event_id:
+                seen_ids.add(event_id)
+            merged.append(event)
+    return merged
+
+
 @router.post("/preview")
 async def preview_calendar_shifts(
     payload: PreviewRequest,
@@ -728,7 +759,7 @@ async def preview_calendar_shifts(
             # Over-fetch one additional local day, then enforce the requested inclusive
             # date range after normalization. This avoids Calendar/MCP boundary quirks
             # that can otherwise omit events occurring on the selected "to" date.
-            events = await _list_calendar_events(
+            events = await _list_calendar_preview_events(
                 calendar_id,
                 payload.from_date,
                 payload.to_date,
