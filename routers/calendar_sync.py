@@ -39,7 +39,7 @@ class ImportDraftRequest(BaseModel):
 
 class PromoteDraftRequest(BaseModel):
     guard_id: str
-    end_time: str
+    end_time: str = ""
     note: str = ""
 
 
@@ -885,16 +885,18 @@ async def promote_calendar_import_draft(
     except ValueError as exc:
         raise HTTPException(status_code=409, detail="Draft date is invalid") from exc
 
-    # Validate the clocks and overnight duration using the same logic as direct Calendar creation.
-    start_clock = _parse_schedule_clock(start_time)
-    end_clock = _parse_schedule_clock(end_time)
-    tz = ZoneInfo(str(getattr(settings, "CALENDAR_TIMEZONE", "America/Toronto") or "America/Toronto"))
-    start_dt = datetime.combine(date.fromisoformat(date_text), start_clock, tzinfo=tz)
-    end_dt = datetime.combine(date.fromisoformat(date_text), end_clock, tzinfo=tz)
-    if end_dt <= start_dt:
-        end_dt += timedelta(days=1)
-    if end_dt - start_dt > timedelta(hours=24):
-        raise HTTPException(status_code=409, detail="Shift duration is longer than 24 hours")
+    # End time is optional when assigning or sending a shift. Validate it only when supplied.
+    _parse_schedule_clock(start_time)
+    if end_time:
+        start_clock = _parse_schedule_clock(start_time)
+        end_clock = _parse_schedule_clock(end_time)
+        tz = ZoneInfo(str(getattr(settings, "CALENDAR_TIMEZONE", "America/Toronto") or "America/Toronto"))
+        start_dt = datetime.combine(date.fromisoformat(date_text), start_clock, tzinfo=tz)
+        end_dt = datetime.combine(date.fromisoformat(date_text), end_clock, tzinfo=tz)
+        if end_dt <= start_dt:
+            end_dt += timedelta(days=1)
+        if end_dt - start_dt > timedelta(hours=24):
+            raise HTTPException(status_code=409, detail="Shift duration is longer than 24 hours")
 
     # Claim the draft so a double-tap cannot create two schedules.
     now = datetime.utcnow()
@@ -960,7 +962,7 @@ async def promote_calendar_import_draft(
             "selected_guard": guard_name,
             "end_time": end_time,
             "needs_guard_review": False,
-            "needs_end_time_review": False,
+            "needs_end_time_review": not bool(end_time),
             "promoted_at": datetime.utcnow(),
             "updated_at": datetime.utcnow(),
         }},
@@ -1036,6 +1038,8 @@ def _schedule_shift_datetimes(shift: dict) -> tuple[datetime, datetime]:
         raise HTTPException(status_code=409, detail="Shift date is invalid") from exc
 
     start_clock = _parse_schedule_clock(shift.get("start_time"))
+    if not str(shift.get("end_time") or "").strip():
+        raise HTTPException(status_code=409, detail="Add an end time before creating a new Google Calendar event")
     end_clock = _parse_schedule_clock(shift.get("end_time"))
     tz = ZoneInfo(str(getattr(settings, "CALENDAR_TIMEZONE", "America/Toronto") or "America/Toronto"))
     start_dt = datetime.combine(day, start_clock, tzinfo=tz)

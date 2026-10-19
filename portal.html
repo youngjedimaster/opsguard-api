@@ -116,9 +116,9 @@
 <div style="border-top:1px solid #e5e7eb;margin-top:9px;padding-top:8px">
 <div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><strong style="font-size:.82rem">Calendar Import Drafts</strong><span class="status-pill status-approved" id="calendar-draft-count">0</span></div>
 <div class="dash-btn-row"><button class="primary secondary" onclick="loadCalendarImportDrafts()" type="button">Refresh Drafts</button><button class="primary" onclick="sendSelectedCalendarDrafts()" type="button">Send Selected Drafts</button></div>
-<p class="small" style="margin:5px 0">Assign each imported shift to its guard and enter the real end time. Select several rows and send them together. This creates OpsGuard assignments only and does not change Google Calendar.</p>
+<p class="small" style="margin:5px 0">Assign each imported shift to its guard. End time is optional and can be left blank/TBD. Select several rows and send them together. This creates OpsGuard assignments only and does not change Google Calendar.</p>
 <div class="table-scroll" id="calendar-drafts-wrap" style="height:260px;margin-top:6px">
-<table id="calendar-drafts-table"><thead><tr><th>Select</th><th>Date</th><th>Venue</th><th>Shift</th><th>Calendar guard</th><th>Start</th><th>Assign to guard</th><th>Real end time</th><th>Review</th><th>Action</th></tr></thead><tbody><tr><td colspan="10">No drafts loaded.</td></tr></tbody></table>
+<table id="calendar-drafts-table"><thead><tr><th>Select</th><th>Date</th><th>Venue</th><th>Shift</th><th>Calendar guard</th><th>Start</th><th>Assign to guard</th><th>End time (optional)</th><th>Review</th><th>Action</th></tr></thead><tbody><tr><td colspan="10">No drafts loaded.</td></tr></tbody></table>
 </div>
 </div>
 </div>
@@ -207,7 +207,7 @@
 <div class="row"><div class="half input-group"><label>Shift</label><select id="sched-shift-code"><option value="">Choose S1/S2/S3</option><option>S1</option><option>S2</option><option>S3</option></select></div></div>
 <div class="row">
 <div class="half input-group"><label>Start time</label><div style="display:flex;gap:4px"><select id="sched-start-hour"></select><select id="sched-start-min"></select><select id="sched-start-ampm"><option>AM</option><option>PM</option></select></div></div>
-<div class="half input-group"><label>End time</label><div style="display:flex;gap:4px"><select id="sched-end-hour"></select><select id="sched-end-min"></select><select id="sched-end-ampm"><option>AM</option><option>PM</option></select></div></div>
+<div class="half input-group"><label>End time (optional)</label><div style="display:flex;gap:4px"><select id="sched-end-hour"></select><select id="sched-end-min"></select><select id="sched-end-ampm"><option>AM</option><option>PM</option></select></div></div>
 </div>
 <div class="row" style="align-items:center;margin-top:4px">
 <button class="primary" onclick="addShiftToScheduleDraft()">Add to schedule</button>
@@ -489,9 +489,10 @@ function initScheduleTimeDropdowns(){
   const hrs=[...Array(12)].map((_,i)=>i+1),mins=["00","15","30","45"],sh=document.getElementById("sched-start-hour"),eh=document.getElementById("sched-end-hour"),sm=document.getElementById("sched-start-min"),em=document.getElementById("sched-end-min");
   if(!sh||!eh||!sm||!em)return;
   sh.innerHTML="";eh.innerHTML="";sm.innerHTML="";em.innerHTML="";
+  const noEnd=document.createElement("option");noEnd.value="";noEnd.textContent="TBD";eh.appendChild(noEnd);
   hrs.forEach(h=>{let o=document.createElement("option");o.value=h;o.textContent=h;sh.appendChild(o);let o2=document.createElement("option");o2.value=h;o2.textContent=h;eh.appendChild(o2)});
   mins.forEach(m=>{let o=document.createElement("option");o.value=m;o.textContent=m;sm.appendChild(o);let o2=document.createElement("option");o2.value=m;o2.textContent=m;em.appendChild(o2)});
-  sh.value=9;eh.value=5;document.getElementById("sched-start-ampm").value="AM";document.getElementById("sched-end-ampm").value="PM";
+  sh.value=9;eh.value="";document.getElementById("sched-start-ampm").value="AM";document.getElementById("sched-end-ampm").value="PM";
 }
 
 function toMinutes(h,m,p){let hh=parseInt(h,10),mm=parseInt(m,10);if(p==="AM"){if(hh===12)hh=0}else{if(hh!==12)hh+=12}return hh*60+mm}
@@ -815,9 +816,8 @@ async function promoteCalendarImportDraft(draftId,tr,row){
   const guardSel=tr.querySelector(".calendar-draft-guard"),endInput=tr.querySelector(".calendar-draft-end");
   const guardId=guardSel?guardSel.value:"",endTime=calendarDraftTimeToDisplay(endInput?endInput.value:"");
   if(!guardId){if(st)st.textContent="Choose a registered guard for the Calendar draft.";return;}
-  if(!endTime){if(st)st.textContent="Enter the real OpsGuard end time before sending the draft.";return;}
   const guardLabel=guardSel.options[guardSel.selectedIndex]?.textContent||"selected guard";
-  if(!(await confirmAction("Send "+(row.venue||"")+" "+(row.shift_code||"")+" on "+(row.date||"")+" "+(row.start_time||"")+" - "+endTime+" to "+guardLabel+"? This creates the OpsGuard assignment only; Google Calendar will not be changed.","Send to Guard")))return;
+  if(!(await confirmAction("Send "+(row.venue||"")+" "+(row.shift_code||"")+" on "+(row.date||"")+" "+(row.start_time||"")+" - "+(endTime||"TBD")+" to "+guardLabel+"? This creates the OpsGuard assignment only; Google Calendar will not be changed.","Send to Guard")))return;
   if(st)st.textContent="Creating OpsGuard schedule from Calendar draft…";
   try{
     const data=await rawApi("/calendar-sync/drafts/"+encodeURIComponent(draftId)+"/promote",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({guard_id:guardId,end_time:endTime,note:"Imported from Google Calendar"}),silent:true});
@@ -849,7 +849,6 @@ async function sendSelectedCalendarDrafts(){
     const guardSel=tr.querySelector(".calendar-draft-guard"),endInput=tr.querySelector(".calendar-draft-end");
     const guardId=guardSel?guardSel.value:"",endTime=calendarDraftTimeToDisplay(endInput?endInput.value:"");
     if(!guardId){if(st)st.textContent="Choose a registered guard for every selected draft.";return;}
-    if(!endTime){if(st)st.textContent="Enter the real end time for every selected draft.";return;}
     jobs.push({draftId,row,guardId,endTime});
   }
   if(!(await confirmAction("Send "+jobs.length+" selected Calendar draft"+(jobs.length===1?"":"s")+" to their assigned guards? Google Calendar will not be changed.","Send Selected Drafts")))return;
@@ -896,7 +895,7 @@ async function loadCalendarImportDrafts(){
       endTd.appendChild(endInput);tr.appendChild(endTd);
 
       const reviewTd=document.createElement("td");
-      reviewTd.textContent=[row.needs_guard_review?"guard":"",row.needs_end_time_review?"end time":""].filter(Boolean).join(" + ")||"Ready";
+      reviewTd.textContent=row.needs_guard_review?"guard needed":(row.needs_end_time_review?"end TBD":"Ready");
       tr.appendChild(reviewTd);
 
       const actionTd=document.createElement("td");
@@ -921,7 +920,7 @@ async function previewGoogleCalendarShifts(){
     const data=await rawApi("/calendar-sync/preview",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({from_date:from,to_date:to}),silent:true});
     renderCalendarPreview(data.items||[]);
     const sourceSummary=(data.sources||[]).map(s=>s.source+": "+(s.shifts_found||0)).join(" | ");
-    if(st)st.textContent=(data.count||0)+" S1/S2/S3 calendar shifts found"+(sourceSummary?" — "+sourceSummary:"")+". Short calendar slots are preview-only until their OpsGuard end time is reviewed."+(data.errors&&data.errors.length?" Some calendars returned an error.":"");
+    if(st)st.textContent=(data.count||0)+" S1/S2/S3 calendar shifts found"+(sourceSummary?" — "+sourceSummary:"")+". Calendar slot end times are reference only; OpsGuard end time may be left TBD."+(data.errors&&data.errors.length?" Some calendars returned an error.":"");
   }catch(e){if(st)st.textContent="Calendar preview failed: "+(e&&e.message?e.message:String(e));}
 }
 async function syncConfirmedToGoogle(){
@@ -1348,7 +1347,7 @@ function renderScheduleAvailability(){
 }
 function renderScheduleDraft(){
   const box=document.getElementById("schedule-proposed-list");if(!box)return;
-  box.value=scheduleDraft.map((s,i)=>(i+1)+". "+(s.venue||"Venue?")+" "+(s.shift_code||"")+" | "+s.date+" | "+s.start_time+" - "+s.end_time).join("\n");
+  box.value=scheduleDraft.map((s,i)=>(i+1)+". "+(s.venue||"Venue?")+" "+(s.shift_code||"")+" | "+s.date+" | "+s.start_time+" - "+(s.end_time||"TBD")).join("\n");
 }
 async function openCheckAvailabilityModal(){
   const adminSt=document.getElementById("schedule-admin-status");if(adminSt)adminSt.textContent="";
@@ -1397,7 +1396,7 @@ function addShiftToScheduleDraft(){
   if(!date){if(st)st.textContent="Choose a date first.";return;}
   if(!venue){if(st)st.textContent="Choose the venue.";return;}
   if(!shiftCode){if(st)st.textContent="Choose S1, S2 or S3.";return;}
-  const startStr=sh+":"+sm+" "+sap,endStr=eh+":"+em+" "+eap;
+  const startStr=sh+":"+sm+" "+sap,endStr=eh?(eh+":"+em+" "+eap):"";
   if(scheduleDraft.some(s=>s.date===date&&s.start_time===startStr&&s.end_time===endStr&&s.venue===venue&&s.shift_code===shiftCode)){if(st)st.textContent="That shift is already in the proposed schedule.";return;}
   scheduleDraft.push({date,start_time:startStr,end_time:endStr,venue:venue,shift_code:shiftCode,calendar_id:VENUE_CALENDAR_IDS[venue]||""});
   scheduleDraft.sort((a,b)=>parseScheduleRowDateTime(a)-parseScheduleRowDateTime(b));
