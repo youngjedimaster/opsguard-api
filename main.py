@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse
 
 from config import settings
-from routers import users, shifts, availability, schedules
+from routers import users, shifts, availability, schedules, calendar_sync
 
 
 def _normalize_origins(origins):
@@ -42,6 +42,7 @@ app.include_router(users.router)
 app.include_router(shifts.router)
 app.include_router(availability.router)
 app.include_router(schedules.router)
+app.include_router(calendar_sync.router)
 
 
 @app.get("/api/health")

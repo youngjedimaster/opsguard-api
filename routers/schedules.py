@@ -69,14 +69,16 @@ async def create_schedule(
     if selected_guard_id:
         if not ObjectId.is_valid(selected_guard_id):
             raise HTTPException(status_code=400, detail="Invalid guard account id")
-        guard_user = await db.users.find_one({"_id": ObjectId(selected_guard_id), "role": "guard"})
-        if not guard_user:
+        guard_user = await db.users.find_one({"_id": ObjectId(selected_guard_id)})
+        if not guard_user or str(guard_user.get("role") or "guard").lower() == "admin":
             raise HTTPException(status_code=404, detail="Selected guard account not found")
     else:
         guard_user = await db.users.find_one({"name": guard})
 
     if not guard_user and not selected_guard_id and "@" in guard:
         guard_user = await db.users.find_one({"email": guard.lower()})
+    if guard_user and str(guard_user.get("role") or "guard").lower() == "admin":
+        guard_user = None
 
     guard_id = str(guard_user["_id"]) if guard_user else None
 
