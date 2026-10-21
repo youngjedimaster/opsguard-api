@@ -283,7 +283,7 @@ async function rawApi(path,opts){
 
 async function deleteShiftAnyRole(shiftId){
   if(!authToken)return alert("Login first.");if(!shiftId)return alert("Missing shift id.");if(!(await confirmAction("Delete this hours entry? This cannot be undone.")))return;
-  const adminView=!document.getElementById("section-admin").classList.contains("hidden");const st=adminView?document.getElementById("admin-management-status"):document.getElementById("shift-status");if(st)st.textContent="Deleting shift...";
+  const adminDashboard=document.getElementById("section-admin-dashboard");const adminView=currentUserRole==="admin"&&!!adminDashboard&&!adminDashboard.classList.contains("hidden");const st=adminView?document.getElementById("admin-management-status"):document.getElementById("shift-status");if(st)st.textContent="Deleting shift...";
   try{await rawApi("/shifts/"+encodeURIComponent(shiftId),{method:"DELETE"});myShiftsCache=(myShiftsCache||[]).filter(s=>s.id!==shiftId);allShiftsCache=(allShiftsCache||[]).filter(s=>s.id!==shiftId);adminFilteredShifts=(adminFilteredShifts||[]).filter(s=>s.id!==shiftId);if(adminView&&currentUserRole==="admin"){await refreshAdminGuardOptionsForCurrentRange();await loadAllShifts();}else{renderMyShifts();await loadMyShifts();}if(st)st.textContent="Hours entry deleted.";}catch(e){if(st)st.textContent="Delete failed: "+(e&&e.message?e.message:String(e));}
 }
 
