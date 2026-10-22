@@ -132,6 +132,15 @@ async def register(user_in: UserCreate, db=Depends(get_db)):
 @router.post("/login", response_model=Token)
 async def login(form: OAuth2PasswordRequestForm = Depends(), db=Depends(get_db)):
     user = await db.users.find_one({"email": form.username.lower().strip()})
+    if (
+        user
+        and str(getattr(settings, "APP_ENV", "")).lower() == "staging"
+        and user.get("staging_mirrored_from") == "production"
+    ):
+        raise HTTPException(
+            status_code=403,
+            detail="This mirrored production guard account is disabled for staging login",
+        )
     if not user or not verify_password(form.password, user["password_hash"]):
         raise HTTPException(status_code=400, detail="Invalid credentials")
 

@@ -1,9 +1,6 @@
 from datetime import datetime
-import secrets
-
 from motor.motor_asyncio import AsyncIOMotorClient
 
-from auth import hash_password
 from config import settings
 
 _client: AsyncIOMotorClient | None = None
@@ -88,7 +85,7 @@ async def sync_production_guards_to_staging_once() -> dict:
             skipped_email_conflicts += 1
 
         clone["role"] = "guard"
-        clone["password_hash"] = hash_password(secrets.token_urlsafe(48))
+        clone["password_hash"] = "STAGING_LOGIN_DISABLED"
         clone["staging_mirrored_from"] = "production"
         clone["staging_mirrored_at"] = datetime.utcnow()
 
