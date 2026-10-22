@@ -1,5 +1,6 @@
 from datetime import datetime
 from typing import List
+import re
 
 from fastapi import APIRouter, Depends, HTTPException
 from bson import ObjectId
@@ -85,8 +86,8 @@ async def create_schedule(
     clean_shifts = []
     for s in shifts:
         shift_code = str(s.get("shift_code") or "").strip().upper()
-        if shift_code not in {"", "S1", "S2", "S3"}:
-            raise HTTPException(status_code=400, detail="Shift code must be S1, S2 or S3")
+        if shift_code and not re.fullmatch(r"S[1-9]\d*", shift_code):
+            raise HTTPException(status_code=400, detail="Shift code must be a valid S-number such as S1, S2 or S5")
         clean_shifts.append(
             {
                 "date": s.get("date"),
