@@ -104,22 +104,26 @@
 <div class="half input-group"><label>Preview to</label><input id="calendar-preview-to" type="date"/></div>
 </div>
 <div class="dash-btn-row">
-<button class="primary" id="calendar-preview-btn" onclick="previewGoogleCalendarShifts()" type="button">Preview Calendar Shifts</button>
-<button class="primary" disabled="" id="calendar-import-drafts-btn" onclick="importSelectedCalendarDrafts()" style="background:#7c3aed" type="button">Import Selected as Drafts</button>
+<button class="primary" id="calendar-preview-btn" onclick="previewGoogleCalendarShifts()" type="button">1. Preview Calendar Shifts</button>
+<button class="primary secondary" onclick="selectAllCalendarPreviewShifts()" type="button">Select all available</button>
+<button class="primary secondary" onclick="clearCalendarPreviewShiftSelection()" type="button">Clear shifts</button>
 <button class="primary" id="calendar-direct-export-btn" onclick="syncConfirmedToGoogle()" style="background:#166534" type="button">Sync Confirmed to Google</button>
 </div>
 <p class="small" id="calendar-sync-status"></p>
-<div class="table-scroll" id="calendar-preview-wrap" style="height:180px;display:none;margin-top:7px">
-<table id="calendar-preview-table"><thead><tr><th>Select</th><th>Date</th><th>Venue</th><th>Shift</th><th>Guard</th><th>Start</th><th>Calendar slot</th><th>OpsGuard</th></tr></thead><tbody></tbody></table>
+<div class="table-scroll" id="calendar-preview-wrap" style="height:260px;display:none;margin-top:7px">
+<table id="calendar-preview-table"><thead><tr><th>Select</th><th>Date</th><th>Venue</th><th>Shift</th><th>Calendar guard</th><th>Start</th><th>Calendar slot</th><th>OpsGuard</th></tr></thead><tbody></tbody></table>
 </div>
-<p class="small">Safety rule: all S-numbered security events are read. Import Selected creates OpsGuard review drafts only. Sync Confirmed to Google only updates existing matching events and never changes their times. Create Calendar Event is separate: for a confirmed manual shift it uses the OpsGuard start/end time, checks for an existing matching slot first, and will not create a duplicate when a conflicting slot is found.</p>
-<div style="border-top:1px solid #e5e7eb;margin-top:9px;padding-top:8px">
-<div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><strong style="font-size:.82rem">Calendar Import Drafts</strong><span class="status-pill status-approved" id="calendar-draft-count">0</span></div>
-<div class="dash-btn-row"><button class="primary secondary" onclick="loadCalendarImportDrafts()" type="button">Refresh Drafts</button><button class="primary" onclick="sendSelectedCalendarDrafts()" type="button">Send Selected Drafts</button></div>
-<p class="small" style="margin:5px 0">Assign each imported shift to its guard. End time is optional and can be left blank/TBD. Select several rows and send them together. This creates OpsGuard assignments only and does not change Google Calendar.</p>
-<div class="table-scroll" id="calendar-drafts-wrap" style="height:260px;margin-top:6px">
-<table id="calendar-drafts-table"><thead><tr><th>Select</th><th>Date</th><th>Venue</th><th>Shift</th><th>Calendar guard</th><th>Start</th><th>Assign to guard</th><th>End time (optional)</th><th>Review</th><th>Action</th></tr></thead><tbody><tr><td colspan="10">No drafts loaded.</td></tr></tbody></table>
+<div id="calendar-direct-send-panel" style="border-top:1px solid #e5e7eb;margin-top:9px;padding-top:8px">
+<strong style="font-size:.84rem">2. Choose guard recipients</strong>
+<p class="small" style="margin:4px 0 6px">Select one or more registered guards. Every selected guard receives the selected shifts as their own OpsGuard schedule.</p>
+<div id="calendar-preview-guard-list" style="border:1px solid #d1d5db;border-radius:9px;padding:7px;max-height:180px;overflow-y:auto;background:#fff"><span class="small">Loading registered guards…</span></div>
+<div class="input-group" style="margin-top:7px"><label>Note to guards (optional)</label><textarea id="calendar-preview-note" rows="2"></textarea></div>
+<div class="dash-btn-row">
+<button class="primary" id="calendar-send-selected-btn" onclick="sendSelectedCalendarShiftsDirect()" style="background:#7c3aed" type="button">3. Send Selected Shifts</button>
+<button class="primary secondary" onclick="clearScheduleGuardSelection()" type="button">Clear guards</button>
 </div>
+</div>
+<p class="small">Google Calendar stays read-only here. Previewed Calendar end times are reference only; the OpsGuard end time is left TBD. Rows already linked/drafted in OpsGuard stay disabled to prevent duplicate assignments.</p>
 </div>
 </div>
 </div>
@@ -648,7 +652,7 @@ function scheduleGuardListMarkup(){
   }).join("");
 }
 function renderScheduleGuardPickers(){
-  ["admin-schedule-guard-list","schedule-modal-guard-list"].forEach(id=>{
+  ["admin-schedule-guard-list","schedule-modal-guard-list","calendar-preview-guard-list"].forEach(id=>{
     const box=document.getElementById(id);if(!box)return;
     box.innerHTML=scheduleGuardListMarkup();
     box.querySelectorAll(".schedule-guard-check").forEach(cb=>cb.addEventListener("change",()=>{
@@ -765,6 +769,74 @@ function updateCalendarDraftImportButton(){
   if(!btn)return;
   btn.disabled=!document.querySelector(".calendar-preview-select:checked");
 }
+function selectedCalendarPreviewRows(){
+  return [...document.querySelectorAll(".calendar-preview-select:checked")]
+    .map(el=>calendarPreviewCache[Number(el.dataset.index)])
+    .filter(Boolean);
+}
+function selectAllCalendarPreviewShifts(){
+  document.querySelectorAll(".calendar-preview-select:not(:disabled)").forEach(cb=>{cb.checked=true;});
+  updateCalendarDraftImportButton();
+}
+function clearCalendarPreviewShiftSelection(){
+  document.querySelectorAll(".calendar-preview-select").forEach(cb=>{cb.checked=false;});
+  updateCalendarDraftImportButton();
+}
+async function sendSelectedCalendarShiftsDirect(){
+  const st=document.getElementById("calendar-sync-status");
+  if(!authToken){if(st)st.textContent="Login first.";return;}
+  if(currentUserRole!=="admin"){if(st)st.textContent="Admin access is required.";return;}
+  if(!Object.keys(adminUserMap||{}).length)await loadAdminUsers();
+
+  const rows=selectedCalendarPreviewRows();
+  const guards=selectedScheduleGuards();
+  if(!rows.length){if(st)st.textContent="Select one or more Calendar shifts first.";return;}
+  if(!guards.length){if(st)st.textContent="Select at least one registered guard.";return;}
+
+  const note=(document.getElementById("calendar-preview-note")||{}).value||"";
+  const shifts=rows.map(row=>({
+    date:row.date||"",
+    venue:row.venue||"",
+    shift_code:row.shift_code||"",
+    start_time:row.start_time||"",
+    end_time:"",
+    calendar_id:row.calendar_id||"",
+    google_event_id:row.google_event_id||null,
+    calendar_start_time:row.calendar_start_time||null,
+    calendar_end_time:row.calendar_end_time||null
+  }));
+
+  const label=rows.length+" selected shift"+(rows.length===1?"":"s")+" to "+guards.length+" guard"+(guards.length===1?"":"s");
+  if(!(await confirmAction("Send "+label+"? Each selected guard receives their own OpsGuard schedule. Google Calendar will not be changed.","Send Selected Shifts")))return;
+
+  if(st)st.textContent="Sending "+label+"…";
+  const results=[];
+  for(const g of guards){
+    try{
+      const payload={
+        guard:g.name||g.email,
+        guard_id:g.id||null,
+        note,
+        shifts:shifts.map(s=>({...s,guard:g.name||g.email}))
+      };
+      await rawApi("/schedules",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload),silent:true});
+      results.push({guard:g,ok:true});
+    }catch(e){
+      results.push({guard:g,ok:false,error:e&&e.message?e.message:String(e)});
+    }
+  }
+
+  const sent=results.filter(r=>r.ok),failed=results.filter(r=>!r.ok);
+  if(st)st.textContent=sent.length+" guard schedule"+(sent.length===1?"":"s")+" sent"+(failed.length?"; "+failed.length+" failed.":". Awaiting guard confirmation.");
+  if(sent.length){
+    clearCalendarPreviewShiftSelection();
+    await loadAdminScheduleConfirmations();
+    await loadAdminDashboard();
+    await previewGoogleCalendarShifts();
+  }
+  if(failed.length)alert("Some schedules could not be sent:\n"+failed.map(r=>(r.guard.name||r.guard.email)+": "+r.error).join("\n"));
+}
+
 async function importSelectedCalendarDrafts(){
   const st=document.getElementById("calendar-sync-status");
   const checked=[...document.querySelectorAll(".calendar-preview-select:checked")];
