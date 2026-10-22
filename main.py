@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse
 
 from config import settings
+from database import sync_production_guards_to_staging_once
 from routers import users, shifts, availability, schedules, calendar_sync
 
 
@@ -44,6 +45,22 @@ app.include_router(availability.router)
 app.include_router(schedules.router)
 app.include_router(calendar_sync.router)
 
+
+
+
+@app.on_event("startup")
+async def staging_guard_roster_bootstrap():
+    result = await sync_production_guards_to_staging_once()
+    status = result.get("status")
+    if status in {"synced", "already_synced"}:
+        print(
+            "STAGING_GUARD_ROSTER",
+            status,
+            "copied=",
+            result.get("copied", 0),
+            "email_conflicts=",
+            result.get("skipped_email_conflicts", 0),
+        )
 
 @app.get("/api/health")
 async def health():
