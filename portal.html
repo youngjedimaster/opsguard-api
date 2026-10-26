@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width,initial-scale=1" name="viewport"/><title>OpsGuard Portal</title><style>:root{--bg:#0B1F3B;--bg2:#1F3C88;--radius:14px}*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f3f4f6;color:#111827}header{background:var(--bg);color:#fff;padding:12px 18px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;position:sticky;top:0;z-index:1000}header h1{font-size:1.1rem;margin:0}.env-badge{display:none;margin-left:8px;padding:3px 7px;border-radius:999px;background:#facc15;color:#422006;font-size:.68rem;font-weight:900;letter-spacing:.06em;vertical-align:middle}.nav-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap}.nav-btn{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);padding:6px 10px;color:#fff;border-radius:999px;font-size:.75rem;cursor:pointer}.nav-btn:hover{background:rgba(255,255,255,.18)}.user-menu-wrap{position:relative;display:none}.avatar-btn{width:34px;height:34px;border-radius:999px;display:grid;place-items:center;background:#fff;color:var(--bg);font-weight:800;font-size:.9rem;border:none;cursor:pointer}.user-dropdown{position:absolute;right:0;top:44px;background:#fff;color:#111827;border-radius:12px;min-width:190px;box-shadow:0 10px 30px rgba(0,0,0,.15);overflow:hidden;display:none}.ud-head{padding:8px 10px;border-bottom:1px solid #e5e7eb;font-size:.78rem;color:#374151;background:#f9fafb}.user-dropdown button{width:100%;text-align:left;padding:8px 10px;border:none;background:#fff;font-size:.8rem;cursor:pointer}.user-dropdown button:hover{background:#f3f4f6}.shell{max-width:1100px;margin:18px auto;padding:0 14px 60px}.card{background:#fff;border-radius:var(--radius);padding:12px 12px 16px;box-shadow:0 10px 30px rgba(11,31,59,.08);margin-bottom:12px}.row{display:flex;gap:10px;flex-wrap:wrap}.input-group{margin-bottom:8px;width:100%}label{display:block;font-weight:600;margin-bottom:2px;font-size:.78rem}input,select,textarea{width:100%;padding:6px 8px;border-radius:9px;border:1px solid #d1d5db;font-size:.8rem}button.primary{background:var(--bg2);border:none;color:#fff;padding:7px 11px;border-radius:999px;cursor:pointer;font-weight:600;font-size:.78rem}button.primary:hover{opacity:.95}.hidden{display:none}table{width:100%;border-collapse:collapse;font-size:.72rem}th,td{border-bottom:1px solid #e5e7eb;padding:5px 4px;text-align:left}th{font-weight:600;color:#4b5563}.table-scroll{height:120px;overflow-y:auto;overflow-x:hidden;border-radius:10px;border:1px solid #e5e7eb;background:#fff;margin-top:4px}.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;z-index:2000}.modal{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(520px,calc(100% - 24px));background:#fff;border-radius:16px;padding:12px;box-shadow:0 20px 60px rgba(0,0,0,.25);display:none;z-index:2001;max-height:90vh;overflow-y:auto}.modal h3{margin:0 0 4px;font-size:1rem}.modal small{color:#6b7280;font-size:.72rem}.modal .actions{display:flex;gap:8px;margin-top:6px;flex-wrap:wrap}.modal .actions .secondary{background:#0B1F3B}p.small{font-size:.7rem;margin-top:4px;color:#4b5563}.avail-line{padding:2px 4px;border-radius:6px;font-size:.75rem}.avail-line:hover{background:#e5e7eb}.icon-btn{background:transparent;border:1px solid #d1d5db;border-radius:999px;padding:3px 8px;cursor:pointer;font-size:.72rem}.icon-btn:hover{background:#f3f4f6}a{color:var(--bg2);text-decoration:none}a:hover{text-decoration:underline}.dash-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0}.dash-metric{border:1px solid #e5e7eb;border-radius:14px;padding:12px;background:#fff;min-height:96px}.dash-metric-label{font-size:.72rem;color:#4b5563;font-weight:700}.dash-metric-value{font-size:1.65rem;line-height:1.05;font-weight:900;color:#0B1F3B;margin-top:5px}.dash-metric-sub{font-size:.7rem;color:#6b7280;margin-top:4px}.dash-section{border:1px solid #e5e7eb;border-radius:14px;padding:11px;background:#f9fafb;margin-top:10px}.dash-section h3{margin:0 0 6px;font-size:.9rem}.dash-action-list{display:grid;gap:8px}.dash-action-item{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:9px}.dash-action-main{min-width:0}.dash-action-title{font-size:.78rem;font-weight:800}.dash-action-meta{font-size:.7rem;color:#6b7280;margin-top:2px}.dash-action-amount{font-size:.78rem;font-weight:800;white-space:nowrap}.dash-btn-row{display:flex;flex-wrap:wrap;gap:7px;margin-top:9px}.dash-empty{font-size:.75rem;color:#6b7280;padding:8px 2px}.dash-calendar-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.dash-calendar-stat{background:#fff;border-radius:10px;padding:8px;text-align:center;border:1px solid #e5e7eb}.dash-calendar-stat strong{display:block;font-size:1.05rem;color:#0B1F3B}.pay-list{display:grid;gap:10px;margin-top:8px}.pay-card{border:1px solid #e5e7eb;border-radius:12px;padding:10px;background:#fff}.pay-card-top{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}.pay-card-title{font-weight:800;font-size:.88rem}.pay-card-meta{font-size:.75rem;color:#4b5563;margin-top:3px}.status-pill{display:inline-block;border-radius:999px;padding:4px 8px;font-size:.7rem;font-weight:800;white-space:nowrap}.status-submitted{background:#fef3c7;color:#92400e}.status-approved{background:#dbeafe;color:#1e40af}.status-paid{background:#dcfce7;color:#166534}.pay-detail-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-top:8px;font-size:.74rem}.pay-detail{background:#f9fafb;border-radius:8px;padding:6px}.password-wrap{display:flex;gap:4px}.password-wrap input{flex:1}.eye-btn{min-width:58px;padding:0 10px;border:1px solid #d1d5db;background:#fff;border-radius:9px;cursor:pointer;font-size:.78rem;font-weight:700;color:#0B1F3B}@media(min-width:700px){.row>.half{width:calc(50% - 5px)}.row>.third{width:calc(33.333% - 7px)}.dash-grid{grid-template-columns:repeat(4,minmax(0,1fr))}.dash-action-list{grid-template-columns:repeat(2,minmax(0,1fr))}}</style></head><body data-environment="__OPSGUARD_ENV__">
 <header><h1>OpsGuard Portal <span class="env-badge" id="env-badge">STAGING</span></h1><div class="nav-row">
-<button class="nav-btn" onclick="showSection('login')">Login</button>
-<button class="nav-btn" onclick="showSection('submit')">Submit Hours</button>
-<button class="nav-btn" onclick="showSection('availability')">Availability</button>
-<button class="nav-btn" onclick="showSection('schedule')">Schedule</button>
-<button class="nav-btn" onclick="showSection('pay')">My Hours &amp; Pay</button>
-<button class="nav-btn" onclick="showSection('admin-dashboard')">Dashboard</button>
+<button class="nav-btn" id="nav-login" onclick="showSection('login')">Login</button>
+<button class="nav-btn" id="nav-submit" onclick="showSection('submit')">Submit Hours</button>
+<button class="nav-btn" id="nav-availability" onclick="showSection('availability')">Availability</button>
+<button class="nav-btn" id="nav-schedule" onclick="showSection('schedule')">Schedule</button>
+<button class="nav-btn" id="nav-pay" onclick="showSection('pay')">My Hours &amp; Pay</button>
+<button class="nav-btn" id="nav-dashboard" onclick="showSection('admin-dashboard')">Dashboard</button>
 <div class="user-menu-wrap" id="user-menu-wrap">
 <button aria-label="User menu" class="avatar-btn" id="avatar-btn" onclick="toggleUserDropdown()">U</button>
 <div class="user-dropdown" id="user-dropdown">
@@ -234,12 +234,16 @@ const FIXED_VENUES=["Baby G","Garrison","Get Well","Jean Darlene","St Anne's","S
 const VENUE_CALENDAR_IDS={"Baby G":"s374q7mjj2hoc77f71oml6n5uc@group.calendar.google.com","Garrison":"garrisonstaff@gmail.com","Jean Darlene":"78f673188cd9e7f1c76014eee634b0b5578f9da7f0657796fcb45e05080f45c3@group.calendar.google.com","St Anne's":"78f673188cd9e7f1c76014eee634b0b5578f9da7f0657796fcb45e05080f45c3@group.calendar.google.com","Get Well":"78f673188cd9e7f1c76014eee634b0b5578f9da7f0657796fcb45e05080f45c3@group.calendar.google.com","Standard Time":"78f673188cd9e7f1c76014eee634b0b5578f9da7f0657796fcb45e05080f45c3@group.calendar.google.com","Two Kats":"78f673188cd9e7f1c76014eee634b0b5578f9da7f0657796fcb45e05080f45c3@group.calendar.google.com"};
 
 function showSection(id){
-  ["login","submit","availability","schedule","pay","admin-dashboard","admin"].forEach(s=>{const el=document.getElementById("section-"+s);if(el)el.classList.add("hidden")});
+  const allSections=["login","submit","availability","schedule","pay","admin-dashboard","admin"];
+  const guardSections=["submit","availability","schedule","pay"];
+  if(!authToken&&id!=="login")id="login";
+  if((id==="admin-dashboard"||id==="admin")&&currentUserRole!=="admin")id=authToken?"submit":"login";
+  if(authToken&&currentUserRole!=="admin"&&id!=="login"&&!guardSections.includes(id))id="submit";
+  allSections.forEach(s=>{const el=document.getElementById("section-"+s);if(el)el.classList.add("hidden")});
   const t=document.getElementById("section-"+id);if(t)t.classList.remove("hidden");
   if(id==="schedule"&&authToken)loadMySchedule();
   if(id==="pay"&&authToken)loadMyShifts();
-  if(id==="admin-dashboard"){
-    if(currentUserRole!=="admin"){const st=document.getElementById("dash-status");if(st)st.textContent="Admin access is required.";return;}
+  if(id==="admin-dashboard"&&currentUserRole==="admin"){
     loadAdminDashboard();
     loadAdminUsers();
     refreshAdminGuardOptionsForCurrentRange();
@@ -278,7 +282,7 @@ function confirmAction(message,okLabel="Delete"){
 function prewarmApi(){if(apiWarmPromise)return apiWarmPromise;apiWarmPromise=fetch(API_BASE+"/health",{method:"GET",cache:"no-store"}).catch(()=>null).finally(()=>{setTimeout(()=>{apiWarmPromise=null},30000)});return apiWarmPromise;}
 function saveSession(){try{sessionStorage.setItem("opsguard_session",JSON.stringify({token:authToken,email:currentUserEmail,name:currentUserName,role:currentUserRole}))}catch{}}
 function clearSession(){try{sessionStorage.removeItem("opsguard_session")}catch{}}
-async function restoreSession(){let saved=null;try{saved=JSON.parse(sessionStorage.getItem("opsguard_session")||"null")}catch{}if(!saved||!saved.token)return;authToken=saved.token;currentUserEmail=saved.email||null;currentUserName=saved.name||null;currentUserRole=saved.role||null;setLoggedInUI(currentUserEmail,currentUserName);showSection("submit");try{const me=await rawApi("/auth/me",{method:"GET",silent:true});if(me){currentUserEmail=me.email||currentUserEmail;currentUserName=me.name||currentUserName;currentUserRole=me.role||currentUserRole;setLoggedInUI(currentUserEmail,currentUserName);saveSession();loadMyShifts();}}catch{authToken=null;currentUserEmail=null;currentUserName=null;currentUserRole=null;clearSession();setLoggedInUI(null,null);showSection("login");}}
+async function restoreSession(){let saved=null;try{saved=JSON.parse(sessionStorage.getItem("opsguard_session")||"null")}catch{}if(!saved||!saved.token){setLoggedInUI(null,null);showSection("login");return;}authToken=saved.token;currentUserEmail=saved.email||null;currentUserName=saved.name||null;currentUserRole=saved.role||null;setLoggedInUI(currentUserEmail,currentUserName);showSection(currentUserRole==="admin"?"admin-dashboard":"submit");try{const me=await rawApi("/auth/me",{method:"GET",silent:true});if(me){currentUserEmail=me.email||currentUserEmail;currentUserName=me.name||currentUserName;currentUserRole=me.role||currentUserRole;setLoggedInUI(currentUserEmail,currentUserName);showSection(currentUserRole==="admin"?"admin-dashboard":"submit");saveSession();loadMyShifts();}}catch{authToken=null;currentUserEmail=null;currentUserName=null;currentUserRole=null;clearSession();setLoggedInUI(null,null);showSection("login");}}
 
 async function rawApi(path,opts){
   const o={...(opts||{})};o.headers={...(o.headers||{})};const silent=!!o.silent;delete o.silent;const timeoutMs=Math.max(1000,Number(o.timeoutMs)||30000);delete o.timeoutMs;if(authToken)o.headers.Authorization="Bearer "+authToken;const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),timeoutMs);o.signal=controller.signal;o.cache=o.cache||"no-store";
@@ -316,6 +320,13 @@ async function adminSetPaid(shiftId,paid){
   }catch(e){alert("Payment status update failed: "+(e&&e.message?e.message:String(e)));await loadAllShifts();}
 }
 
+function updateNavigationForRole(){
+  const loggedIn=!!authToken,isAdmin=loggedIn&&currentUserRole==="admin";
+  const setNav=(id,show)=>{const el=document.getElementById(id);if(el)el.style.display=show?"inline-block":"none";};
+  setNav("nav-login",!loggedIn);
+  ["nav-submit","nav-availability","nav-schedule","nav-pay"].forEach(id=>setNav(id,loggedIn));
+  setNav("nav-dashboard",isAdmin);
+}
 function setLoggedInUI(email,name){
   if(looksLikeEmail(email))currentUserEmail=email;
   if(name)currentUserName=name;
@@ -323,6 +334,7 @@ function setLoggedInUI(email,name){
   const display=currentUserName||(currentUserEmail?currentUserEmail.split("@")[0]:"User");
   const initial=display?display.trim()[0].toUpperCase():"U";
   avatar.textContent=initial;udName.textContent=display;udEmail.textContent=currentUserEmail||"";wrap.style.display=authToken?"block":"none";
+  updateNavigationForRole();
 }
 function logout(){
   authToken=null;currentUserEmail=null;currentUserName=null;currentUserRole=null;clearSession();
