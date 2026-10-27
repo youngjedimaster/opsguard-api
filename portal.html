@@ -299,13 +299,20 @@ async function deleteAvailabilityAnyRole(availId){
   if(!authToken)return alert("Login first.");if(!availId)return alert("Missing availability id.");if(!(await confirmAction("Delete this availability entry?")))return;const st=document.getElementById("avail-status");if(st)st.textContent="Deleting availability...";try{await rawApi("/availability/"+encodeURIComponent(availId),{method:"DELETE"});if(st)st.textContent="Availability deleted.";await loadMyAvailability();}catch(e){if(st)st.textContent="Delete failed: "+(e&&e.message?e.message:String(e));}
 }
 
+function syncAdminShiftCaches(updated,renderLoadedOperations){
+  if(!updated||!updated.id)return;
+  allShiftsCache=(allShiftsCache||[]).map(s=>s.id===updated.id?({...s,...updated}):s);
+  adminFilteredShifts=(adminFilteredShifts||[]).map(s=>s.id===updated.id?({...s,...updated}):s);
+  if(renderLoadedOperations&&adminFilteredShifts.length){
+    renderAdminShifts({items:adminFilteredShifts});
+  }
+}
 async function adminSetApproved(shiftId,approved){
   if(!authToken)return alert("Login first.");
   if(!shiftId)return alert("Missing shift id.");
   try{
     const updated=await rawApi("/shifts/"+encodeURIComponent(shiftId)+"/approved",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({approved:!!approved})});
-    allShiftsCache=(allShiftsCache||[]).map(s=>s.id===updated.id?({...s,...updated}):s);
-    renderAdminShifts({items:allShiftsCache});
+    syncAdminShiftCaches(updated,true);
     const dash=document.getElementById("section-admin-dashboard");if(dash&&!dash.classList.contains("hidden"))loadAdminDashboard();
   }catch(e){alert("Approval update failed: "+(e&&e.message?e.message:String(e)));await loadAllShifts();}
 }
@@ -314,8 +321,7 @@ async function adminSetPaid(shiftId,paid){
   if(!shiftId)return alert("Missing shift id.");
   try{
     const updated=await rawApi("/shifts/"+encodeURIComponent(shiftId)+"/paid",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({paid:!!paid})});
-    allShiftsCache=(allShiftsCache||[]).map(s=>s.id===updated.id?({...s,...updated}):s);
-    renderAdminShifts({items:allShiftsCache});
+    syncAdminShiftCaches(updated,true);
     const dash=document.getElementById("section-admin-dashboard");if(dash&&!dash.classList.contains("hidden"))loadAdminDashboard();
   }catch(e){alert("Payment status update failed: "+(e&&e.message?e.message:String(e)));await loadAllShifts();}
 }
@@ -718,7 +724,8 @@ function openAdvancedAdmin(){showSection("admin-dashboard");setTimeout(()=>{cons
 async function dashboardApproveShift(shiftId){
   if(!shiftId)return;
   try{
-    await rawApi("/shifts/"+encodeURIComponent(shiftId)+"/approved",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({approved:true})});
+    const updated=await rawApi("/shifts/"+encodeURIComponent(shiftId)+"/approved",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({approved:true})});
+    syncAdminShiftCaches(updated,true);
     await loadAdminDashboard();
   }catch(e){alert("Approval failed: "+(e&&e.message?e.message:String(e)));}
 }
@@ -726,7 +733,8 @@ async function dashboardMarkPaid(shiftId){
   if(!shiftId)return;
   if(!(await confirmAction("Mark this approved hours record as paid?","Mark Paid")))return;
   try{
-    await rawApi("/shifts/"+encodeURIComponent(shiftId)+"/paid",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({paid:true})});
+    const updated=await rawApi("/shifts/"+encodeURIComponent(shiftId)+"/paid",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({paid:true})});
+    syncAdminShiftCaches(updated,true);
     await loadAdminDashboard();
   }catch(e){alert("Payment status update failed: "+(e&&e.message?e.message:String(e)));}
 }
@@ -1070,7 +1078,6 @@ async function loadAdminDashboard(){
     ]);
     const shifts=Array.isArray(shiftData&&shiftData.items)?shiftData.items:[];
     const schedules=Array.isArray(scheduleData)?scheduleData:[];
-    allShiftsCache=shifts;
     adminScheduleConfirmationsCache=schedules;
     renderAdminDashboard(shifts,schedules);
     initCalendarPreviewDates();
