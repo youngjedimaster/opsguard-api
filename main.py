@@ -45,6 +45,9 @@ app.include_router(schedules.router)
 app.include_router(calendar_sync.router)
 
 
+
+
+
 @app.get("/api/health")
 async def health():
     return {"status": "ok", "environment": getattr(settings, "APP_ENV", "production")}
