@@ -107,7 +107,6 @@
 <button class="primary" id="calendar-preview-btn" onclick="previewGoogleCalendarShifts()" type="button">1. Preview Calendar Shifts</button>
 <button class="primary secondary" onclick="selectAllCalendarPreviewShifts()" type="button">Select all available</button>
 <button class="primary secondary" onclick="clearCalendarPreviewShiftSelection()" type="button">Clear shifts</button>
-<button class="primary" id="calendar-direct-export-btn" onclick="syncConfirmedToGoogle()" style="background:#166534" type="button">Sync Confirmed to Google</button>
 </div>
 <p class="small" id="calendar-sync-status"></p>
 <div class="table-scroll" id="calendar-preview-wrap" style="height:260px;display:none;margin-top:7px">
@@ -743,24 +742,22 @@ async function dashboardExportConfirmed(){
 }
 async function loadCalendarSyncStatus(){
   const badge=document.getElementById("calendar-sync-badge"),label=document.getElementById("calendar-sync-connection");
-  const previewBtn=document.getElementById("calendar-preview-btn"),exportBtn=document.getElementById("calendar-direct-export-btn");
+  const previewBtn=document.getElementById("calendar-preview-btn");
   try{
     const data=await rawApi("/calendar-sync/status",{method:"GET",silent:true});
     const ready=!!data.configured;
     if(badge){badge.textContent=ready?"Connected":"Needs Setup";badge.className="status-pill "+(ready?"status-paid":"status-submitted");}
-    if(label)label.textContent=ready?"Direct Google sync is ready. "+String(data.draft_count||0)+" import draft(s) await review.":"Direct sync is built but the staging Composio key still needs to be added.";
-    const draftCount=document.getElementById("calendar-draft-count");if(draftCount)draftCount.textContent=String(data.draft_count||0);
+    if(label)label.textContent=ready?"Google Calendar connected. Preview is read-only; Send Selected Shifts creates OpsGuard schedules only.":"Google Calendar connection needs setup.";
     if(previewBtn)previewBtn.disabled=!ready;
-    if(exportBtn)exportBtn.disabled=!ready;
     return ready;
   }catch(e){
     if(badge){badge.textContent="Unavailable";badge.className="status-pill status-submitted";}
     if(label)label.textContent="Could not check calendar connection.";
     if(previewBtn)previewBtn.disabled=true;
-    if(exportBtn)exportBtn.disabled=true;
     return false;
   }
 }
+
 function initCalendarPreviewDates(){
   const from=document.getElementById("calendar-preview-from"),to=document.getElementById("calendar-preview-to");
   if(!from||!to||from.value||to.value)return;
@@ -1082,7 +1079,6 @@ async function loadAdminDashboard(){
     renderAdminDashboard(shifts,schedules);
     initCalendarPreviewDates();
     loadCalendarSyncStatus();
-    loadCalendarImportDrafts();
     if(st)st.textContent="Updated just now.";
   }catch(e){
     if(st)st.textContent="Could not refresh dashboard.";
