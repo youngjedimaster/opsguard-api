@@ -27,7 +27,7 @@ async def sync_production_guards_to_staging_once() -> dict:
     client = _client_instance()
     staging_db = client["opsguard_staging"]
     production_db = client["opsguard"]
-    marker_id = "production_guard_roster_v1"
+    marker_id = "production_guard_roster_v2_2026_11_02"
 
     marker = await staging_db.migrations.find_one({"_id": marker_id})
     if marker:

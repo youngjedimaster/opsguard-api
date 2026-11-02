@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width,initial-scale=1" name="viewport"/><title>OpsGuard Portal</title><style>:root{--bg:#0B1F3B;--bg2:#1F3C88;--radius:14px}*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f3f4f6;color:#111827}header{background:var(--bg);color:#fff;padding:12px 18px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;position:sticky;top:0;z-index:1000}header h1{font-size:1.1rem;margin:0}.env-badge{display:none;margin-left:8px;padding:3px 7px;border-radius:999px;background:#facc15;color:#422006;font-size:.68rem;font-weight:900;letter-spacing:.06em;vertical-align:middle}.nav-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap}.nav-btn{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);padding:6px 10px;color:#fff;border-radius:999px;font-size:.75rem;cursor:pointer}.nav-btn:hover{background:rgba(255,255,255,.18)}.user-menu-wrap{position:relative;display:none}.avatar-btn{width:34px;height:34px;border-radius:999px;display:grid;place-items:center;background:#fff;color:var(--bg);font-weight:800;font-size:.9rem;border:none;cursor:pointer}.user-dropdown{position:absolute;right:0;top:44px;background:#fff;color:#111827;border-radius:12px;min-width:190px;box-shadow:0 10px 30px rgba(0,0,0,.15);overflow:hidden;display:none}.ud-head{padding:8px 10px;border-bottom:1px solid #e5e7eb;font-size:.78rem;color:#374151;background:#f9fafb}.user-dropdown button{width:100%;text-align:left;padding:8px 10px;border:none;background:#fff;font-size:.8rem;cursor:pointer}.user-dropdown button:hover{background:#f3f4f6}.shell{max-width:1100px;margin:18px auto;padding:0 14px 60px}.card{background:#fff;border-radius:var(--radius);padding:12px 12px 16px;box-shadow:0 10px 30px rgba(11,31,59,.08);margin-bottom:12px}.row{display:flex;gap:10px;flex-wrap:wrap}.input-group{margin-bottom:8px;width:100%}label{display:block;font-weight:600;margin-bottom:2px;font-size:.78rem}input,select,textarea{width:100%;padding:6px 8px;border-radius:9px;border:1px solid #d1d5db;font-size:.8rem}button.primary{background:var(--bg2);border:none;color:#fff;padding:7px 11px;border-radius:999px;cursor:pointer;font-weight:600;font-size:.78rem}button.primary:hover{opacity:.95}.hidden{display:none}table{width:100%;border-collapse:collapse;font-size:.72rem}th,td{border-bottom:1px solid #e5e7eb;padding:5px 4px;text-align:left}th{font-weight:600;color:#4b5563}.table-scroll{height:120px;overflow-y:auto;overflow-x:hidden;border-radius:10px;border:1px solid #e5e7eb;background:#fff;margin-top:4px}.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;z-index:2000}.modal{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(520px,calc(100% - 24px));background:#fff;border-radius:16px;padding:12px;box-shadow:0 20px 60px rgba(0,0,0,.25);display:none;z-index:2001;max-height:90vh;overflow-y:auto}.modal h3{margin:0 0 4px;font-size:1rem}.modal small{color:#6b7280;font-size:.72rem}.modal .actions{display:flex;gap:8px;margin-top:6px;flex-wrap:wrap}.modal .actions .secondary{background:#0B1F3B}p.small{font-size:.7rem;margin-top:4px;color:#4b5563}.avail-line{padding:2px 4px;border-radius:6px;font-size:.75rem}.avail-line:hover{background:#e5e7eb}.icon-btn{background:transparent;border:1px solid #d1d5db;border-radius:999px;padding:3px 8px;cursor:pointer;font-size:.72rem}.icon-btn:hover{background:#f3f4f6}a{color:var(--bg2);text-decoration:none}a:hover{text-decoration:underline}.dash-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0}.dash-metric{border:1px solid #e5e7eb;border-radius:14px;padding:12px;background:#fff;min-height:96px}.dash-metric-label{font-size:.72rem;color:#4b5563;font-weight:700}.dash-metric-value{font-size:1.65rem;line-height:1.05;font-weight:900;color:#0B1F3B;margin-top:5px}.dash-metric-sub{font-size:.7rem;color:#6b7280;margin-top:4px}.dash-section{border:1px solid #e5e7eb;border-radius:14px;padding:11px;background:#f9fafb;margin-top:10px}.dash-section h3{margin:0 0 6px;font-size:.9rem}.dash-action-list{display:grid;gap:8px}.dash-action-item{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:9px}.dash-action-main{min-width:0}.dash-action-title{font-size:.78rem;font-weight:800}.dash-action-meta{font-size:.7rem;color:#6b7280;margin-top:2px}.dash-action-amount{font-size:.78rem;font-weight:800;white-space:nowrap}.dash-btn-row{display:flex;flex-wrap:wrap;gap:7px;margin-top:9px}.dash-empty{font-size:.75rem;color:#6b7280;padding:8px 2px}.dash-calendar-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.dash-calendar-stat{background:#fff;border-radius:10px;padding:8px;text-align:center;border:1px solid #e5e7eb}.dash-calendar-stat strong{display:block;font-size:1.05rem;color:#0B1F3B}.pay-list{display:grid;gap:10px;margin-top:8px}.pay-card{border:1px solid #e5e7eb;border-radius:12px;padding:10px;background:#fff}.pay-card-top{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}.pay-card-title{font-weight:800;font-size:.88rem}.pay-card-meta{font-size:.75rem;color:#4b5563;margin-top:3px}.status-pill{display:inline-block;border-radius:999px;padding:4px 8px;font-size:.7rem;font-weight:800;white-space:nowrap}.status-submitted{background:#fef3c7;color:#92400e}.status-approved{background:#dbeafe;color:#1e40af}.status-paid{background:#dcfce7;color:#166534}.pay-detail-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-top:8px;font-size:.74rem}.pay-detail{background:#f9fafb;border-radius:8px;padding:6px}.password-wrap{display:flex;gap:4px}.password-wrap input{flex:1}.eye-btn{min-width:58px;padding:0 10px;border:1px solid #d1d5db;background:#fff;border-radius:9px;cursor:pointer;font-size:.78rem;font-weight:700;color:#0B1F3B}@media(min-width:700px){.row>.half{width:calc(50% - 5px)}.row>.third{width:calc(33.333% - 7px)}.dash-grid{grid-template-columns:repeat(4,minmax(0,1fr))}.dash-action-list{grid-template-columns:repeat(2,minmax(0,1fr))}}.section-heading-row{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap}.section-heading-row h3{margin:0}.compact-action{flex:0 0 auto}.schedule-panel{border:1px solid #e5e7eb;border-radius:12px;background:#f9fafb;padding:10px;margin-top:10px}.manual-schedule-panel{background:#fff}.schedule-recipient-panel{border-top:1px solid #e5e7eb;margin-top:10px;padding-top:10px}.guard-picker-list{border:1px solid #d1d5db;border-radius:10px;padding:4px 10px;max-height:220px;overflow:auto;background:#fff}.guard-picker-row{display:grid;grid-template-columns:24px minmax(0,1fr);align-items:center;gap:10px;padding:10px 2px;border-bottom:1px solid #eef0f3;cursor:pointer}.guard-picker-row:last-child{border-bottom:none}.schedule-guard-check,input[type="checkbox"],input[type="radio"]{width:auto!important;min-width:0!important}.schedule-guard-check{width:18px!important;height:18px!important;margin:0!important;justify-self:center}.guard-picker-label{min-width:0;text-align:left;overflow-wrap:anywhere;line-height:1.25}.dashboard-subcard{box-shadow:none;border:1px solid #e5e7eb;margin-top:12px;background:#f9fafb}.operations-clear{justify-content:flex-end}.operations-table-scroll,.confirmations-table-scroll,.calendar-preview-scroll{height:auto;max-height:420px;overflow:auto}.table-scroll{overflow-x:auto!important;overflow-y:auto;height:auto;max-height:420px}#admin-shifts{min-width:980px}#admin-schedule-confirmations{min-width:820px}#calendar-preview-table{min-width:760px}#admin-shifts th,#admin-shifts td,#admin-schedule-confirmations th,#admin-schedule-confirmations td,#calendar-preview-table th,#calendar-preview-table td{vertical-align:middle}#admin-shifts th,#admin-shifts td{white-space:nowrap}#admin-shifts th:first-child,#admin-shifts td:first-child{min-width:150px;white-space:normal}#admin-shifts input[type="checkbox"]{width:18px!important;height:18px!important;margin:0!important}.danger-action{background:#991b1b!important}.guard-management-row{align-items:flex-end}.guard-management-row>button{margin-bottom:8px}.operations-actions{margin-bottom:4px}@media(max-width:699px){.section-heading-row>.compact-action{width:100%}.dash-btn-row>button{flex:1 1 100%}.guard-management-row>button{width:100%;margin-bottom:0}.schedule-panel{padding:9px}.guard-picker-list{padding:3px 8px}.guard-picker-row{grid-template-columns:24px minmax(0,1fr);padding:10px 0}.table-scroll{-webkit-overflow-scrolling:touch}.operations-table-scroll,.confirmations-table-scroll,.calendar-preview-scroll{max-height:360px}}</style></head><body data-environment="__OPSGUARD_ENV__">
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width,initial-scale=1" name="viewport"/><title>OpsGuard Portal</title><style>:root{--bg:#0B1F3B;--bg2:#1F3C88;--radius:14px}*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f3f4f6;color:#111827}header{background:var(--bg);color:#fff;padding:12px 18px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;position:sticky;top:0;z-index:1000}header h1{font-size:1.1rem;margin:0}.env-badge{display:none;margin-left:8px;padding:3px 7px;border-radius:999px;background:#facc15;color:#422006;font-size:.68rem;font-weight:900;letter-spacing:.06em;vertical-align:middle}.nav-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap}.nav-btn{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);padding:6px 10px;color:#fff;border-radius:999px;font-size:.75rem;cursor:pointer}.nav-btn:hover{background:rgba(255,255,255,.18)}.user-menu-wrap{position:relative;display:none}.avatar-btn{width:34px;height:34px;border-radius:999px;display:grid;place-items:center;background:#fff;color:var(--bg);font-weight:800;font-size:.9rem;border:none;cursor:pointer}.user-dropdown{position:absolute;right:0;top:44px;background:#fff;color:#111827;border-radius:12px;min-width:190px;box-shadow:0 10px 30px rgba(0,0,0,.15);overflow:hidden;display:none}.ud-head{padding:8px 10px;border-bottom:1px solid #e5e7eb;font-size:.78rem;color:#374151;background:#f9fafb}.user-dropdown button{width:100%;text-align:left;padding:8px 10px;border:none;background:#fff;font-size:.8rem;cursor:pointer}.user-dropdown button:hover{background:#f3f4f6}.shell{max-width:1100px;margin:18px auto;padding:0 14px 60px}.card{background:#fff;border-radius:var(--radius);padding:12px 12px 16px;box-shadow:0 10px 30px rgba(11,31,59,.08);margin-bottom:12px}.row{display:flex;gap:10px;flex-wrap:wrap}.input-group{margin-bottom:8px;width:100%}label{display:block;font-weight:600;margin-bottom:2px;font-size:.78rem}input,select,textarea{width:100%;padding:6px 8px;border-radius:9px;border:1px solid #d1d5db;font-size:.8rem}button.primary{background:var(--bg2);border:none;color:#fff;padding:7px 11px;border-radius:999px;cursor:pointer;font-weight:600;font-size:.78rem}button.primary:hover{opacity:.95}.hidden{display:none}table{width:100%;border-collapse:collapse;font-size:.72rem}th,td{border-bottom:1px solid #e5e7eb;padding:5px 4px;text-align:left}th{font-weight:600;color:#4b5563}.table-scroll{height:120px;overflow-y:auto;overflow-x:hidden;border-radius:10px;border:1px solid #e5e7eb;background:#fff;margin-top:4px}.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;z-index:2000}.modal{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(520px,calc(100% - 24px));background:#fff;border-radius:16px;padding:12px;box-shadow:0 20px 60px rgba(0,0,0,.25);display:none;z-index:2001;max-height:90vh;overflow-y:auto}.modal h3{margin:0 0 4px;font-size:1rem}.modal small{color:#6b7280;font-size:.72rem}.modal .actions{display:flex;gap:8px;margin-top:6px;flex-wrap:wrap}.modal .actions .secondary{background:#0B1F3B}p.small{font-size:.7rem;margin-top:4px;color:#4b5563}.avail-line{padding:2px 4px;border-radius:6px;font-size:.75rem}.avail-line:hover{background:#e5e7eb}.icon-btn{background:transparent;border:1px solid #d1d5db;border-radius:999px;padding:3px 8px;cursor:pointer;font-size:.72rem}.icon-btn:hover{background:#f3f4f6}a{color:var(--bg2);text-decoration:none}a:hover{text-decoration:underline}.dash-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0}.dash-metric{border:1px solid #e5e7eb;border-radius:14px;padding:12px;background:#fff;min-height:96px}.dash-metric-label{font-size:.72rem;color:#4b5563;font-weight:700}.dash-metric-value{font-size:1.65rem;line-height:1.05;font-weight:900;color:#0B1F3B;margin-top:5px}.dash-metric-sub{font-size:.7rem;color:#6b7280;margin-top:4px}.dash-section{border:1px solid #e5e7eb;border-radius:14px;padding:11px;background:#f9fafb;margin-top:10px}.dash-section h3{margin:0 0 6px;font-size:.9rem}.dash-action-list{display:grid;gap:8px}.dash-action-item{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:9px}.dash-action-main{min-width:0}.dash-action-title{font-size:.78rem;font-weight:800}.dash-action-meta{font-size:.7rem;color:#6b7280;margin-top:2px}.dash-action-amount{font-size:.78rem;font-weight:800;white-space:nowrap}.dash-btn-row{display:flex;flex-wrap:wrap;gap:7px;margin-top:9px}.dash-empty{font-size:.75rem;color:#6b7280;padding:8px 2px}.dash-calendar-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.dash-calendar-stat{background:#fff;border-radius:10px;padding:8px;text-align:center;border:1px solid #e5e7eb}.dash-calendar-stat strong{display:block;font-size:1.05rem;color:#0B1F3B}.pay-list{display:grid;gap:10px;margin-top:8px}.pay-card{border:1px solid #e5e7eb;border-radius:12px;padding:10px;background:#fff}.pay-card-top{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}.pay-card-title{font-weight:800;font-size:.88rem}.pay-card-meta{font-size:.75rem;color:#4b5563;margin-top:3px}.status-pill{display:inline-block;border-radius:999px;padding:4px 8px;font-size:.7rem;font-weight:800;white-space:nowrap}.status-submitted{background:#fef3c7;color:#92400e}.status-approved{background:#dbeafe;color:#1e40af}.status-paid{background:#dcfce7;color:#166534}.pay-detail-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-top:8px;font-size:.74rem}.pay-detail{background:#f9fafb;border-radius:8px;padding:6px}.password-wrap{display:flex;gap:4px}.password-wrap input{flex:1}.eye-btn{min-width:58px;padding:0 10px;border:1px solid #d1d5db;background:#fff;border-radius:9px;cursor:pointer;font-size:.78rem;font-weight:700;color:#0B1F3B}@media(min-width:700px){.row>.half{width:calc(50% - 5px)}.row>.third{width:calc(33.333% - 7px)}.dash-grid{grid-template-columns:repeat(4,minmax(0,1fr))}.dash-action-list{grid-template-columns:repeat(2,minmax(0,1fr))}}.section-heading-row{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap}.section-heading-row h3{margin:0}.compact-action{flex:0 0 auto}.schedule-panel{border:1px solid #e5e7eb;border-radius:12px;background:#f9fafb;padding:10px;margin-top:10px}.manual-schedule-panel{background:#fff}.schedule-recipient-panel{border-top:1px solid #e5e7eb;margin-top:10px;padding-top:10px}.guard-picker-list{border:1px solid #d1d5db;border-radius:10px;padding:4px 10px;max-height:220px;overflow:auto;background:#fff}.guard-picker-row{display:grid;grid-template-columns:24px minmax(0,1fr);align-items:center;gap:10px;padding:10px 2px;border-bottom:1px solid #eef0f3;cursor:pointer}.guard-picker-row:last-child{border-bottom:none}.schedule-guard-check,input[type="checkbox"],input[type="radio"]{width:auto!important;min-width:0!important}.schedule-guard-check{width:18px!important;height:18px!important;margin:0!important;justify-self:center}.guard-picker-label{min-width:0;text-align:left;overflow-wrap:anywhere;line-height:1.25}.dashboard-subcard{box-shadow:none;border:1px solid #e5e7eb;margin-top:12px;background:#f9fafb}.operations-clear{justify-content:flex-end}.operations-table-scroll,.confirmations-table-scroll,.calendar-preview-scroll{height:auto;max-height:420px;overflow:auto}.table-scroll{overflow-x:auto!important;overflow-y:auto;height:auto;max-height:420px}#admin-shifts{min-width:980px}#admin-schedule-confirmations{min-width:820px}#calendar-preview-table{min-width:760px}#admin-shifts th,#admin-shifts td,#admin-schedule-confirmations th,#admin-schedule-confirmations td,#calendar-preview-table th,#calendar-preview-table td{vertical-align:middle}#admin-shifts th,#admin-shifts td{white-space:nowrap}#admin-shifts th:first-child,#admin-shifts td:first-child{min-width:150px;white-space:normal}#admin-shifts input[type="checkbox"]{width:18px!important;height:18px!important;margin:0!important}.danger-action{background:#991b1b!important}.guard-management-row{align-items:flex-end}.guard-management-row>button{margin-bottom:8px}.operations-actions{margin-bottom:4px}@media(max-width:699px){.section-heading-row>.compact-action{width:100%}.dash-btn-row>button{flex:1 1 100%}.guard-management-row>button{width:100%;margin-bottom:0}.schedule-panel{padding:9px}.guard-picker-list{padding:3px 8px}.guard-picker-row{grid-template-columns:24px minmax(0,1fr);padding:10px 0}.table-scroll{-webkit-overflow-scrolling:touch}.operations-table-scroll,.confirmations-table-scroll,.calendar-preview-scroll{max-height:360px}}.dashboard-launcher{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:12px 0}.dashboard-launcher-card{appearance:none;border:1px solid #dbe2ea;background:#fff;border-radius:14px;padding:14px;text-align:left;cursor:pointer;box-shadow:0 5px 18px rgba(11,31,59,.06);color:#0B1F3B;min-height:88px}.dashboard-launcher-card:hover{border-color:#9ca3af;transform:translateY(-1px)}.dashboard-launcher-card strong{display:block;font-size:.9rem;margin-bottom:5px}.dashboard-launcher-card span{display:block;font-size:.72rem;line-height:1.35;color:#6b7280;font-weight:500}.dashboard-panel-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px}.dashboard-panel-head h3{margin:0}.dashboard-back-btn{flex:0 0 auto}.dashboard-panel.hidden{display:none!important}@media(min-width:900px){.dashboard-launcher{grid-template-columns:repeat(5,minmax(0,1fr))}}@media(max-width:560px){.dashboard-launcher{grid-template-columns:1fr}.dashboard-launcher-card{min-height:72px}.dashboard-back-btn{width:100%}}</style></head><body data-environment="__OPSGUARD_ENV__">
 <header><h1>OpsGuard Portal <span class="env-badge" id="env-badge">STAGING</span></h1><div class="nav-row">
 <button class="nav-btn" id="nav-login" onclick="showSection('login')">Login</button>
 <button class="nav-btn" id="nav-submit" onclick="showSection('submit')">Submit Hours</button>
@@ -76,17 +76,23 @@
 <div class="dash-metric"><div class="dash-metric-label">Paid</div><div class="dash-metric-value" id="dash-paid">—</div><div class="dash-metric-sub" id="dash-paid-sub">Paid records</div></div>
 <div class="dash-metric"><div class="dash-metric-label">Awaiting Confirmation</div><div class="dash-metric-value" id="dash-awaiting-confirm">—</div><div class="dash-metric-sub" id="dash-awaiting-confirm-sub">Scheduled shifts</div></div>
 </div>
-<div class="dash-section">
+<div class="dashboard-launcher" id="dashboard-launcher">
+<button class="dashboard-launcher-card" onclick="openDashboardPanel('calendar-schedule')" type="button"><strong>Calendar &amp; Schedule</strong><span>Preview Calendar shifts and send selected shifts</span></button>
+<button class="dashboard-launcher-card" onclick="openCheckAvailabilityModal()" type="button"><strong>Manual Schedule</strong><span>Build and send a schedule manually</span></button>
+<button class="dashboard-launcher-card" onclick="openDashboardPanel('payroll')" type="button"><strong>Payroll</strong><span>Hours, approvals, payments and CSV export</span></button>
+<button class="dashboard-launcher-card" onclick="openDashboardPanel('guard-management')" type="button"><strong>Guard Account Management</strong><span>Manage the registered guard roster</span></button>
+<button class="dashboard-launcher-card" onclick="openDashboardPanel('confirmations')" type="button"><strong>Schedule Confirmations</strong><span>Review confirmed and pending schedules</span></button>
+</div>
+<p class="small hidden" id="schedule-admin-status"></p>
+<div class="dash-section" id="dashboard-attention">
 <h3>Needs Attention</h3>
 <div class="dash-action-list" id="dash-attention-list" style="max-height:420px;overflow-y:auto;overscroll-behavior:contain;padding-right:4px"><div class="dash-empty">Loading dashboard…</div></div>
 </div>
-<div class="dash-section" id="dashboard-calendar-schedule">
-<div class="section-heading-row">
-  <div><h3>Calendar &amp; Schedule</h3><p class="small">Build schedules from Google Calendar or create a manual schedule from one place.</p></div>
-  <button class="primary secondary compact-action" onclick="loadAdminDashboard()" type="button">Refresh</button>
+<div class="dash-section dashboard-panel hidden" id="dashboard-calendar-schedule">
+<div class="dashboard-panel-head">
+  <div><h3>Calendar &amp; Schedule</h3><p class="small">Preview Google Calendar shifts, choose the shifts you want, then send them to one or more guards.</p></div>
+  <button class="primary secondary dashboard-back-btn" onclick="returnToDashboard()" type="button">← Back to Dashboard</button>
 </div>
-<p class="small" id="dash-status"></p>
-
 <div class="schedule-panel">
   <div class="section-heading-row">
     <div><strong>Google Calendar shifts</strong><div class="small" id="calendar-sync-connection">Checking connection…</div></div>
@@ -105,7 +111,6 @@
   <div class="table-scroll calendar-preview-scroll" id="calendar-preview-wrap" style="display:none;margin-top:7px">
     <table id="calendar-preview-table"><thead><tr><th>Select</th><th>Date</th><th>Venue</th><th>Shift</th><th>Calendar guard</th><th>Start</th><th>Calendar slot</th><th>OpsGuard</th></tr></thead><tbody></tbody></table>
   </div>
-
   <div id="calendar-direct-send-panel" class="schedule-recipient-panel">
     <strong>2. Choose guard recipients</strong>
     <p class="small" style="margin:4px 0 6px">Select one or more registered guards. Every selected guard receives the selected shifts as their own OpsGuard schedule.</p>
@@ -118,18 +123,13 @@
   </div>
   <p class="small">Google Calendar stays read-only here. Previewed Calendar end times are reference only; OpsGuard leaves the end time TBD. Existing linked assignments remain disabled to prevent duplicates.</p>
 </div>
-
-<div class="schedule-panel manual-schedule-panel">
-  <div><strong>Manual schedule</strong><p class="small" style="margin:4px 0 8px">For a shift that is not being selected from Google Calendar, build it manually here and send it to one or more guards.</p></div>
-  <div class="dash-btn-row"><button class="primary" onclick="openCheckAvailabilityModal()" type="button">Build Manual Schedule</button></div>
-  <p class="small" id="schedule-admin-status"></p>
-</div>
 </div>
 
-<div class="dash-section" id="dashboard-operations">
-<h3>Operations</h3>
-<p class="small">Review submitted hours, filter payroll records, approve hours, mark payments and export the filtered results.</p>
-
+<div class="dash-section dashboard-panel hidden" id="dashboard-payroll">
+<div class="dashboard-panel-head">
+  <div><h3>Payroll</h3><p class="small">Filter submitted hours, approve hours, mark payments and export payroll records.</p></div>
+  <button class="primary secondary dashboard-back-btn" onclick="returnToDashboard()" type="button">← Back to Dashboard</button>
+</div>
 <div class="row">
   <div class="third input-group"><label>Hourly rate ($)</label><input id="admin-rate" step=".01" type="number" value="20"/></div>
   <div class="third input-group"><label>Guard filter</label><select id="admin-guard-filter"><option value="__all__">All guards</option></select></div>
@@ -150,27 +150,30 @@
 </div>
 <p class="small" id="admin-total"></p>
 <p class="small" id="csv-status"></p>
-
-<div class="card dashboard-subcard">
-  <h3>Guard account management</h3>
-  <p class="small">Manage registered guard accounts. Historical shift records remain when an account is deleted.</p>
-  <div class="row guard-management-row">
-    <div class="half input-group"><label>Registered guard</label><select id="admin-user-manage"><option value="">Choose registered guard</option></select></div>
-    <button class="primary danger-action" onclick="adminDeleteSelectedGuard()" type="button">Delete selected guard</button>
-  </div>
-  <p class="small" id="admin-management-status"></p>
 </div>
 
-<div class="card dashboard-subcard">
-  <div class="section-heading-row">
-    <div><h3>Schedule confirmations</h3><p class="small">Review schedules sent to guards and see which shifts have been confirmed.</p></div>
-    <button class="primary secondary compact-action" onclick="loadAdminScheduleConfirmations()" type="button">Refresh confirmations</button>
-  </div>
-  <p class="small" id="admin-schedule-confirmation-summary"></p>
-  <p id="admin-confirmation-alert" role="status" style="display:none;font-weight:700;padding:10px;margin:6px 0;background:#dcfce7;color:#14532d;border-radius:8px"></p>
-  <div class="table-scroll confirmations-table-scroll">
-    <table id="admin-schedule-confirmations"><thead><tr><th>Guard</th><th>Venue</th><th>Shift</th><th>Date</th><th>Time</th><th>Status</th><th>Confirmed</th><th>Admin</th></tr></thead><tbody><tr><td colspan="8">No confirmation data loaded.</td></tr></tbody></table>
-  </div>
+<div class="dash-section dashboard-panel hidden" id="dashboard-guard-management">
+<div class="dashboard-panel-head">
+  <div><h3>Guard Account Management</h3><p class="small">Manage the complete registered guard roster. Historical shift records remain when a guard account is removed.</p></div>
+  <button class="primary secondary dashboard-back-btn" onclick="returnToDashboard()" type="button">← Back to Dashboard</button>
+</div>
+<div class="row guard-management-row">
+  <div class="half input-group"><label>Registered guard</label><select id="admin-user-manage"><option value="">Choose registered guard</option></select></div>
+  <button class="primary danger-action" onclick="adminDeleteSelectedGuard()" type="button">Delete selected guard</button>
+</div>
+<p class="small" id="admin-management-status"></p>
+</div>
+
+<div class="dash-section dashboard-panel hidden" id="dashboard-confirmations">
+<div class="dashboard-panel-head">
+  <div><h3>Schedule Confirmations</h3><p class="small">Review schedules sent to guards and see which shifts have been confirmed.</p></div>
+  <button class="primary secondary dashboard-back-btn" onclick="returnToDashboard()" type="button">← Back to Dashboard</button>
+</div>
+<div class="dash-btn-row"><button class="primary secondary" onclick="loadAdminScheduleConfirmations()" type="button">Refresh confirmations</button></div>
+<p class="small" id="admin-schedule-confirmation-summary"></p>
+<p id="admin-confirmation-alert" role="status" style="display:none;font-weight:700;padding:10px;margin:6px 0;background:#dcfce7;color:#14532d;border-radius:8px"></p>
+<div class="table-scroll confirmations-table-scroll">
+  <table id="admin-schedule-confirmations"><thead><tr><th>Guard</th><th>Venue</th><th>Shift</th><th>Date</th><th>Time</th><th>Status</th><th>Confirmed</th><th>Admin</th></tr></thead><tbody><tr><td colspan="8">No confirmation data loaded.</td></tr></tbody></table>
 </div>
 </div></div>
 
@@ -235,6 +238,32 @@ let authToken=null,currentUserEmail=null,currentUserName=null,currentUserRole=nu
 const FIXED_VENUES=["Baby G","Garrison","Get Well","Jean Darlene","St Anne's","Standard Time","Two Kats"];
 const VENUE_CALENDAR_IDS={"Baby G":"s374q7mjj2hoc77f71oml6n5uc@group.calendar.google.com","Garrison":"garrisonstaff@gmail.com","Jean Darlene":"78f673188cd9e7f1c76014eee634b0b5578f9da7f0657796fcb45e05080f45c3@group.calendar.google.com","St Anne's":"78f673188cd9e7f1c76014eee634b0b5578f9da7f0657796fcb45e05080f45c3@group.calendar.google.com","Get Well":"78f673188cd9e7f1c76014eee634b0b5578f9da7f0657796fcb45e05080f45c3@group.calendar.google.com","Standard Time":"78f673188cd9e7f1c76014eee634b0b5578f9da7f0657796fcb45e05080f45c3@group.calendar.google.com","Two Kats":"78f673188cd9e7f1c76014eee634b0b5578f9da7f0657796fcb45e05080f45c3@group.calendar.google.com"};
 
+function returnToDashboard(){
+  document.querySelectorAll(".dashboard-panel").forEach(el=>el.classList.add("hidden"));
+  const metrics=document.querySelector("#section-admin-dashboard .dash-grid");
+  const launcher=document.getElementById("dashboard-launcher");
+  const attention=document.getElementById("dashboard-attention");
+  if(metrics)metrics.classList.remove("hidden");
+  if(launcher)launcher.classList.remove("hidden");
+  if(attention)attention.classList.remove("hidden");
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+function openDashboardPanel(name){
+  document.querySelectorAll(".dashboard-panel").forEach(el=>el.classList.add("hidden"));
+  const metrics=document.querySelector("#section-admin-dashboard .dash-grid");
+  const launcher=document.getElementById("dashboard-launcher");
+  const attention=document.getElementById("dashboard-attention");
+  if(metrics)metrics.classList.add("hidden");
+  if(launcher)launcher.classList.add("hidden");
+  if(attention)attention.classList.add("hidden");
+  const panel=document.getElementById("dashboard-"+name);
+  if(panel)panel.classList.remove("hidden");
+  if(name==="calendar-schedule")loadCalendarSyncStatus();
+  if(name==="payroll")refreshAdminGuardOptionsForCurrentRange().catch(()=>{});
+  if(name==="guard-management")loadAdminUsers();
+  if(name==="confirmations")loadAdminScheduleConfirmations();
+  window.scrollTo({top:0,behavior:"smooth"});
+}
 function showSection(id){
   const allSections=["login","submit","availability","schedule","pay","admin-dashboard","admin"];
   const guardSections=["submit","availability","schedule","pay"];
@@ -246,6 +275,7 @@ function showSection(id){
   if(id==="schedule"&&authToken)loadMySchedule();
   if(id==="pay"&&authToken)loadMyShifts();
   if(id==="admin-dashboard"&&currentUserRole==="admin"){
+    returnToDashboard();
     loadAdminDashboard();
     loadAdminUsers();
     refreshAdminGuardOptionsForCurrentRange();
