@@ -428,6 +428,9 @@ function showSection(id){
     loadAdminUsers();
     updateCalendarActionButtons();
   }
+  if(id==="admin-manual-schedule"&&currentUserRole==="admin"){
+    initializeManualSchedulePage().catch(()=>{});
+  }
   if(id==="admin-payroll"&&currentUserRole==="admin"){
     refreshAdminGuardOptionsForCurrentRange().catch(()=>{});
     if(adminPayrollQuickFilter)loadPayrollQuickFilter(adminPayrollQuickFilter);
@@ -871,6 +874,8 @@ function renderScheduleGuardPickers(){
     box.querySelectorAll(".schedule-guard-check").forEach(cb=>cb.addEventListener("change",()=>{
       if(cb.checked)scheduleSelectedGuardIds.add(cb.value);else scheduleSelectedGuardIds.delete(cb.value);
       renderScheduleGuardPickers();
+      const manual=document.getElementById("section-admin-manual-schedule");
+      if(manual&&!manual.classList.contains("hidden"))updateManualScheduleGuardState().catch(()=>{});
     }));
   });
 }
@@ -1739,42 +1744,75 @@ function renderScheduleAvailability(){
     holder.appendChild(row);
   });
 }
+async function updateManualScheduleGuardState(){
+  const modalSt=document.getElementById("schedule-modal-status");
+  const holder=document.getElementById("schedule-summary-preview");
+  const guards=selectedScheduleGuards();
+  if(!guards.length){
+    currentGuardAvailability=[];
+    renderScheduleAvailability();
+    if(holder)holder.textContent="Select one registered guard to view availability.";
+    if(modalSt)modalSt.textContent=Object.keys(adminUserMap||{}).length
+      ?"Choose one or more registered guards above."
+      :"No active registered guards are currently loaded.";
+    return;
+  }
+  if(guards.length>1){
+    currentGuardAvailability=[];
+    renderScheduleAvailability();
+    if(holder)holder.textContent="Availability is shown when one guard is selected.";
+    if(modalSt)modalSt.textContent=guards.length+" registered guards selected. Each will receive their own schedule.";
+    return;
+  }
+  const g=guards[0];
+  if(!adminUserMap[g.id]){
+    scheduleSelectedGuardIds.delete(g.id);
+    renderScheduleGuardPickers();
+    currentGuardAvailability=[];
+    renderScheduleAvailability();
+    if(modalSt)modalSt.textContent="That guard account is no longer active. Choose a current registered guard.";
+    return;
+  }
+  if(modalSt)modalSt.textContent=(g.name||g.email)+" is linked to an active registered OpsGuard guard account.";
+  try{
+    const guardQuery=g.email||g.name;
+    const data=await rawApi("/availability/admin?guard="+encodeURIComponent(guardQuery)+"&month="+encodeURIComponent(scheduleMonth()),{method:"GET",silent:true});
+    currentGuardAvailability=Array.isArray(data)?data:(data&&data.items)||[];
+    renderScheduleAvailability();
+    if(!currentGuardAvailability.length&&holder)holder.textContent="No availability records found for this guard/month.";
+  }catch(e){
+    currentGuardAvailability=[];
+    renderScheduleAvailability();
+    if(holder)holder.textContent="Availability could not be loaded. You can still build and send the schedule.";
+    if(modalSt)modalSt.textContent=(g.name||g.email)+" remains linked to an active registered guard account; availability could not be loaded.";
+  }
+}
+
+async function initializeManualSchedulePage(){
+  if(!authToken||currentUserRole!=="admin")return;
+  const modalSt=document.getElementById("schedule-modal-status");
+  const addSt=document.getElementById("schedule-add-status");
+  if(modalSt)modalSt.textContent="Refreshing registered guard directory…";
+  if(addSt)addSt.textContent="";
+  await loadAdminUsers(true);
+  scheduleSelectedGuardIds=new Set([...scheduleSelectedGuardIds].filter(id=>adminUserMap[id]));
+  renderScheduleGuardPickers();
+  renderScheduleDraft();
+  await updateManualScheduleGuardState();
+}
+
 function renderScheduleDraft(){
   const box=document.getElementById("schedule-proposed-list");if(!box)return;
   box.value=scheduleDraft.map((s,i)=>(i+1)+". "+(s.venue||"Venue?")+" "+(s.shift_code||"")+" | "+s.date+" | "+s.start_time+" - "+(s.end_time||"TBD")).join("\n");
 }
 async function openCheckAvailabilityModal(){
-  showSection("admin-manual-schedule");
-  const adminSt=document.getElementById("schedule-admin-status");if(adminSt)adminSt.textContent="";
   if(!authToken)return alert("Login first.");
-  if(!Object.keys(adminUserMap||{}).length)await loadAdminUsers();
   scheduleDraft=[];currentGuardAvailability=[];
   const note=document.getElementById("schedule-note");if(note)note.value="";
   const modalSt=document.getElementById("schedule-modal-status");if(modalSt)modalSt.textContent="";
   const addSt=document.getElementById("schedule-add-status");if(addSt)addSt.textContent="";
-  renderScheduleGuardPickers();renderScheduleDraft();renderScheduleAvailability();
-  const guards=selectedScheduleGuards();
-  if(!guards.length){
-    currentGuardAvailability=[];renderScheduleAvailability();
-    if(modalSt)modalSt.textContent=Object.keys(adminUserMap||{}).length?"Choose one or more guards above.":"No registered guard accounts exist in this staging environment.";
-    return;
-  }
-  if(guards.length>1){
-    currentGuardAvailability=[];renderScheduleAvailability();
-    if(modalSt)modalSt.textContent=guards.length+" guards selected. Build the schedule manually; availability is shown only when one guard is selected.";
-    return;
-  }
-  const g=guards[0];
-  try{
-    const guardQuery=g.email||g.name;
-    const data=await rawApi("/availability/admin?guard="+encodeURIComponent(guardQuery)+"&month="+encodeURIComponent(scheduleMonth()),{method:"GET"});
-    currentGuardAvailability=Array.isArray(data)?data:(data&&data.items)||[];
-    renderScheduleAvailability();
-    if(modalSt)modalSt.textContent="Availability loaded for "+(g.name||g.email)+" for "+scheduleMonth()+".";
-  }catch(e){
-    currentGuardAvailability=[];renderScheduleAvailability();
-    if(modalSt)modalSt.textContent="Could not load availability: "+(e&&e.message?e.message:String(e));
-  }
+  renderScheduleDraft();
+  showSection("admin-manual-schedule");
 }
 function closeScheduleModal(){showSection("admin-dashboard");}
 function addShiftToScheduleDraft(){
@@ -1797,8 +1835,10 @@ function addShiftToScheduleDraft(){
 function cancelScheduleBuild(){scheduleDraft=[];renderScheduleDraft();showSection("admin-dashboard");}
 async function sendScheduleFromAdmin(){
   if(!authToken)return alert("Login first.");
-  const guards=selectedScheduleGuards(),st=document.getElementById("schedule-modal-status");
-  if(!guards.length){if(st)st.textContent="Choose at least one registered guard.";return;}
+  await loadAdminUsers();
+  const guards=selectedScheduleGuards().filter(g=>adminUserMap[g.id]);
+  const st=document.getElementById("schedule-modal-status");
+  if(!guards.length){if(st)st.textContent="Choose at least one active registered guard.";return;}
   if(!scheduleDraft.length){if(st)st.textContent="Add at least one working day before sending.";return;}
   const note=(document.getElementById("schedule-note")||{}).value||"";
   if(!(await confirmAction("Send this "+scheduleDraft.length+"-shift schedule to "+guards.length+" selected guard"+(guards.length===1?"":"s")+"? Each guard receives their own OpsGuard schedule.","Send Schedules")))return;
