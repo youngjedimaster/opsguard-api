@@ -56,7 +56,7 @@
 <div class="table-scroll"><table id="my-avail-table"><thead><tr><th>Date</th><th>Avail</th><th>Start</th><th>End</th><th>Notes</th><th>Delete</th></tr></thead><tbody></tbody></table></div>
 </div>
 <div class="card hidden" id="section-schedule">
-<h2 style="margin:0 0 4px">My Schedule</h2><p class="small">Schedules sent by admin appear here. First confirm your availability, then confirm the shift. Final shift confirmation locks your commitment.</p>
+<h2 style="margin:0 0 4px">My Schedule</h2><p class="small">Schedules sent by admin appear here. Confirm your availability for each shift. Admin will then decide whether to confirm or remove the shift.</p>
 <div class="table-scroll"><table id="my-schedule-table"><thead><tr><th>Confirm</th><th>Date</th><th>Venue</th><th>Shift</th><th>Start</th><th>End</th><th>Guard</th><th>Note</th><th>Status</th></tr></thead>
 <tbody><tr><td colspan="9">Login to see your schedule.</td></tr></tbody></table></div>
 <p class="small" id="my-schedule-status"></p>
@@ -74,7 +74,7 @@
 <button class="dash-metric dash-metric-button" onclick="openDashboardMetric('needs-approval')" type="button"><div class="dash-metric-label">Needs Approval</div><div class="dash-metric-value" id="dash-needs-approval">—</div><div class="dash-metric-sub" id="dash-needs-approval-sub">Submitted hours</div></button>
 <button class="dash-metric dash-metric-button" onclick="openDashboardMetric('ready-pay')" type="button"><div class="dash-metric-label">Ready to Pay</div><div class="dash-metric-value" id="dash-ready-pay">—</div><div class="dash-metric-sub" id="dash-ready-pay-sub">Approved, unpaid</div></button>
 <button class="dash-metric dash-metric-button" onclick="openDashboardMetric('paid')" type="button"><div class="dash-metric-label">Paid</div><div class="dash-metric-value" id="dash-paid">—</div><div class="dash-metric-sub" id="dash-paid-sub">Paid records</div></button>
-<button class="dash-metric dash-metric-button" onclick="openDashboardMetric('awaiting-confirmation')" type="button"><div class="dash-metric-label">Awaiting Final Confirmation</div><div class="dash-metric-value" id="dash-awaiting-confirm">—</div><div class="dash-metric-sub" id="dash-awaiting-confirm-sub">Guard availability confirmed / shift still pending</div></button>
+<button class="dash-metric dash-metric-button" onclick="openDashboardMetric('awaiting-confirmation')" type="button"><div class="dash-metric-label">Awaiting Confirmation</div><div class="dash-metric-value" id="dash-awaiting-confirm">—</div><div class="dash-metric-sub" id="dash-awaiting-confirm-sub">Sent shifts awaiting guard/admin confirmation</div></button>
 </div>
 <div class="dashboard-launcher" id="dashboard-launcher">
 <button class="dashboard-launcher-card" onclick="showSection('admin-calendar-schedule')" type="button"><strong>Calendar &amp; Schedule</strong><span>Preview Calendar shifts and send selected shifts</span></button>
@@ -181,7 +181,7 @@
 <p class="small" id="admin-management-status"></p>
 </div></div><div class="card hidden admin-standalone-page" id="section-admin-confirmations"><div class="dash-section" id="dashboard-confirmations">
 <div class="dashboard-panel-head">
-<div><h3 id="confirmation-page-title">Schedule Confirmations</h3><p class="small" id="confirmation-page-description">Track guard availability and final shift confirmation in one place.</p></div>
+<div><h3 id="confirmation-page-title">Schedule Confirmations</h3><p class="small" id="confirmation-page-description">Review sent shifts, guard availability responses, and make the final assignment decision in one place.</p></div>
 <button class="primary secondary dashboard-back-btn" onclick="showSection('admin-dashboard')" type="button">← Back to Dashboard</button>
 </div>
 <div class="queue-filter-bar" id="confirmation-queue-filters">
@@ -189,9 +189,9 @@
   <div class="queue-filter-field"><label>Venue</label><select id="confirmation-queue-venue" onchange="applyConfirmationQueueFilters()"><option value="">All venues</option></select></div>
   <div class="queue-filter-field"><label>Guard</label><select id="confirmation-queue-guard" onchange="applyConfirmationQueueFilters()"><option value="">All guards</option></select></div>
   <div class="queue-filter-field"><label>Status</label><select id="confirmation-queue-status" onchange="applyConfirmationQueueFilters()">
-    <option value="awaiting-final">Awaiting final confirmation</option>
-    <option value="awaiting-availability">Awaiting availability</option>
-    <option value="available">Availability confirmed</option>
+    <option value="pending">All awaiting confirmation</option>
+    <option value="awaiting-availability">Awaiting guard availability</option>
+    <option value="available">Ready for admin confirmation</option>
     <option value="confirmed">Shift confirmed</option>
     <option value="all">All statuses</option>
   </select></div>
@@ -338,7 +338,7 @@ function setConfirmationQueueMode(kind){
   if(!page)return;
   page.classList.toggle("confirmation-queue-mode",kind==="pending");
   if(title)title.textContent="Schedule Confirmations";
-  if(desc)desc.textContent="Track guard availability and final shift confirmation in one place.";
+  if(desc)desc.textContent="Review sent shifts, guard availability responses, and make the final assignment decision in one place.";
 }
 function applyConfirmationQueueFilters(){
   loadAdminScheduleConfirmations();
@@ -413,7 +413,7 @@ function openDashboardMetric(kind){
     resetQueueFilters("confirmation");
     setConfirmationQueueMode("pending");
     const status=document.getElementById("confirmation-queue-status");
-    if(status)status.value="awaiting-final";
+    if(status)status.value="pending";
     showSection("admin-confirmations");
     return;
   }
@@ -1451,7 +1451,7 @@ function renderAdminDashboard(shifts,schedules){
   set("dash-paid",String(paid.length));
   set("dash-paid-sub",dashboardMoney(sum(paid))+" recorded paid");
   set("dash-awaiting-confirm",String(pending));
-  set("dash-awaiting-confirm-sub",pending===1?"1 scheduled shift":"Scheduled shifts");
+  set("dash-awaiting-confirm-sub",pending===1?"1 sent shift awaiting confirmation":pending+" sent shifts awaiting confirmation");
   set("dash-confirmed",String(confirmed));
   set("dash-ready-export",String(readyExport));
   set("dash-exported",String(exported));
@@ -1959,28 +1959,20 @@ async function confirmScheduleAvailability(scheduleId, shiftIndex){
   const st=document.getElementById("my-schedule-status");
   if(!authToken){if(st)st.textContent="Login first.";return;}
   if(!scheduleId){if(st)st.textContent="Missing schedule id.";return;}
-  if(!(await confirmAction("Confirm that you are available for this shift? This does not yet lock your final acceptance.","Confirm Availability")))return;
+  if(!(await confirmAction("Confirm that you are available for this shift? Admin will make the final shift assignment.","Confirm Availability")))return;
   if(st)st.textContent="Confirming availability...";
   try{
     await rawApi("/schedules/"+encodeURIComponent(scheduleId)+"/shifts/"+shiftIndex+"/availability",{method:"POST",silent:true});
-    if(st)st.textContent="Availability confirmed. You can now confirm the shift.";
+    if(st)st.textContent="Availability confirmed. Waiting for admin to confirm the shift.";
     await loadMySchedule();
   }catch(e){
     if(st)st.textContent="Could not confirm availability: "+(e&&e.message?e.message:String(e));
   }
 }
 
-async function confirmScheduleShift(scheduleId, shiftIndex){
+async function confirmScheduleShift(){
   const st=document.getElementById("my-schedule-status");
-  if(!authToken){if(st)st.textContent="Login first.";return;}
-  if(!scheduleId){if(st)st.textContent="Missing schedule id.";return;}
-  if(!(await confirmAction("Confirm final acceptance of this shift? Once confirmed, your commitment is locked.","Confirm shift")))return;
-  if(st)st.textContent="Confirming shift...";
-  try{
-    await rawApi("/schedules/"+encodeURIComponent(scheduleId)+"/shifts/"+shiftIndex+"/confirm",{method:"POST",silent:true});
-    if(st)st.textContent="Shift confirmed. You are committed to this shift.";
-    await loadMySchedule();
-  }catch(e){if(st)st.textContent="Could not confirm shift: "+(e&&e.message?e.message:String(e));}
+  if(st)st.textContent="Final shift confirmation is completed by an administrator after you confirm availability.";
 }
 function formatScheduleTimestamp(v){
   if(!v)return "";
@@ -2012,21 +2004,22 @@ async function loadMySchedule(){
     tbody.innerHTML="";
     if(!rows.length){tbody.innerHTML="<tr><td colspan='9'>No schedule yet.</td></tr>";if(st)st.textContent="";return;}
     rows.forEach(function(r){
-      let statusText=r.confirmed?"SHIFT CONFIRMED ✓ — LOCKED":r.available?"AVAILABLE ✓ — confirm shift":"Awaiting availability";
-      const availabilityAction=r.available
-        ?'<span class="schedule-state-ok">Availability ✓</span>'
-        :"<button type='button' class='primary schedule-availability-btn'>Confirm Availability</button>";
-      const shiftAction=r.confirmed
-        ?'<span class="schedule-state-ok">Shift ✓</span>'
-        :"<button type='button' class='primary schedule-shift-btn' "+(r.available?"":"disabled")+" >Confirm Shift</button>";
-      const action="<div class='schedule-confirm-actions'>"+availabilityAction+shiftAction+"</div>";
+      const statusText=r.confirmed
+        ?"SHIFT CONFIRMED BY ADMIN ✓ — LOCKED"
+        :r.available
+          ?"AVAILABILITY CONFIRMED ✓ — awaiting admin confirmation"
+          :"Awaiting your availability";
+      const action=r.confirmed
+        ?'<span class="schedule-state-ok">Shift Confirmed ✓</span>'
+        :r.available
+          ?'<span class="schedule-state-ok">Availability ✓</span>'
+          :"<button type='button' class='primary schedule-availability-btn'>Confirm Availability</button>";
       const tr=document.createElement("tr");
-      tr.innerHTML="<td>"+action+"</td><td>"+(r.date||"")+"</td><td>"+(r.venue||"—")+"</td><td>"+(r.shift_code||"—")+"</td><td>"+(r.start_time||"")+"</td><td>"+(r.end_time||"")+"</td><td>"+(r.guard||"")+"</td><td>"+(r.note||"")+"</td><td>"+statusText
-        +(r.available&&r.availabilityConfirmedAt&&!r.confirmed?"<div class='small'>Available: "+formatScheduleTimestamp(r.availabilityConfirmedAt)+"</div>":"")
-        +(r.confirmed&&r.confirmedAt?"<div class='small'>Confirmed: "+formatScheduleTimestamp(r.confirmedAt)+"</div>":"")
+      tr.innerHTML="<td><div class='schedule-confirm-actions'>"+action+"</div></td><td>"+(r.date||"")+"</td><td>"+(r.venue||"—")+"</td><td>"+(r.shift_code||"—")+"</td><td>"+(r.start_time||"")+"</td><td>"+(r.end_time||"")+"</td><td>"+(r.guard||"")+"</td><td>"+(r.note||"")+"</td><td>"+statusText
+        +(r.available&&r.availabilityConfirmedAt&&!r.confirmed?"<div class='small'>Availability sent: "+formatScheduleTimestamp(r.availabilityConfirmedAt)+"</div>":"")
+        +(r.confirmed&&r.confirmedAt?"<div class='small'>Admin confirmed: "+formatScheduleTimestamp(r.confirmedAt)+"</div>":"")
         +"</td>";
       const ab=tr.querySelector(".schedule-availability-btn");if(ab)ab.addEventListener("click",()=>confirmScheduleAvailability(r.scheduleId,r.shiftIndex));
-      const sb=tr.querySelector(".schedule-shift-btn");if(sb)sb.addEventListener("click",()=>confirmScheduleShift(r.scheduleId,r.shiftIndex));
       tbody.appendChild(tr);
     });
   }catch(e){
@@ -2123,6 +2116,19 @@ async function clearCalendarExportStatus(scheduleId,shiftIndex){
     await loadAdminScheduleConfirmations();
   }catch(e){alert("Could not clear export status: "+(e&&e.message?e.message:String(e)));}
 }
+async function adminConfirmScheduledShift(scheduleId,shiftIndex,guard,shift){
+  if(!authToken||currentUserRole!=="admin")return;
+  const label=[guard,shift&&shift.date,shift&&shift.venue,shift&&shift.shift_code].filter(Boolean).join(" · ");
+  if(!(await confirmAction("Confirm this shift for "+label+"? This makes the assignment final.","Confirm Shift")))return;
+  try{
+    await rawApi("/schedules/"+encodeURIComponent(scheduleId)+"/shifts/"+shiftIndex+"/confirm",{method:"POST",silent:true});
+    await loadAdminScheduleConfirmations();
+    await loadAdminDashboard();
+  }catch(e){
+    alert("Could not confirm shift: "+(e&&e.message?e.message:String(e)));
+  }
+}
+
 async function adminDeleteScheduledShift(scheduleId,shiftIndex,guard,sh){
   const label=(guard||"Guard")+" — "+((sh&&sh.venue)||"")+" "+((sh&&sh.shift_code)||"")+" "+((sh&&sh.date)||"");
   let warning="Delete this scheduled shift from OpsGuard?\n\n"+label+"\n\nThis works even after the guard confirmed it.";
@@ -2143,32 +2149,32 @@ async function loadAdminScheduleConfirmations(){
     const items=Array.isArray(data)?data:[];
     adminScheduleConfirmationsCache=items;
     const rows=[];
-    let availabilityConfirmed=0,confirmed=0,awaitingAvailability=0,awaitingFinal=0;
-    const confirmedKeys=new Set(),newEvents=[];
+    let confirmed=0,awaitingAvailability=0,readyForAdmin=0;
+    const confirmedKeys=new Set(),newAvailabilityEvents=[];
     items.slice(0,100).forEach(function(sch){
       (sch.shifts||[]).forEach(function(sh,index){
         const isConfirmed=(sch.status==="confirmed"||sh.status==="confirmed");
         const isAvailable=isConfirmed||sh.availability_status==="confirmed";
         const key=String(sch.id)+"-"+index;
-        if(isAvailable)availabilityConfirmed++;
         if(isConfirmed){
           confirmed++;confirmedKeys.add(key);
-          if(adminConfirmationsInitialized&&!adminSeenConfirmedShifts.has(key))newEvents.push((sch.guard||"Guard")+" confirmed "+(sh.date||"their shift")+" ("+(sh.start_time||"")+"-"+(sh.end_time||"TBD")+")");
-        }else if(isAvailable)awaitingFinal++;
-        else awaitingAvailability++;
-        rows.push({schedule:sch,shift:sh,index,isConfirmed,isAvailable,guard:sch.guard||"",venue:sh.venue||"",date:sh.date||""});
+        }else if(isAvailable){
+          readyForAdmin++;
+          if(adminConfirmationsInitialized&&!adminSeenConfirmedShifts.has("available-"+key))newAvailabilityEvents.push((sch.guard||"Guard")+" is available for "+(sh.date||"their shift")+" ("+(sh.start_time||"")+"-"+(sh.end_time||"TBD")+")");
+        }else awaitingAvailability++;
+        rows.push({schedule:sch,shift:sh,index,isConfirmed,isAvailable,guard:sch.guard||"",venue:sh.venue||"",date:sh.date||"",key});
       });
     });
 
     populateQueueFilterOptions("confirmation",rows,r=>r.guard);
     let visibleRows=filterRowsByQueueControls(rows,"confirmation",r=>r.guard);
-    const statusValue=document.getElementById("confirmation-queue-status")?.value||"awaiting-final";
+    const statusValue=document.getElementById("confirmation-queue-status")?.value||"all";
     visibleRows=visibleRows.filter(r=>{
       if(statusValue==="all")return true;
       if(statusValue==="confirmed")return r.isConfirmed;
       if(statusValue==="available")return r.isAvailable&&!r.isConfirmed;
       if(statusValue==="awaiting-availability")return !r.isAvailable&&!r.isConfirmed;
-      return r.isAvailable&&!r.isConfirmed;
+      return !r.isConfirmed;
     });
 
     tbody.innerHTML="";
@@ -2182,26 +2188,35 @@ async function loadAdminScheduleConfirmations(){
       const tr=document.createElement("tr");
       if(isConfirmed)tr.style.background="#ecfdf5";
       else if(isAvailable)tr.style.background="#eff6ff";
-      const adminAction="<button type='button' class='primary admin-delete-shift danger-action'>Delete Shift</button>";
+      const confirmAction=isConfirmed
+        ?"<span class='schedule-state-ok'>Confirmed ✓</span>"
+        :isAvailable
+          ?"<button type='button' class='primary admin-confirm-shift'>Confirm Shift</button>"
+          :"<button type='button' class='primary admin-confirm-shift' disabled>Confirm Shift</button>";
+      const deleteAction="<button type='button' class='primary admin-delete-shift danger-action'>Delete Shift</button>";
+      const adminAction="<div class='schedule-confirm-actions'>"+confirmAction+deleteAction+"</div>";
       const availabilityText=isAvailable
         ?"AVAILABLE ✓"+(sh.availability_confirmed_at?"<div class='small'>"+formatScheduleTimestamp(sh.availability_confirmed_at)+"</div>":"")
-        :"Awaiting";
-      const shiftText=isConfirmed?"CONFIRMED ✓ — LOCKED":isAvailable?"Awaiting final confirmation":"Waiting for availability";
+        :"Awaiting guard";
+      const shiftText=isConfirmed?"CONFIRMED BY ADMIN ✓ — LOCKED":isAvailable?"Ready for admin decision":"Waiting for guard availability";
       tr.innerHTML="<td>"+(sch.guard||"")+"</td><td>"+(sh.venue||"—")+"</td><td>"+(sh.shift_code||"—")+"</td><td>"+(sh.date||"")+"</td><td>"+(sh.start_time||"")+" – "+(sh.end_time||"TBD")+"</td><td style='font-weight:700'>"+availabilityText+"</td><td style='font-weight:700'>"+shiftText+"</td><td>"+(isConfirmed?formatScheduleTimestamp(sh.confirmed_at||sch.confirmed_at):"")+"</td><td>"+adminAction+"</td>";
+      const confirmBtn=tr.querySelector(".admin-confirm-shift");if(confirmBtn&&!confirmBtn.disabled)confirmBtn.addEventListener("click",()=>adminConfirmScheduledShift(sch.id,index,sch.guard,sh));
       const deleteBtn=tr.querySelector(".admin-delete-shift");if(deleteBtn)deleteBtn.addEventListener("click",()=>adminDeleteScheduledShift(sch.id,index,sch.guard,sh));
       tbody.appendChild(tr);
     });
-    if(!tbody.children.length)tbody.innerHTML="<tr><td colspan='9'>No schedule confirmations match these filters.</td></tr>";
-    if(summary){
-      summary.textContent="Awaiting availability: "+awaitingAvailability+" | Availability confirmed / awaiting final: "+awaitingFinal+" | Shift confirmed: "+confirmed+" | Showing: "+visibleRows.length+".";
-    }
-    adminSeenConfirmedShifts=confirmedKeys;adminConfirmationsInitialized=true;
-    if(newEvents.length&&banner){
+    if(!tbody.children.length)tbody.innerHTML="<tr><td colspan='9'>No shifts match these filters.</td></tr>";
+    if(summary)summary.textContent="Awaiting guard availability: "+awaitingAvailability+" | Ready for admin confirmation: "+readyForAdmin+" | Confirmed: "+confirmed+" | Showing: "+visibleRows.length+".";
+    adminSeenConfirmedShifts=new Set([
+      ...confirmedKeys,
+      ...rows.filter(r=>r.isAvailable&&!r.isConfirmed).map(r=>"available-"+r.key)
+    ]);
+    adminConfirmationsInitialized=true;
+    if(newAvailabilityEvents.length&&banner){
       banner.style.display="block";
-      banner.textContent="NEW SHIFT CONFIRMATION: "+newEvents.slice(0,4).join(" | ")+(newEvents.length>4?" | +"+(newEvents.length-4)+" more":"");
+      banner.textContent="NEW AVAILABILITY: "+newAvailabilityEvents.slice(0,4).join(" | ")+(newAvailabilityEvents.length>4?" | +"+(newAvailabilityEvents.length-4)+" more":"");
     }
   }catch(e){
-    tbody.innerHTML="<tr><td colspan='9'>Could not load shift confirmations.</td></tr>";
+    tbody.innerHTML="<tr><td colspan='9'>Could not load confirmations.</td></tr>";
     if(summary)summary.textContent="";
   }
 }
