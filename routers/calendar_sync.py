@@ -20,7 +20,7 @@ from deps import get_admin_user
 
 router = APIRouter(prefix="/api/calendar-sync", tags=["calendar-sync"])
 
-SHIFT_TITLE_RE = re.compile(r"^\s*(S[1-9]\d*)\s*(?::\s*(.+?))?\s*$", re.IGNORECASE)
+SHIFT_TITLE_RE = re.compile(r"^\s*(S[1-9]\d*)\s*(?::\s*(.*?))?\s*$", re.IGNORECASE)
 
 def _valid_shift_code(value: Any) -> bool:
     return bool(re.fullmatch(r"S[1-9]\d*", str(value or "").strip().upper()))
