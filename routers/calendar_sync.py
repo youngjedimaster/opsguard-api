@@ -701,6 +701,13 @@ async def _list_calendar_events(calendar_id: str, from_date: date, to_date: date
 
 
 async def _existing_google_ids(db) -> set[tuple[str, str]]:
+    """Return Calendar events already linked to real OpsGuard schedules.
+
+    Legacy calendar_import draft records are intentionally ignored here.
+    The current admin workflow sends previewed Calendar shifts directly into
+    OpsGuard schedules, so stale/abandoned import drafts must not make a shift
+    appear unavailable.
+    """
     pairs: set[tuple[str, str]] = set()
     cursor = db.schedules.find({}, {"shifts.calendar_id": 1, "shifts.google_event_id": 1})
     async for doc in cursor:
@@ -709,15 +716,6 @@ async def _existing_google_ids(db) -> set[tuple[str, str]]:
             eid = str(shift.get("google_event_id") or "").strip()
             if cal and eid:
                 pairs.add((cal, eid))
-    draft_cursor = db.calendar_imports.find(
-        {"status": {"$ne": "discarded"}},
-        {"calendar_id": 1, "google_event_id": 1},
-    )
-    async for doc in draft_cursor:
-        cal = str(doc.get("calendar_id") or "").strip()
-        eid = str(doc.get("google_event_id") or "").strip()
-        if cal and eid:
-            pairs.add((cal, eid))
     return pairs
 
 

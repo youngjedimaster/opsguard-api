@@ -103,8 +103,49 @@ async def create_schedule(
                 "calendar_export_method": None,
                 "status": "pending",
                 "confirmed_at": None,
+                "availability_status": "pending",
+                "availability_confirmed_at": None,
+                "availability_confirmed_by_guard_id": None,
             }
         )
+
+    skipped_duplicates = []
+    if guard_id:
+        existing_pairs: set[tuple[str, str]] = set()
+        cursor = db.schedules.find(
+            {"guard_id": guard_id},
+            {"shifts.calendar_id": 1, "shifts.google_event_id": 1},
+        )
+        async for existing_schedule in cursor:
+            for existing_shift in existing_schedule.get("shifts") or []:
+                cal_id = str(existing_shift.get("calendar_id") or "").strip()
+                event_id = str(existing_shift.get("google_event_id") or "").strip()
+                if cal_id and event_id:
+                    existing_pairs.add((cal_id, event_id))
+
+        filtered_shifts = []
+        request_pairs: set[tuple[str, str]] = set()
+        for shift in clean_shifts:
+            cal_id = str(shift.get("calendar_id") or "").strip()
+            event_id = str(shift.get("google_event_id") or "").strip()
+            pair = (cal_id, event_id) if cal_id and event_id else None
+            if pair and (pair in existing_pairs or pair in request_pairs):
+                skipped_duplicates.append(shift)
+                continue
+            if pair:
+                request_pairs.add(pair)
+            filtered_shifts.append(shift)
+        clean_shifts = filtered_shifts
+
+    if not clean_shifts:
+        return {
+            "created": False,
+            "duplicate_only": True,
+            "guard": guard,
+            "guard_id": guard_id,
+            "skipped_duplicates": len(skipped_duplicates),
+            "message": "All selected Calendar shifts are already assigned to this guard.",
+        }
 
     doc = {
         "guard": guard,
@@ -120,7 +161,7 @@ async def create_schedule(
 
     res = await db.schedules.insert_one(doc)
 
-    return serialize_schedule(
+    response = serialize_schedule(
         {
             "_id": res.inserted_id,
             "guard": guard,
@@ -134,6 +175,9 @@ async def create_schedule(
             "confirmed_by_guard_id": doc["confirmed_by_guard_id"],
         }
     )
+    response["created"] = True
+    response["skipped_duplicates"] = len(skipped_duplicates)
+    return response
 
 
 @router.get("")
@@ -226,58 +270,56 @@ async def admin_delete_schedule_shift(
 
 
 @router.post("/{schedule_id}/confirm")
-async def confirm_schedule(
+async def admin_confirm_schedule(
     schedule_id: str,
-    current_user=Depends(get_current_user),
+    admin=Depends(get_admin_user),
     db=Depends(get_db),
 ):
+    """Legacy admin-only bulk confirmation. Guards cannot finalize schedules."""
     if not ObjectId.is_valid(schedule_id):
         raise HTTPException(status_code=400, detail="Invalid schedule id")
-
-    user_id = str(current_user["_id"])
-    name = (current_user.get("name") or current_user.get("full_name") or "").strip()
-    email = (current_user.get("email") or "").lower().strip()
-
-    or_clauses = [{"guard_id": user_id}]
-    if name:
-        or_clauses.append({"guard_id": None, "guard": name})
-    if email:
-        or_clauses.append({"guard_id": None, "guard": email})
-
-    schedule = await db.schedules.find_one({"_id": ObjectId(schedule_id), "$or": or_clauses})
+    schedule = await db.schedules.find_one({"_id": ObjectId(schedule_id)})
     if not schedule:
-        raise HTTPException(status_code=404, detail="Schedule not found for this guard")
-
+        raise HTTPException(status_code=404, detail="Schedule not found")
+    shifts = list(schedule.get("shifts") or [])
+    if not shifts:
+        raise HTTPException(status_code=409, detail="Schedule has no shifts")
+    if any(sh.get("availability_status") != "confirmed" for sh in shifts if sh.get("status") != "confirmed"):
+        raise HTTPException(status_code=409, detail="Every unconfirmed shift requires guard availability before admin confirmation")
     if (schedule.get("status") or "pending") == "confirmed":
         return serialize_schedule(schedule)
-
     now = datetime.utcnow()
-    confirmed_shifts = [dict(sh, status="confirmed", confirmed_at=now) for sh in (schedule.get("shifts") or [])]
+    admin_id = str(admin["_id"])
+    confirmed_shifts=[]
+    for sh in shifts:
+        item=dict(sh)
+        item["status"]="confirmed"
+        item["confirmed_at"]=item.get("confirmed_at") or now
+        item["confirmed_by_admin_id"]=admin_id
+        item["confirmed_by_guard_id"]=None
+        confirmed_shifts.append(item)
     await db.schedules.update_one(
         {"_id": schedule["_id"]},
         {"$set": {
             "status": "confirmed",
             "shifts": confirmed_shifts,
             "confirmed_at": now,
-            "confirmed_by_guard_id": user_id,
+            "confirmed_by_guard_id": None,
+            "confirmed_by_admin_id": admin_id,
             "updated_at": now,
         }},
     )
-    schedule["shifts"] = confirmed_shifts
-    schedule["status"] = "confirmed"
-    schedule["confirmed_at"] = now
-    schedule["confirmed_by_guard_id"] = user_id
-    return serialize_schedule(schedule)
+    return serialize_schedule(await db.schedules.find_one({"_id": schedule["_id"]}))
 
 
-@router.post("/{schedule_id}/shifts/{shift_index}/confirm")
-async def confirm_one_shift(
+@router.post("/{schedule_id}/shifts/{shift_index}/availability")
+async def confirm_shift_availability(
     schedule_id: str,
     shift_index: int,
     current_user=Depends(get_current_user),
     db=Depends(get_db),
 ):
-    """Guard acknowledgement for exactly one assigned shift; confirmed shifts stay locked."""
+    """Guard confirms they are available for one assigned shift, without locking final acceptance."""
     if not ObjectId.is_valid(schedule_id):
         raise HTTPException(status_code=400, detail="Invalid schedule id")
     uid = str(current_user["_id"])
@@ -294,33 +336,72 @@ async def confirm_one_shift(
     shifts = doc.get("shifts") or []
     if not 0 <= shift_index < len(shifts):
         raise HTTPException(status_code=404, detail="Shift not found in schedule")
-    if (doc.get("status") or "pending") == "confirmed" or shifts[shift_index].get("status") == "confirmed":
+    shift = shifts[shift_index]
+    if shift.get("status") == "confirmed":
+        return serialize_schedule(doc)
+    if shift.get("availability_status") == "confirmed":
         return serialize_schedule(doc)
     now = datetime.utcnow()
-    # Atomic update prevents a double-click from creating inconsistent confirmation records.
     await db.schedules.update_one(
         {"_id": doc["_id"], f"shifts.{shift_index}.status": {"$ne": "confirmed"}},
-        {"$set": {f"shifts.{shift_index}.status": "confirmed",
-                  f"shifts.{shift_index}.confirmed_at": now,
-                  f"shifts.{shift_index}.confirmed_by_guard_id": uid,
-                  "updated_at": now}},
+        {"$set": {
+            f"shifts.{shift_index}.availability_status": "confirmed",
+            f"shifts.{shift_index}.availability_confirmed_at": now,
+            f"shifts.{shift_index}.availability_confirmed_by_guard_id": uid,
+            "updated_at": now,
+        }},
     )
     doc = await db.schedules.find_one({"_id": doc["_id"]})
-    all_confirmed = bool(doc.get("shifts")) and all(
-        sh.get("status") == "confirmed" for sh in doc["shifts"]
+    return serialize_schedule(doc)
+
+
+@router.post("/{schedule_id}/shifts/{shift_index}/confirm")
+async def admin_confirm_one_shift(
+    schedule_id: str,
+    shift_index: int,
+    admin=Depends(get_admin_user),
+    db=Depends(get_db),
+):
+    """Admin makes the final shift assignment after the guard confirms availability."""
+    if not ObjectId.is_valid(schedule_id):
+        raise HTTPException(status_code=400, detail="Invalid schedule id")
+    doc = await db.schedules.find_one({"_id": ObjectId(schedule_id)})
+    if not doc:
+        raise HTTPException(status_code=404, detail="Schedule not found")
+    shifts = doc.get("shifts") or []
+    if not 0 <= shift_index < len(shifts):
+        raise HTTPException(status_code=404, detail="Shift not found in schedule")
+    shift = shifts[shift_index]
+    if (doc.get("status") or "pending") == "confirmed" or shift.get("status") == "confirmed":
+        return serialize_schedule(doc)
+    if shift.get("availability_status") != "confirmed":
+        raise HTTPException(status_code=409, detail="Guard must confirm availability before admin can confirm this shift")
+    now = datetime.utcnow()
+    admin_id = str(admin["_id"])
+    await db.schedules.update_one(
+        {"_id": doc["_id"], f"shifts.{shift_index}.status": {"$ne": "confirmed"}},
+        {"$set": {
+            f"shifts.{shift_index}.status": "confirmed",
+            f"shifts.{shift_index}.confirmed_at": now,
+            f"shifts.{shift_index}.confirmed_by_admin_id": admin_id,
+            f"shifts.{shift_index}.confirmed_by_guard_id": None,
+            "updated_at": now,
+        }},
     )
+    doc = await db.schedules.find_one({"_id": doc["_id"]})
+    all_confirmed = bool(doc.get("shifts")) and all(sh.get("status") == "confirmed" for sh in doc["shifts"])
     parent_status = "confirmed" if all_confirmed else "partial"
     await db.schedules.update_one(
         {"_id": doc["_id"]},
-        {"$set": {"status": parent_status,
-                  "confirmed_at": now if all_confirmed else None,
-                  "confirmed_by_guard_id": uid if all_confirmed else None,
-                  "updated_at": now}},
+        {"$set": {
+            "status": parent_status,
+            "confirmed_at": now if all_confirmed else None,
+            "confirmed_by_guard_id": None,
+            "confirmed_by_admin_id": admin_id if all_confirmed else None,
+            "updated_at": now,
+        }},
     )
-    doc["status"] = parent_status
-    doc["confirmed_at"] = now if all_confirmed else None
-    doc["confirmed_by_guard_id"] = uid if all_confirmed else None
-    return serialize_schedule(doc)
+    return serialize_schedule(await db.schedules.find_one({"_id": doc["_id"]}))
 
 
 @router.post("/{schedule_id}/shifts/{shift_index}/calendar-exported")
