@@ -24,7 +24,7 @@
   #my-schedule-table .guard-schedule-guard{display:none!important}
   #my-schedule-table .schedule-confirm-actions{justify-content:flex-start}
   #my-schedule-table .schedule-availability-btn{width:auto;max-width:100%}
-}</style></head><body data-environment="__OPSGUARD_ENV__">
+}.needs-approval-batch-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:4px 0 9px;padding:8px 10px;border:1px solid #dbe3ee;border-radius:10px;background:#f8fafc}.needs-approval-batch-bar.hidden{display:none!important}.needs-approval-batch-count{font-size:.76rem;font-weight:800;color:#334155}.needs-approval-batch-actions{display:flex;gap:6px;flex-wrap:wrap}.needs-approval-batch-actions .primary{padding:6px 9px;font-size:.72rem}.needs-approval-selected-row{background:#eef4ff!important;outline:2px solid #8fb0ef;outline-offset:-2px}.needs-approval-select-cell{text-align:center!important;width:38px!important;min-width:38px!important}.needs-approval-select-cell input{width:18px!important;height:18px!important;margin:0!important}@media(max-width:560px){.needs-approval-batch-bar{align-items:stretch}.needs-approval-batch-actions{width:100%}.needs-approval-batch-actions .primary{flex:1 1 auto}.needs-approval-batch-count{width:100%}}</style></head><body data-environment="__OPSGUARD_ENV__">
 <header><h1>OpsGuard Portal <span class="env-badge" id="env-badge">STAGING</span></h1><div class="nav-row">
 <button class="nav-btn" id="nav-login" onclick="showSection('login')">Login</button>
 <button class="nav-btn" id="nav-submit" onclick="showSection('submit')">Submit Hours</button>
@@ -193,6 +193,14 @@
 <p class="small">Choose your filters and date range, then Load shifts. Approval and Paid changes stay on the same filtered list.</p>
 </div>
 <div class="payroll-queue-label hidden" id="payroll-queue-label"></div>
+<div class="needs-approval-batch-bar hidden" id="needs-approval-batch-bar">
+  <div class="needs-approval-batch-count" id="needs-approval-batch-count">0 selected</div>
+  <div class="needs-approval-batch-actions">
+    <button class="primary secondary" onclick="selectAllVisibleNeedsApproval()" type="button">Select All Visible</button>
+    <button class="primary secondary" onclick="clearNeedsApprovalSelection()" type="button">Clear Selection</button>
+    <button class="primary danger-action" id="delete-selected-needs-approval" onclick="deleteSelectedNeedsApproval()" type="button" disabled>Delete Selected</button>
+  </div>
+</div>
 <div class="table-scroll operations-table-scroll">
 <table id="admin-shifts"><thead><tr><th>Guard</th><th>Date</th><th>Venue</th><th>Start</th><th>End</th><th>Hours</th><th>Pay</th><th>Approved</th><th>Paid</th><th>Status</th><th>Delete</th></tr></thead><tbody></tbody></table>
 </div>
@@ -359,7 +367,11 @@ function filterRowsByQueueControls(rows,prefix,guardGetter){
 }
 function applyPayrollQueueFilters(){
   if(!adminPayrollQuickFilter)return;
-  const rows=filterRowsByQueueControls(adminPayrollQueueBaseRows,"payroll",r=>getGuardLabel(r));
+  const rows=filterRowsByQueueControls(adminPayrollQueueBaseRows,"payroll",function(r){return getGuardLabel(r);});
+  if(adminPayrollQuickFilter==="needs-approval"){
+    const visible=new Set(rows.map(function(r){return String(r&&r.id||"");}).filter(Boolean));
+    Array.from(adminNeedsApprovalSelectedIds).forEach(function(id){if(!visible.has(id))adminNeedsApprovalSelectedIds.delete(id);});
+  }else adminNeedsApprovalSelectedIds.clear();
   renderAdminShifts({items:rows});
   const totalEl=document.getElementById("admin-total"),label=payrollQuickFilterLabel(adminPayrollQuickFilter);
   if(totalEl&&label)totalEl.textContent=label+" · "+totalEl.textContent;
@@ -407,11 +419,13 @@ function filterPayrollRowsForQueue(rows,kind){
 }
 async function loadPayrollQuickFilter(kind){
   if(!authToken||currentUserRole!=="admin")return;
+  const previousQuickFilter=adminPayrollQuickFilter;
   adminPayrollQuickFilter=kind||null;
+  if(previousQuickFilter!==adminPayrollQuickFilter)adminNeedsApprovalSelectedIds.clear();
   const label=payrollQuickFilterLabel(adminPayrollQuickFilter);
   const totalEl=document.getElementById("admin-total");
   const tbody=document.querySelector("#admin-shifts tbody");
-  if(tbody)tbody.innerHTML="<tr><td colspan='11'>Loading "+(label||"payroll")+"…</td></tr>";
+  if(tbody)tbody.innerHTML="<tr><td colspan='"+(adminPayrollQuickFilter==="needs-approval"?12:11)+"'>Loading "+(label||"payroll")+"…</td></tr>";
   try{
     const rate=getAdminHourlyRate();
     const data=await rawApi("/shifts?hourly_rate="+encodeURIComponent(rate),{method:"GET",silent:true});
@@ -419,17 +433,19 @@ async function loadPayrollQuickFilter(kind){
     allShiftsCache=all;
     const rows=filterPayrollRowsForQueue(all,adminPayrollQuickFilter);
     adminPayrollQueueBaseRows=rows;
-    populateQueueFilterOptions("payroll",rows,r=>getGuardLabel(r));
-    const visibleRows=filterRowsByQueueControls(rows,"payroll",r=>getGuardLabel(r));
+    populateQueueFilterOptions("payroll",rows,function(r){return getGuardLabel(r);});
+    const visibleRows=filterRowsByQueueControls(rows,"payroll",function(r){return getGuardLabel(r);});
     renderAdminShifts({items:visibleRows});
     if(totalEl&&label)totalEl.textContent=label+" · "+totalEl.textContent;
   }catch(e){
-    if(tbody)tbody.innerHTML="<tr><td colspan='11'>Could not load "+(label||"payroll")+".</td></tr>";
+    if(tbody)tbody.innerHTML="<tr><td colspan='"+(adminPayrollQuickFilter==="needs-approval"?12:11)+"'>Could not load "+(label||"payroll")+".</td></tr>";
   }
 }
 function openPayrollPage(){
   adminPayrollQuickFilter=null;
   adminPayrollQueueBaseRows=[];
+  adminNeedsApprovalSelectedIds.clear();
+  updateNeedsApprovalBatchUI();
   setPayrollQueueMode(null);
   showSection("admin-payroll");
 }
@@ -1586,36 +1602,156 @@ function getDisplayHours(s){
 function getDisplayPay(s){
   return getDisplayHours(s)*getAdminHourlyRate();
 }
+const adminNeedsApprovalSelectedIds=new Set();
+function needsApprovalBatchMode(){
+  return currentUserRole==="admin"&&adminPayrollQuickFilter==="needs-approval";
+}
+function visibleNeedsApprovalIds(){
+  if(!needsApprovalBatchMode())return [];
+  return (adminFilteredShifts||[]).map(function(s){return String(s&&s.id||"");}).filter(Boolean);
+}
+function updateNeedsApprovalBatchUI(){
+  const bar=document.getElementById("needs-approval-batch-bar");
+  const count=document.getElementById("needs-approval-batch-count");
+  const del=document.getElementById("delete-selected-needs-approval");
+  const on=needsApprovalBatchMode();
+  if(bar)bar.classList.toggle("hidden",!on);
+  if(count)count.textContent=adminNeedsApprovalSelectedIds.size+" selected";
+  if(del)del.disabled=!adminNeedsApprovalSelectedIds.size;
+}
+function clearNeedsApprovalSelection(){
+  adminNeedsApprovalSelectedIds.clear();
+  document.querySelectorAll("#admin-shifts tbody tr.needs-approval-selected-row").forEach(function(tr){tr.classList.remove("needs-approval-selected-row");});
+  document.querySelectorAll(".needs-approval-row-select").forEach(function(cb){cb.checked=false;});
+  updateNeedsApprovalBatchUI();
+}
+function findNeedsApprovalRow(id){
+  let found=null;
+  document.querySelectorAll("#admin-shifts tbody tr[data-shift-id]").forEach(function(row){
+    if(row.dataset.shiftId===String(id))found=row;
+  });
+  return found;
+}
+function setNeedsApprovalRowSelected(shiftId,selected){
+  const id=String(shiftId||"");
+  if(!id)return;
+  if(selected)adminNeedsApprovalSelectedIds.add(id);else adminNeedsApprovalSelectedIds.delete(id);
+  const row=findNeedsApprovalRow(id);
+  if(row)row.classList.toggle("needs-approval-selected-row",selected);
+  const cb=row?row.querySelector(".needs-approval-row-select"):null;
+  if(cb&&cb.checked!==selected)cb.checked=selected;
+  updateNeedsApprovalBatchUI();
+}
+function pruneNeedsApprovalSelectionToVisible(){
+  const visible=new Set(visibleNeedsApprovalIds());
+  Array.from(adminNeedsApprovalSelectedIds).forEach(function(id){
+    if(!visible.has(id))adminNeedsApprovalSelectedIds.delete(id);
+  });
+  updateNeedsApprovalBatchUI();
+}
+function selectAllVisibleNeedsApproval(){
+  if(!needsApprovalBatchMode())return;
+  visibleNeedsApprovalIds().forEach(function(id){adminNeedsApprovalSelectedIds.add(id);});
+  document.querySelectorAll(".needs-approval-row-select").forEach(function(cb){cb.checked=true;});
+  document.querySelectorAll("#admin-shifts tbody tr[data-shift-id]").forEach(function(tr){tr.classList.add("needs-approval-selected-row");});
+  updateNeedsApprovalBatchUI();
+}
+function toggleNeedsApprovalRowFromClick(event,shiftId){
+  if(!needsApprovalBatchMode())return;
+  if(event&&event.target&&event.target.closest("button,input,select,a,label"))return;
+  const id=String(shiftId||"");
+  if(!id)return;
+  setNeedsApprovalRowSelected(id,!adminNeedsApprovalSelectedIds.has(id));
+}
+async function deleteSelectedNeedsApproval(){
+  if(!needsApprovalBatchMode())return;
+  const visible=new Set(visibleNeedsApprovalIds());
+  const ids=Array.from(adminNeedsApprovalSelectedIds).filter(function(id){return visible.has(id);});
+  if(!ids.length){clearNeedsApprovalSelection();return;}
+  if(!(await confirmAction("Delete "+ids.length+" selected Needs Approval record"+(ids.length===1?"":"s")+"? This cannot be undone.","Delete Selected")))return;
+  const status=document.getElementById("admin-total");
+  if(status)status.textContent="Deleting "+ids.length+" selected record"+(ids.length===1?"":"s")+"...";
+  let deleted=0,alreadyGone=0,failed=0;
+  const batchSize=5;
+  for(let i=0;i<ids.length;i+=batchSize){
+    const batch=ids.slice(i,i+batchSize);
+    const results=await Promise.allSettled(batch.map(function(id){
+      return rawApi("/shifts/"+encodeURIComponent(id),{method:"DELETE",silent:true});
+    }));
+    results.forEach(function(result){
+      if(result.status==="fulfilled")deleted++;
+      else if(result.reason&&result.reason.status===404)alreadyGone++;
+      else failed++;
+    });
+  }
+  const removed=new Set(ids);
+  myShiftsCache=(myShiftsCache||[]).filter(function(s){return !removed.has(String(s.id||""));});
+  allShiftsCache=(allShiftsCache||[]).filter(function(s){return !removed.has(String(s.id||""));});
+  adminFilteredShifts=(adminFilteredShifts||[]).filter(function(s){return !removed.has(String(s.id||""));});
+  adminPayrollQueueBaseRows=(adminPayrollQueueBaseRows||[]).filter(function(s){return !removed.has(String(s.id||""));});
+  adminNeedsApprovalSelectedIds.clear();
+  await loadPayrollQuickFilter("needs-approval");
+  const summary=document.getElementById("admin-total");
+  if(summary){
+    const prefix="Batch delete: "+deleted+" deleted"+(alreadyGone?"; "+alreadyGone+" already gone":"")+(failed?"; "+failed+" failed":"")+". ";
+    summary.textContent=prefix+summary.textContent;
+  }
+  updateNeedsApprovalBatchUI();
+}
+
 function renderAdminShifts(data){
-  const tbody=document.querySelector("#admin-shifts tbody"),totalEl=document.getElementById("admin-total");
+  const table=document.getElementById("admin-shifts"),tbody=table&&table.querySelector("tbody"),thead=table&&table.querySelector("thead"),totalEl=document.getElementById("admin-total");
   document.getElementById("csv-status").textContent="";document.getElementById("schedule-admin-status").textContent="";
+  if(!tbody||!thead)return;
   tbody.innerHTML="";adminFilteredShifts=[];
   const payload=data||{};
   const rows=Array.isArray(payload.items)?payload.items:(Array.isArray(allShiftsCache)?allShiftsCache:[]);
-  if(!rows.length){tbody.innerHTML="<tr><td colspan='11'>No matches.</td></tr>";totalEl.textContent="";return;}
-  rows.sort((a,b)=>{
+  const batchMode=needsApprovalBatchMode();
+  thead.innerHTML=batchMode
+    ?"<tr><th class='needs-approval-select-cell'>Select</th><th>Guard</th><th>Date</th><th>Venue</th><th>Start</th><th>End</th><th>Hours</th><th>Pay</th><th>Approved</th><th>Paid</th><th>Status</th><th>Delete</th></tr>"
+    :"<tr><th>Guard</th><th>Date</th><th>Venue</th><th>Start</th><th>End</th><th>Hours</th><th>Pay</th><th>Approved</th><th>Paid</th><th>Status</th><th>Delete</th></tr>";
+  if(!rows.length){
+    tbody.innerHTML="<tr><td colspan='"+(batchMode?12:11)+"'>No matches.</td></tr>";
+    totalEl.textContent="";
+    adminNeedsApprovalSelectedIds.clear();
+    updateNeedsApprovalBatchUI();
+    return;
+  }
+  rows.sort(function(a,b){
     const ga=String(getGuardLabel(a)||"").toLowerCase(),gb=String(getGuardLabel(b)||"").toLowerCase();
     if(ga!==gb)return ga.localeCompare(gb);
     return String(a.date||"").localeCompare(String(b.date||""));
   });
   adminFilteredShifts=rows;
+  if(batchMode)pruneNeedsApprovalSelectionToVisible();else adminNeedsApprovalSelectedIds.clear();
   let totalHours=0,totalPayroll=0,paidPayroll=0,unpaidPayroll=0;
-  rows.forEach(s=>{
-    const hours=getDisplayHours(s);
-    const pay=getDisplayPay(s);
+  rows.forEach(function(s){
+    const hours=getDisplayHours(s),pay=getDisplayPay(s);
     totalHours+=hours;totalPayroll+=pay;
     if(s.paid)paidPayroll+=pay;else unpaidPayroll+=pay;
     const tr=document.createElement("tr");
+    if(s.id)tr.dataset.shiftId=String(s.id);
     const status=shiftStatus(s);
-    tr.innerHTML=
-      `<td>${getGuardLabel(s)}</td><td>${s.date||""}</td><td>${s.venue||""}</td><td>${s.start_time||""}</td><td>${s.end_time||""}</td><td>${hours}</td><td>$${pay.toFixed(2)}</td>`+
-      `<td style="text-align:center;">${s.id?`<input type="checkbox" ${s.approved?"checked":""} onchange="adminSetApproved('${s.id}',this.checked)">`:""}</td>`+
-      `<td style="text-align:center;">${s.id?`<input type="checkbox" ${s.paid?"checked":""} ${!s.approved&&!s.paid?"disabled title='Approve first'":""} onchange="adminSetPaid('${s.id}',this.checked)">`:""}</td>`+
-      `<td><span class="status-pill ${statusClass(status)}">${status}</span></td>`+
-      `<td style="text-align:center;">${s.id?`<button type="button" class="icon-btn" onclick="deleteShiftAnyRole('${s.id}')">🗑</button>`:""}</td>`;
+    const selected=!!(batchMode&&s.id&&adminNeedsApprovalSelectedIds.has(String(s.id)));
+    if(selected)tr.classList.add("needs-approval-selected-row");
+    if(batchMode&&s.id)tr.addEventListener("click",function(e){toggleNeedsApprovalRowFromClick(e,s.id);});
+    let html="";
+    if(batchMode){
+      html+="<td class='needs-approval-select-cell'>";
+      if(s.id)html+="<input class='needs-approval-row-select' type='checkbox' "+(selected?"checked ":"")+"onchange=\"setNeedsApprovalRowSelected('"+String(s.id)+"',this.checked)\">";
+      html+="</td>";
+    }
+    html+="<td>"+getGuardLabel(s)+"</td>";
+    html+="<td>"+(s.date||"")+"</td><td>"+(s.venue||"")+"</td><td>"+(s.start_time||"")+"</td><td>"+(s.end_time||"")+"</td><td>"+hours+"</td><td>$"+pay.toFixed(2)+"</td>";
+    html+="<td style='text-align:center;'>"+(s.id?"<input type='checkbox' "+(s.approved?"checked ":"")+"onchange=\"adminSetApproved('"+String(s.id)+"',this.checked)\">":"")+"</td>";
+    html+="<td style='text-align:center;'>"+(s.id?"<input type='checkbox' "+(s.paid?"checked ":"")+(!s.approved&&!s.paid?"disabled title='Approve first' ":"")+"onchange=\"adminSetPaid('"+String(s.id)+"',this.checked)\">":"")+"</td>";
+    html+="<td><span class='status-pill "+statusClass(status)+"'>"+status+"</span></td>";
+    html+="<td style='text-align:center;'>"+(s.id?"<button type='button' class='icon-btn' onclick=\"deleteShiftAnyRole('"+String(s.id)+"')\">🗑</button>":"")+"</td>";
+    tr.innerHTML=html;
     tbody.appendChild(tr);
   });
-  totalEl.textContent=`Total shifts: ${rows.length} | Total hours: ${totalHours.toFixed(2)} | Total payout: $${totalPayroll.toFixed(2)} | Paid: $${paidPayroll.toFixed(2)} | Unpaid: $${unpaidPayroll.toFixed(2)}`;
+  totalEl.textContent="Total shifts: "+rows.length+" | Total hours: "+totalHours.toFixed(2)+" | Total payout: $"+totalPayroll.toFixed(2)+" | Paid: $"+paidPayroll.toFixed(2)+" | Unpaid: $"+unpaidPayroll.toFixed(2);
+  updateNeedsApprovalBatchUI();
 }
 
 function clearAdminDateFilters(){
