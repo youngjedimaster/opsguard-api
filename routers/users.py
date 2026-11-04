@@ -316,6 +316,108 @@ async def admin_list_users(
 
 
 
+
+@router.get("/guard-directory")
+async def admin_guard_directory(
+    admin=Depends(get_admin_user),
+    db=Depends(get_db),
+):
+    """Canonical roster used by every admin guard selector."""
+    def clean(value) -> str:
+        return str(value or "").strip()
+
+    def norm(value) -> str:
+        return " ".join(clean(value).lower().split())
+
+    active_by_id: dict[str, dict] = {}
+    active_name_index: dict[str, str] = {}
+    active_email_index: dict[str, str] = {}
+
+    async for user in db.users.find({}):
+        if str(user.get("role") or "guard").lower() == "admin":
+            continue
+        uid = str(user.get("_id"))
+        entry = serialize_user(user)
+        entry.update({
+            "registered": True,
+            "schedulable": True,
+            "directory_status": "active",
+            "shift_count": 0,
+            "schedule_count": 0,
+            "aliases": [],
+        })
+        active_by_id[uid] = entry
+        name_key = norm(user.get("name") or user.get("full_name"))
+        email_key = norm(user.get("email"))
+        if name_key and name_key not in active_name_index:
+            active_name_index[name_key] = uid
+        if email_key and email_key not in active_email_index:
+            active_email_index[email_key] = uid
+
+    historical: dict[str, dict] = {}
+
+    def ensure_identity(label: str):
+        label = clean(label)
+        key = norm(label)
+        if not key:
+            return None
+        if key in active_name_index:
+            return active_by_id[active_name_index[key]]
+        if key in active_email_index:
+            return active_by_id[active_email_index[key]]
+        if key not in historical:
+            historical[key] = {
+                "id": "history:" + hashlib.sha1(key.encode("utf-8")).hexdigest()[:16],
+                "name": label,
+                "email": "",
+                "role": "guard",
+                "created_at": None,
+                "registered": False,
+                "schedulable": False,
+                "directory_status": "historical",
+                "shift_count": 0,
+                "schedule_count": 0,
+                "aliases": [],
+            }
+        return historical[key]
+
+    async for shift in db.shifts.find({}, {"user_id": 1, "guard_name": 1, "user_name": 1, "guard": 1, "email": 1}):
+        uid = clean(shift.get("user_id"))
+        label = clean(shift.get("guard_name") or shift.get("user_name") or shift.get("guard") or shift.get("email"))
+        entry = active_by_id.get(uid) if uid else None
+        if entry is None and label:
+            entry = ensure_identity(label)
+        if entry is not None:
+            entry["shift_count"] = int(entry.get("shift_count") or 0) + 1
+            if label and norm(label) not in {norm(entry.get("name")), norm(entry.get("email"))}:
+                aliases = entry.setdefault("aliases", [])
+                if label not in aliases:
+                    aliases.append(label)
+
+    async for schedule in db.schedules.find({}, {"guard_id": 1, "guard": 1}):
+        uid = clean(schedule.get("guard_id"))
+        label = clean(schedule.get("guard"))
+        entry = active_by_id.get(uid) if uid else None
+        if entry is None and label:
+            entry = ensure_identity(label)
+        if entry is not None:
+            entry["schedule_count"] = int(entry.get("schedule_count") or 0) + 1
+
+    active_items = sorted(
+        active_by_id.values(),
+        key=lambda x: (clean(x.get("name") or x.get("email")).lower(), clean(x.get("email")).lower()),
+    )
+    historical_items = sorted(historical.values(), key=lambda x: clean(x.get("name")).lower())
+    return {
+        "items": active_items + historical_items,
+        "summary": {
+            "active_registered": len(active_items),
+            "historical_only": len(historical_items),
+            "total_directory": len(active_items) + len(historical_items),
+        },
+    }
+
+
 @router.delete("/users/{user_id}")
 async def admin_delete_user(
     user_id: str,
