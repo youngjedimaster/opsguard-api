@@ -813,29 +813,24 @@ async def preview_calendar_shifts(
 
     tz = ZoneInfo(str(getattr(settings, "CALENDAR_TIMEZONE", "America/Toronto") or "America/Toronto"))
     existing = await _existing_google_ids(db)
-    out: list[dict] = []
-    errors: list[dict] = []
-    sources: list[dict] = []
-    for source in _calendar_sources():
+
+    async def process_source(source: dict) -> tuple[list[dict], dict, dict | None]:
         calendar_id = source["calendar_id"]
         if not calendar_id:
-            sources.append({
+            return [], {
                 "source": source["name"],
                 "configured": False,
                 "events_read": 0,
                 "shifts_found": 0,
-            })
-            continue
-        source_rows = 0
+            }, None
+
         try:
-            # Over-fetch one additional local day, then enforce the requested inclusive
-            # date range after normalization. This avoids Calendar/MCP boundary quirks
-            # that can otherwise omit events occurring on the selected "to" date.
             events = await _list_calendar_preview_events(
                 calendar_id,
                 payload.from_date,
                 payload.to_date,
             )
+            rows: list[dict] = []
             for event in events:
                 row = _normalize_shift_event(event, source["fixed_venue"], calendar_id, tz)
                 if not row:
@@ -848,24 +843,36 @@ async def preview_calendar_shifts(
                     continue
                 row["calendar_source"] = source["name"]
                 row["already_in_opsguard"] = (calendar_id, row["google_event_id"]) in existing
-                out.append(row)
-                source_rows += 1
-            sources.append({
+                rows.append(row)
+            return rows, {
                 "source": source["name"],
                 "configured": True,
                 "events_read": len(events),
-                "shifts_found": source_rows,
-            })
+                "shifts_found": len(rows),
+            }, None
         except Exception as exc:
             message = str(exc)[:500]
-            errors.append({"calendar": source["name"], "error": message})
-            sources.append({
+            return [], {
                 "source": source["name"],
                 "configured": True,
                 "events_read": 0,
                 "shifts_found": 0,
                 "error": message,
-            })
+            }, {"calendar": source["name"], "error": message}
+
+    # Read the independent Calendar sources concurrently. Each source keeps its
+    # existing per-day concurrency/normalization logic, but Garrison, Baby G
+    # and Titan Security no longer wait on one another.
+    results = await asyncio.gather(*(process_source(source) for source in _calendar_sources()))
+
+    out: list[dict] = []
+    errors: list[dict] = []
+    sources: list[dict] = []
+    for rows, source_meta, error in results:
+        out.extend(rows)
+        sources.append(source_meta)
+        if error:
+            errors.append(error)
 
     out.sort(key=lambda x: (x.get("date") or "", x.get("venue") or "", x.get("start_time") or "", x.get("shift_code") or ""))
     return {

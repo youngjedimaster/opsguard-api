@@ -108,8 +108,8 @@
 </div>
 <div class="dash-btn-row">
 <button class="primary" id="calendar-preview-btn" onclick="previewGoogleCalendarShifts()" type="button">1. Preview Calendar Shifts</button>
-<button class="primary secondary" onclick="selectAllCalendarPreviewShifts()" type="button">Select all available</button>
-<button class="primary secondary" onclick="clearCalendarPreviewShiftSelection()" type="button">Clear shifts</button>
+<button class="primary secondary" id="calendar-select-all-btn" onclick="selectAllCalendarPreviewShifts()" type="button">Select all available</button>
+<button class="primary secondary" id="calendar-clear-shifts-btn" onclick="clearCalendarPreviewShiftSelection()" type="button">Clear shifts</button>
 </div>
 <p class="small" id="calendar-sync-status"></p>
 <div class="table-scroll calendar-preview-scroll" id="calendar-preview-wrap" style="display:none;margin-top:7px">
@@ -326,6 +326,7 @@ function showSection(id){
   if(id==="admin-calendar-schedule"&&currentUserRole==="admin"){
     loadCalendarSyncStatus();
     loadAdminUsers();
+    updateCalendarActionButtons();
   }
   if(id==="admin-payroll"&&currentUserRole==="admin"){
     refreshAdminGuardOptionsForCurrentRange().catch(()=>{});
@@ -857,39 +858,89 @@ function initCalendarPreviewDates(){
   from.value=localDate(now);to.value=localDate(later);
 }
 let calendarPreviewCache=[];
+let calendarPreviewLoading=false;
+
+function updateCalendarActionButtons(){
+  const previewBtn=document.getElementById("calendar-preview-btn");
+  const selectAllBtn=document.getElementById("calendar-select-all-btn");
+  const clearBtn=document.getElementById("calendar-clear-shifts-btn");
+  const sendBtn=document.getElementById("calendar-send-selected-btn");
+  const hasRows=calendarPreviewCache.some(row=>!row.already_in_opsguard);
+  const hasSelected=!!document.querySelector(".calendar-preview-select:checked");
+  if(previewBtn)previewBtn.disabled=calendarPreviewLoading;
+  if(selectAllBtn)selectAllBtn.disabled=calendarPreviewLoading||!hasRows;
+  if(clearBtn)clearBtn.disabled=calendarPreviewLoading||!hasSelected;
+  if(sendBtn)sendBtn.disabled=calendarPreviewLoading||!hasSelected;
+}
+
+function setCalendarPreviewLoading(loading){
+  calendarPreviewLoading=!!loading;
+  const previewBtn=document.getElementById("calendar-preview-btn");
+  if(previewBtn)previewBtn.textContent=calendarPreviewLoading?"Previewing Calendar Shifts…":"1. Preview Calendar Shifts";
+  updateCalendarActionButtons();
+}
+
 function renderCalendarPreview(items){
-  const wrap=document.getElementById("calendar-preview-wrap"),tbody=document.querySelector("#calendar-preview-table tbody"),importBtn=document.getElementById("calendar-import-drafts-btn");
+  const wrap=document.getElementById("calendar-preview-wrap"),tbody=document.querySelector("#calendar-preview-table tbody");
   if(!wrap||!tbody)return;
   calendarPreviewCache=Array.isArray(items)?items:[];
-  wrap.style.display="block";tbody.innerHTML="";
-  if(importBtn)importBtn.disabled=true;
-  if(!calendarPreviewCache.length){tbody.innerHTML="<tr><td colspan='8'>No S-numbered calendar shifts found in this range.</td></tr>";return;}
+  wrap.style.display="block";
+  tbody.innerHTML="";
+  if(!calendarPreviewCache.length){
+    tbody.innerHTML="<tr><td colspan='8'>No S-numbered calendar shifts found in this range.</td></tr>";
+    updateCalendarActionButtons();
+    return;
+  }
   calendarPreviewCache.forEach((row,index)=>{
     const tr=document.createElement("tr");
     const slot=(row.calendar_duration_minutes==null?"Unknown":row.calendar_duration_minutes+" min")+(row.requires_end_time_review?" ⚠":"");
     const disabled=row.already_in_opsguard?"disabled":"";
-    tr.innerHTML="<td style='text-align:center'><input class='calendar-preview-select' type='checkbox' data-index='"+index+"' "+disabled+" onchange='updateCalendarDraftImportButton()'></td><td>"+(row.date||"")+"</td><td>"+(row.venue||"")+"</td><td><strong>"+(row.shift_code||"")+"</strong></td><td>"+(row.guard||"Unassigned")+"</td><td>"+(row.start_time||"")+"</td><td>"+slot+"</td><td>"+(row.already_in_opsguard?"Linked / Drafted":"Calendar only")+"</td>";
+    tr.innerHTML="<td style='text-align:center'><input class='calendar-preview-select' type='checkbox' data-index='"+index+"' "+disabled+" onchange='updateCalendarActionButtons()'></td><td>"+(row.date||"")+"</td><td>"+(row.venue||"")+"</td><td><strong>"+(row.shift_code||"")+"</strong></td><td>"+(row.guard||"Unassigned")+"</td><td>"+(row.start_time||"")+"</td><td>"+slot+"</td><td>"+(row.already_in_opsguard?"Linked / Drafted":"Calendar only")+"</td>";
     tbody.appendChild(tr);
   });
+  updateCalendarActionButtons();
 }
+
 function updateCalendarDraftImportButton(){
-  const btn=document.getElementById("calendar-import-drafts-btn");
-  if(!btn)return;
-  btn.disabled=!document.querySelector(".calendar-preview-select:checked");
+  updateCalendarActionButtons();
 }
+
 function selectedCalendarPreviewRows(){
   return [...document.querySelectorAll(".calendar-preview-select:checked")]
     .map(el=>calendarPreviewCache[Number(el.dataset.index)])
     .filter(Boolean);
 }
+
 function selectAllCalendarPreviewShifts(){
+  if(calendarPreviewLoading)return;
   document.querySelectorAll(".calendar-preview-select:not(:disabled)").forEach(cb=>{cb.checked=true;});
-  updateCalendarDraftImportButton();
+  updateCalendarActionButtons();
 }
+
 function clearCalendarPreviewShiftSelection(){
+  if(calendarPreviewLoading)return;
   document.querySelectorAll(".calendar-preview-select").forEach(cb=>{cb.checked=false;});
-  updateCalendarDraftImportButton();
+  updateCalendarActionButtons();
 }
+
+async function previewGoogleCalendarShifts(){
+  const st=document.getElementById("calendar-sync-status"),from=document.getElementById("calendar-preview-from")?.value||"",to=document.getElementById("calendar-preview-to")?.value||"";
+  if(calendarPreviewLoading)return;
+  if(!from||!to){if(st)st.textContent="Choose both preview dates.";return;}
+  setCalendarPreviewLoading(true);
+  if(st)st.textContent="Reading Garrison, Baby G and Titan Security calendars in parallel…";
+  try{
+    const data=await rawApi("/calendar-sync/preview",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({from_date:from,to_date:to}),silent:true,timeoutMs:120000});
+    renderCalendarPreview(data.items||[]);
+    const sourceSummary=(data.sources||[]).map(s=>s.source+": "+(s.shifts_found||0)).join(" | ");
+    if(st)st.textContent=(data.count||0)+" S-numbered calendar shifts found"+(sourceSummary?" — "+sourceSummary:"")+". Calendar slot end times are reference only; OpsGuard end time may be left TBD."+(data.errors&&data.errors.length?" Some calendars returned an error.":"");
+  }catch(e){
+    if(st)st.textContent="Calendar preview failed: "+(e&&e.message?e.message:String(e));
+  }finally{
+    setCalendarPreviewLoading(false);
+  }
+}
+
 async function sendSelectedCalendarShiftsDirect(){
   const st=document.getElementById("calendar-sync-status");
   if(!authToken){if(st)st.textContent="Login first.";return;}
