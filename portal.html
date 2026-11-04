@@ -1115,7 +1115,7 @@ function renderCalendarPreviewTable(){
     const tr=document.createElement("tr");
     const slot=(row.calendar_duration_minutes==null?"Unknown":row.calendar_duration_minutes+" min")+(row.requires_end_time_review?" ⚠":"");
     const disabled=row.already_in_opsguard?"disabled":"";
-    tr.innerHTML="<td style='text-align:center'><input class='calendar-preview-select' type='checkbox' data-index='"+index+"' "+disabled+" onchange='updateCalendarActionButtons()'></td><td>"+(row.date||"")+"</td><td>"+(row.venue||"")+"</td><td><strong>"+(row.shift_code||"")+"</strong></td><td>"+(row.guard||"Unassigned")+"</td><td>"+(row.start_time||"")+"</td><td>"+slot+"</td><td>"+(row.already_in_opsguard?"Linked / Drafted":"Calendar only")+"</td>";
+    tr.innerHTML="<td style='text-align:center'><input class='calendar-preview-select' type='checkbox' data-index='"+index+"' "+disabled+" onchange='updateCalendarActionButtons()'></td><td>"+(row.date||"")+"</td><td>"+(row.venue||"")+"</td><td><strong>"+(row.shift_code||"")+"</strong></td><td>"+(row.guard||"Unassigned")+"</td><td>"+(row.start_time||"")+"</td><td>"+slot+"</td><td>"+(row.already_in_opsguard?"Already scheduled":"Available")+"</td>";
     tbody.appendChild(tr);
   });
   updateCalendarActionButtons();
@@ -1178,7 +1178,7 @@ async function previewGoogleCalendarShifts(){
     const data=await rawApi("/calendar-sync/preview",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({from_date:from,to_date:to}),silent:true,timeoutMs:120000});
     renderCalendarPreview(data.items||[]);
     const sourceSummary=(data.sources||[]).map(s=>s.source+": "+(s.shifts_found||0)).join(" | ");
-    if(st)st.textContent=(data.count||0)+" S-numbered calendar shifts found"+(sourceSummary?" — "+sourceSummary:"")+". Calendar slot end times are reference only; OpsGuard end time may be left TBD."+(data.errors&&data.errors.length?" Some calendars returned an error.":"");
+    if(st)st.textContent=(data.count||0)+" S-numbered calendar shifts found"+(sourceSummary?" — "+sourceSummary:"")+". Calendar slot end times are reference only; OpsGuard end time may be left TBD. Rows marked Already scheduled cannot be selected; all Available rows can be selected."+(data.errors&&data.errors.length?" Some calendars returned an error.":"");
   }catch(e){
     if(st)st.textContent="Calendar preview failed: "+(e&&e.message?e.message:String(e));
   }finally{
