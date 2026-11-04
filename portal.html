@@ -169,6 +169,11 @@
   <div class="queue-filter-field queue-date-range"><label>Date range</label><div class="queue-date-pair"><input aria-label="From date" id="payroll-queue-date-from" onchange="handleQueueFromDate('payroll')" type="date"/><span>to</span><input aria-label="To date" id="payroll-queue-date-to" onchange="applyPayrollQueueFilters()" type="date"/></div></div>
   <div class="queue-filter-field"><label>Venue</label><select id="payroll-queue-venue" onchange="applyPayrollQueueFilters()"><option value="">All venues</option></select></div>
   <div class="queue-filter-field"><label>Guard</label><select id="payroll-queue-guard" onchange="applyPayrollQueueFilters()"><option value="">All guards</option></select></div>
+  <div class="queue-filter-field"><label>Account</label><select id="payroll-queue-account" onchange="applyPayrollQueueFilters()">
+    <option value="">All records</option>
+    <option value="active_registered">Active registered</option>
+    <option value="historical_or_orphaned">Historical / orphaned</option>
+  </select></div>
 </div>
 <div class="payroll-controls" id="payroll-controls">
 <div class="row">
@@ -295,10 +300,12 @@ function resetQueueFilters(prefix){
   const toEl=document.getElementById(prefix+"-queue-date-to");
   const venueEl=document.getElementById(prefix+"-queue-venue");
   const guardEl=document.getElementById(prefix+"-queue-guard");
+  const accountEl=prefix==="payroll"?document.getElementById("payroll-queue-account"):null;
   if(fromEl)fromEl.value="";
   if(toEl){toEl.value="";toEl.min="";}
   if(venueEl)venueEl.value="";
   if(guardEl)guardEl.value="";
+  if(accountEl)accountEl.value="";
 }
 function handleQueueFromDate(prefix){
   const fromEl=document.getElementById(prefix+"-queue-date-from");
@@ -339,12 +346,14 @@ function filterRowsByQueueControls(rows,prefix,guardGetter){
   const toValue=document.getElementById(prefix+"-queue-date-to")?.value||"";
   const venueValue=document.getElementById(prefix+"-queue-venue")?.value||"";
   const guardValue=document.getElementById(prefix+"-queue-guard")?.value||"";
+  const accountValue=prefix==="payroll"?(document.getElementById("payroll-queue-account")?.value||""):"";
   return (rows||[]).filter(r=>{
     const rowDate=String(r.date||"");
     if(fromValue&&rowDate<fromValue)return false;
     if(toValue&&rowDate>toValue)return false;
     if(venueValue&&String(r.venue||"")!==venueValue)return false;
     if(guardValue&&String(guardGetter(r)||"")!==guardValue)return false;
+    if(accountValue&&String(r.guard_account_status||"historical_or_orphaned")!==accountValue)return false;
     return true;
   });
 }
@@ -539,9 +548,36 @@ async function rawApi(path,opts){
 }
 
 async function deleteShiftAnyRole(shiftId){
-  if(!authToken)return alert("Login first.");if(!shiftId)return alert("Missing shift id.");if(!(await confirmAction("Delete this hours entry? This cannot be undone.")))return;
-  const adminDashboard=document.getElementById("section-admin-dashboard");const adminView=currentUserRole==="admin"&&!!adminDashboard&&!adminDashboard.classList.contains("hidden");const st=adminView?document.getElementById("admin-management-status"):document.getElementById("shift-status");if(st)st.textContent="Deleting shift...";
-  try{await rawApi("/shifts/"+encodeURIComponent(shiftId),{method:"DELETE"});myShiftsCache=(myShiftsCache||[]).filter(s=>s.id!==shiftId);allShiftsCache=(allShiftsCache||[]).filter(s=>s.id!==shiftId);adminFilteredShifts=(adminFilteredShifts||[]).filter(s=>s.id!==shiftId);if(adminView&&currentUserRole==="admin"){await refreshAdminGuardOptionsForCurrentRange();await loadAllShifts();}else{renderMyShifts();await loadMyShifts();}if(st)st.textContent="Hours entry deleted.";}catch(e){if(st)st.textContent="Delete failed: "+(e&&e.message?e.message:String(e));}
+  if(!authToken)return alert("Login first.");
+  if(!shiftId)return alert("Missing shift id.");
+  if(!(await confirmAction("Delete this hours entry? This cannot be undone.")))return;
+  const isAdmin=currentUserRole==="admin";
+  const st=isAdmin?document.getElementById("admin-total"):document.getElementById("shift-status");
+  if(st)st.textContent="Deleting shift...";
+  try{
+    await rawApi("/shifts/"+encodeURIComponent(shiftId),{method:"DELETE"});
+    myShiftsCache=(myShiftsCache||[]).filter(s=>s.id!==shiftId);
+    allShiftsCache=(allShiftsCache||[]).filter(s=>s.id!==shiftId);
+    adminFilteredShifts=(adminFilteredShifts||[]).filter(s=>s.id!==shiftId);
+    adminPayrollQueueBaseRows=(adminPayrollQueueBaseRows||[]).filter(s=>s.id!==shiftId);
+    if(isAdmin){
+      if(adminPayrollQuickFilter)await loadPayrollQuickFilter(adminPayrollQuickFilter);
+      else {await refreshAdminGuardOptionsForCurrentRange();await loadAllShifts();}
+      const dash=document.getElementById("section-admin-dashboard");
+      if(dash&&!dash.classList.contains("hidden"))await loadAdminDashboard();
+    }else{
+      renderMyShifts();
+      await loadMyShifts();
+    }
+    if(st)st.textContent="Hours entry deleted.";
+  }catch(e){
+    if(e&&e.status===404&&isAdmin){
+      if(adminPayrollQuickFilter)await loadPayrollQuickFilter(adminPayrollQuickFilter);else await loadAllShifts();
+      if(st)st.textContent="Entry was already deleted; list refreshed.";
+      return;
+    }
+    if(st)st.textContent="Delete failed: "+(e&&e.message?e.message:String(e));
+  }
 }
 
 async function deleteAvailabilityAnyRole(availId){
