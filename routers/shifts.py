@@ -138,10 +138,16 @@ def serialize_shift(
     recalculated_pay = recalculate_pay(recalculated_hours, hourly_rate)
     stored_hours = doc.get("total_hours")
 
+    linked_user_id = _clean_text(doc.get("user_id") or doc.get("guard_id"))
+    linked_user = user_lookup.get(linked_user_id) if (linked_user_id and user_lookup) else None
+    registered_guard = bool(linked_user and not (linked_user.get("is_admin") or linked_user.get("admin") or linked_user.get("role") == "admin"))
+
     return {
         "id": str(doc.get("_id")) if doc.get("_id") is not None else None,
         "user_id": str(doc.get("user_id")) if doc.get("user_id") is not None else None,
         "guard_name": _guard_name_from_doc(doc, user_lookup),
+        "registered_guard": registered_guard,
+        "guard_account_status": "active_registered" if registered_guard else "historical_or_orphaned",
         "date": doc.get("date"),
         "venue": doc.get("venue"),
         "start_time": doc.get("start_time"),
