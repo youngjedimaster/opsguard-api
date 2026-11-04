@@ -106,6 +106,44 @@ async def create_schedule(
             }
         )
 
+    skipped_duplicates = []
+    if guard_id:
+        existing_pairs: set[tuple[str, str]] = set()
+        cursor = db.schedules.find(
+            {"guard_id": guard_id},
+            {"shifts.calendar_id": 1, "shifts.google_event_id": 1},
+        )
+        async for existing_schedule in cursor:
+            for existing_shift in existing_schedule.get("shifts") or []:
+                cal_id = str(existing_shift.get("calendar_id") or "").strip()
+                event_id = str(existing_shift.get("google_event_id") or "").strip()
+                if cal_id and event_id:
+                    existing_pairs.add((cal_id, event_id))
+
+        filtered_shifts = []
+        request_pairs: set[tuple[str, str]] = set()
+        for shift in clean_shifts:
+            cal_id = str(shift.get("calendar_id") or "").strip()
+            event_id = str(shift.get("google_event_id") or "").strip()
+            pair = (cal_id, event_id) if cal_id and event_id else None
+            if pair and (pair in existing_pairs or pair in request_pairs):
+                skipped_duplicates.append(shift)
+                continue
+            if pair:
+                request_pairs.add(pair)
+            filtered_shifts.append(shift)
+        clean_shifts = filtered_shifts
+
+    if not clean_shifts:
+        return {
+            "created": False,
+            "duplicate_only": True,
+            "guard": guard,
+            "guard_id": guard_id,
+            "skipped_duplicates": len(skipped_duplicates),
+            "message": "All selected Calendar shifts are already assigned to this guard.",
+        }
+
     doc = {
         "guard": guard,
         "guard_id": guard_id,
@@ -120,7 +158,7 @@ async def create_schedule(
 
     res = await db.schedules.insert_one(doc)
 
-    return serialize_schedule(
+    response = serialize_schedule(
         {
             "_id": res.inserted_id,
             "guard": guard,
@@ -134,6 +172,9 @@ async def create_schedule(
             "confirmed_by_guard_id": doc["confirmed_by_guard_id"],
         }
     )
+    response["created"] = True
+    response["skipped_duplicates"] = len(skipped_duplicates)
+    return response
 
 
 @router.get("")

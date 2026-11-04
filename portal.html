@@ -1114,8 +1114,8 @@ function renderCalendarPreviewTable(){
   visible.forEach(({row,index})=>{
     const tr=document.createElement("tr");
     const slot=(row.calendar_duration_minutes==null?"Unknown":row.calendar_duration_minutes+" min")+(row.requires_end_time_review?" ⚠":"");
-    const disabled=row.already_in_opsguard?"disabled":"";
-    tr.innerHTML="<td style='text-align:center'><input class='calendar-preview-select' type='checkbox' data-index='"+index+"' "+disabled+" onchange='updateCalendarActionButtons()'></td><td>"+(row.date||"")+"</td><td>"+(row.venue||"")+"</td><td><strong>"+(row.shift_code||"")+"</strong></td><td>"+(row.guard||"Unassigned")+"</td><td>"+(row.start_time||"")+"</td><td>"+slot+"</td><td>"+(row.already_in_opsguard?"Already scheduled":"Available")+"</td>";
+    const disabled="";
+    tr.innerHTML="<td style='text-align:center'><input class='calendar-preview-select' type='checkbox' data-index='"+index+"' "+disabled+" onchange='updateCalendarActionButtons()'></td><td>"+(row.date||"")+"</td><td>"+(row.venue||"")+"</td><td><strong>"+(row.shift_code||"")+"</strong></td><td>"+(row.guard||"Unassigned")+"</td><td>"+(row.start_time||"")+"</td><td>"+slot+"</td><td>"+(row.already_in_opsguard?"Previously assigned":"Available")+"</td>";
     tbody.appendChild(tr);
   });
   updateCalendarActionButtons();
@@ -1125,7 +1125,7 @@ function updateCalendarActionButtons(){
   const selectAllBtn=document.getElementById("calendar-select-all-btn");
   const clearBtn=document.getElementById("calendar-clear-shifts-btn");
   const sendBtn=document.getElementById("calendar-send-selected-btn");
-  const hasRows=visibleCalendarPreviewRows().some(item=>!item.row.already_in_opsguard);
+  const hasRows=visibleCalendarPreviewRows().length>0;
   const hasSelected=!!document.querySelector(".calendar-preview-select:checked");
   if(previewBtn)previewBtn.disabled=calendarPreviewLoading;
   if(selectAllBtn)selectAllBtn.disabled=calendarPreviewLoading||!hasRows;
@@ -1178,7 +1178,7 @@ async function previewGoogleCalendarShifts(){
     const data=await rawApi("/calendar-sync/preview",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({from_date:from,to_date:to}),silent:true,timeoutMs:120000});
     renderCalendarPreview(data.items||[]);
     const sourceSummary=(data.sources||[]).map(s=>s.source+": "+(s.shifts_found||0)).join(" | ");
-    if(st)st.textContent=(data.count||0)+" S-numbered calendar shifts found"+(sourceSummary?" — "+sourceSummary:"")+". Calendar slot end times are reference only; OpsGuard end time may be left TBD. Rows marked Already scheduled cannot be selected; all Available rows can be selected."+(data.errors&&data.errors.length?" Some calendars returned an error.":"");
+    if(st)st.textContent=(data.count||0)+" S-numbered calendar shifts found"+(sourceSummary?" — "+sourceSummary:"")+". Calendar slot end times are reference only; OpsGuard end time may be left TBD. Previously assigned rows may be selected again for another guard; OpsGuard prevents duplicate assignment to the same guard."+(data.errors&&data.errors.length?" Some calendars returned an error.":"");
   }catch(e){
     if(st)st.textContent="Calendar preview failed: "+(e&&e.message?e.message:String(e));
   }finally{
@@ -1223,15 +1223,19 @@ async function sendSelectedCalendarShiftsDirect(){
         note,
         shifts:shifts.map(s=>({...s,guard:g.name||g.email}))
       };
-      await rawApi("/schedules",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload),silent:true});
-      results.push({guard:g,ok:true});
+      const saved=await rawApi("/schedules",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload),silent:true});
+      results.push({guard:g,ok:true,created:saved&&saved.created!==false,skipped:Number(saved&&saved.skipped_duplicates||0)});
     }catch(e){
       results.push({guard:g,ok:false,error:e&&e.message?e.message:String(e)});
     }
   }
 
-  const sent=results.filter(r=>r.ok),failed=results.filter(r=>!r.ok);
-  if(st)st.textContent=sent.length+" guard schedule"+(sent.length===1?"":"s")+" sent"+(failed.length?"; "+failed.length+" failed.":". Awaiting guard confirmation.");
+  const sent=results.filter(r=>r.ok&&r.created),duplicates=results.filter(r=>r.ok&&!r.created),failed=results.filter(r=>!r.ok);
+  const skipped=results.reduce((n,r)=>n+Number(r.skipped||0),0);
+  if(st)st.textContent=sent.length+" guard schedule"+(sent.length===1?"":"s")+" sent"
+    +(skipped?"; "+skipped+" same-guard duplicate shift"+(skipped===1?"":"s")+" skipped":"")
+    +(duplicates.length&&!sent.length?"; nothing new to send to the selected guard"+(duplicates.length===1?"":"s"):"")
+    +(failed.length?"; "+failed.length+" failed.":sent.length?". Awaiting guard confirmation.":".");
   if(sent.length){
     clearCalendarPreviewShiftSelection();
     await loadAdminScheduleConfirmations();
