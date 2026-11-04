@@ -114,8 +114,9 @@
     <label class="calendar-shift-chip"><input onchange="toggleCalendarShiftFilter('S3',this.checked)" type="checkbox"/><span>S3</span></label>
     <label class="calendar-shift-chip"><input onchange="toggleCalendarShiftFilter('S4',this.checked)" type="checkbox"/><span>S4</span></label>
     <label class="calendar-shift-chip"><input onchange="toggleCalendarShiftFilter('S5',this.checked)" type="checkbox"/><span>S5</span></label>
+    <label class="calendar-shift-chip"><input onchange="toggleCalendarShiftFilter('UNASSIGNED',this.checked)" type="checkbox"/><span>Unassigned</span></label>
   </div>
-  <p class="small calendar-shift-hint">Choose one or more shifts. Leave all unselected to show every S-numbered shift.</p>
+  <p class="small calendar-shift-hint">Choose one or more S shifts and/or Unassigned. Leave all unselected to show every S-numbered shift.</p>
 </div>
 <div class="dash-btn-row">
 <button class="primary" id="calendar-preview-btn" onclick="previewGoogleCalendarShifts()" type="button">1. Preview Calendar Shifts</button>
@@ -1043,9 +1044,15 @@ let calendarPreviewShiftFilters=new Set();
 function calendarShiftCode(row){
   return String(row&&row.shift_code||"").trim().toUpperCase();
 }
+function calendarShiftIsUnassigned(row){
+  const guard=String(row&&row.guard||"").trim().toLowerCase();
+  return !guard||guard==="unassigned";
+}
 function calendarShiftMatches(row){
   if(!calendarPreviewShiftFilters.size)return true;
-  return calendarPreviewShiftFilters.has(calendarShiftCode(row));
+  if(calendarPreviewShiftFilters.has(calendarShiftCode(row)))return true;
+  if(calendarPreviewShiftFilters.has("UNASSIGNED")&&calendarShiftIsUnassigned(row))return true;
+  return false;
 }
 function visibleCalendarPreviewRows(){
   return calendarPreviewCache
@@ -1073,6 +1080,11 @@ function renderCalendarShiftFilterOptions(){
     const span=document.createElement("span");span.textContent=code;
     label.append(input,span);holder.appendChild(label);
   });
+  const unassignedLabel=document.createElement("label");unassignedLabel.className="calendar-shift-chip";
+  const unassignedInput=document.createElement("input");unassignedInput.type="checkbox";unassignedInput.checked=calendarPreviewShiftFilters.has("UNASSIGNED");
+  unassignedInput.addEventListener("change",()=>toggleCalendarShiftFilter("UNASSIGNED",unassignedInput.checked));
+  const unassignedSpan=document.createElement("span");unassignedSpan.textContent="Unassigned";
+  unassignedLabel.append(unassignedInput,unassignedSpan);holder.appendChild(unassignedLabel);
 }
 function toggleCalendarShiftFilter(code,checked){
   const key=String(code||"").trim().toUpperCase();
