@@ -163,7 +163,7 @@
 <button class="primary secondary" onclick="clearScheduleGuardSelection()" type="button">Clear guard selection</button>
 </div>
 </div>
-<p class="small">Google Calendar stays read-only here. Start times default to the Calendar time but can be edited in 12-hour format before sending; only the OpsGuard schedule uses the edited start time. Previewed Calendar end times are reference only; OpsGuard leaves the end time TBD.</p>
+<p class="small">Google Calendar stays read-only here. Start times default to the Calendar time and can be edited in 12-hour format using 00, 15, 30 or 45 minutes. Your edited OpsGuard time is kept through preview refreshes; Google Calendar remains unchanged. Previewed Calendar end times are reference only; OpsGuard leaves the end time TBD.</p>
 </div>
 </div></div><div class="card hidden admin-standalone-page" id="section-admin-payroll"><div class="dash-section" id="dashboard-payroll">
 <div class="dashboard-panel-head">
@@ -1139,6 +1139,7 @@ function initCalendarPreviewDates(){
   from.value=localDate(now);to.value=localDate(later);
 }
 let calendarPreviewCache=[];
+const calendarPreviewStartOverrides=new Map();
 let calendarPreviewLoading=false;
 let calendarPreviewShiftFilters=new Set();
 
@@ -1232,6 +1233,7 @@ function updateCalendarPreviewStartTimeParts(index){
   if(!hour||!minute||!["AM","PM"].includes(ampm))return;
   if(!row._calendar_original_start_time)row._calendar_original_start_time=row.start_time||"";
   row.start_time=Number(hour)+":"+minute+" "+ampm;
+  calendarPreviewStartOverrides.set(calendarPreviewRowKey(row),row.start_time);
 }
 function renderCalendarPreviewTable(){
   const wrap=document.getElementById("calendar-preview-wrap"),tbody=document.querySelector("#calendar-preview-table tbody");
@@ -1260,7 +1262,8 @@ function renderCalendarPreviewTable(){
     const parts=calendarDisplayToParts(row.start_time||row._calendar_original_start_time||"");
     const original=row._calendar_original_start_time||row.start_time||"";
     const hourOptions=Array.from({length:12},(_,i)=>String(i+1)).map(v=>"<option value='"+v+"' "+(parts.hour===v?"selected":"")+">"+v+"</option>").join("");
-    const minuteOptions=Array.from({length:60},(_,i)=>String(i).padStart(2,"0")).map(v=>"<option value='"+v+"' "+(parts.minute===v?"selected":"")+">"+v+"</option>").join("");
+    const minuteValues=["00","15","30","45"];
+    const minuteOptions=minuteValues.map(v=>"<option value='"+v+"' "+(parts.minute===v?"selected":"")+">"+v+"</option>").join("");
     const ampmOptions=["AM","PM"].map(v=>"<option value='"+v+"' "+(parts.ampm===v?"selected":"")+">"+v+"</option>").join("");
     tr.innerHTML=
       "<td class='calendar-preview-select-cell' data-label='Select' style='text-align:center'><input class='calendar-preview-select' type='checkbox' data-index='"+index+"' onchange='updateCalendarActionButtons()'></td>"
@@ -1300,6 +1303,8 @@ function renderCalendarPreview(items){
   calendarPreviewCache=(Array.isArray(items)?items:[]).map(function(row){
     const copy={...row};
     copy._calendar_original_start_time=copy.start_time||"";
+    const override=calendarPreviewStartOverrides.get(calendarPreviewRowKey(copy));
+    if(override)copy.start_time=override;
     return copy;
   });
   renderCalendarShiftFilterOptions();
@@ -1378,36 +1383,41 @@ async function sendSelectedCalendarShiftsDirect(){
   const results=[];
   for(const g of guards){
     try{
-      const payload={
-        guard:g.name||g.email,
-        guard_id:g.id||null,
-        note,
-        shifts:shifts.map(s=>({...s,guard:g.name||g.email}))
-      };
+      const payload={guard:g.name||g.email,guard_id:g.id||null,note,shifts:shifts.map(s=>({...s,guard:g.name||g.email}))};
       const saved=await rawApi("/schedules",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload),silent:true});
-      results.push({guard:g,ok:true,created:saved&&saved.created!==false,skipped:Number(saved&&saved.skipped_duplicates||0),updated:Number(saved&&saved.updated_existing||0),locked:Number(saved&&saved.locked_duplicates||0)});
+      results.push({
+        guard:g,ok:true,created:saved&&saved.created!==false,
+        createdShifts:Array.isArray(saved&&saved.shifts)?saved.shifts.length:0,
+        skipped:Number(saved&&saved.skipped_duplicates||0),
+        updated:Number(saved&&saved.updated_existing||0),
+        locked:Number(saved&&saved.locked_duplicates||0)
+      });
     }catch(e){
       results.push({guard:g,ok:false,error:e&&e.message?e.message:String(e)});
     }
   }
 
-  const sent=results.filter(r=>r.ok&&r.created),duplicates=results.filter(r=>r.ok&&!r.created),failed=results.filter(r=>!r.ok);
+  const sent=results.filter(r=>r.ok&&r.created),failed=results.filter(r=>!r.ok);
+  const createdShifts=results.reduce((n,r)=>n+Number(r.createdShifts||0),0);
   const skipped=results.reduce((n,r)=>n+Number(r.skipped||0),0);
   const updated=results.reduce((n,r)=>n+Number(r.updated||0),0);
   const locked=results.reduce((n,r)=>n+Number(r.locked||0),0);
-  if(st)st.textContent=sent.length+" new guard schedule"+(sent.length===1?"":"s")+" sent"
-    +(updated?"; "+updated+" existing shift"+(updated===1?"":"s")+" updated with revised OpsGuard time":"")
-    +(locked?"; "+locked+" confirmed shift"+(locked===1?"":"s")+" left unchanged":"")
-    +(skipped?"; "+skipped+" request duplicate"+(skipped===1?"":"s")+" skipped":"")
-    +(duplicates.length&&!sent.length&&!updated?"; nothing new to send to the selected guard"+(duplicates.length===1?"":"s"):"")
-    +(failed.length?"; "+failed.length+" failed.":(sent.length||updated)?". Awaiting guard confirmation.":".");
+  const expected=rows.length*guards.length;
+  const accounted=createdShifts+updated+skipped+locked;
+  const summary=expected+" selected assignment"+(expected===1?"":"s")+": "
+    +createdShifts+" new, "+updated+" revised, "+skipped+" already unchanged, "+locked+" confirmed/locked"
+    +(failed.length?"; "+failed.length+" guard send failed":"")
+    +(accounted<expected&&!failed.length?"; "+(expected-accounted)+" not accounted for":"")+".";
+
   if(sent.length||updated){
     clearCalendarPreviewShiftSelection();
     await loadAdminScheduleConfirmations();
     await loadAdminDashboard();
     await previewGoogleCalendarShifts();
   }
-  if(failed.length)alert("Some schedules could not be sent:\n"+failed.map(r=>(r.guard.name||r.guard.email)+": "+r.error).join("\n"));
+  if(st)st.textContent=summary;
+  if(locked||skipped||failed.length||accounted<expected)alert("Schedule send result: "+summary);
+  if(failed.length)alert("Some schedules could not be sent: "+failed.map(r=>(r.guard.name||r.guard.email)+": "+r.error).join(" | "));
 }
 
 async function importSelectedCalendarDrafts(){
@@ -2264,12 +2274,20 @@ async function loadMySchedule(){
         rows.push({
           date:sh.date,venue:sh.venue||"",shift_code:sh.shift_code||"",start_time:sh.start_time,end_time:sh.end_time,
           guard,note,available,confirmed,scheduleId,shiftIndex:index,
+          assignmentUpdatedAt:sh.assignment_updated_at||sch.created_at||"",
           availabilityConfirmedAt:sh.availability_confirmed_at||"",
           confirmedAt:sh.confirmed_at||sch.confirmed_at||""
         });
       });
     });
-    rows.sort(function(a,b){return parseScheduleRowDateTime(b)-parseScheduleRowDateTime(a);});
+    rows.sort(function(a,b){
+      const stateRank=function(r){return r.confirmed?2:r.available?1:0;};
+      const stateDiff=stateRank(a)-stateRank(b);
+      if(stateDiff!==0)return stateDiff;
+      const activityDiff=new Date(b.assignmentUpdatedAt||0)-new Date(a.assignmentUpdatedAt||0);
+      if(activityDiff!==0)return activityDiff;
+      return parseScheduleRowDateTime(b)-parseScheduleRowDateTime(a);
+    });
     tbody.innerHTML="";
     if(!rows.length){tbody.innerHTML="<tr><td colspan='9'>No schedule yet.</td></tr>";if(st)st.textContent="";return;}
     rows.forEach(function(r){

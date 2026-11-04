@@ -106,6 +106,7 @@ async def create_schedule(
                 "availability_status": "pending",
                 "availability_confirmed_at": None,
                 "availability_confirmed_by_guard_id": None,
+                "assignment_updated_at": datetime.utcnow(),
             }
         )
 
@@ -113,24 +114,23 @@ async def create_schedule(
     updated_duplicates = []
     locked_duplicates = []
     if guard_id:
-        # Same guard + same Calendar event is one logical assignment. If it is not
-        # finally confirmed, a resend updates the existing assignment in place so
-        # revised OpsGuard times replace the earlier copy instead of being skipped.
-        existing_by_pair: dict[tuple[str, str], tuple[dict, int, dict]] = {}
+        existing_by_pair: dict[tuple[str, str], tuple[dict, int]] = {}
         cursor = db.schedules.find({"guard_id": guard_id})
         async for existing_schedule in cursor:
             for existing_index, existing_shift in enumerate(existing_schedule.get("shifts") or []):
                 cal_id = str(existing_shift.get("calendar_id") or "").strip()
                 event_id = str(existing_shift.get("google_event_id") or "").strip()
                 if cal_id and event_id:
-                    existing_by_pair[(cal_id, event_id)] = (
-                        existing_schedule,
-                        existing_index,
-                        existing_shift,
-                    )
+                    existing_by_pair[(cal_id, event_id)] = (existing_schedule, existing_index)
 
+        schedule_revisions: dict[str, dict] = {}
         filtered_shifts = []
         request_pairs: set[tuple[str, str]] = set()
+        compare_fields = (
+            "date", "venue", "shift_code", "start_time", "end_time",
+            "calendar_id", "google_event_id", "calendar_start_time", "calendar_end_time",
+        )
+
         for shift in clean_shifts:
             cal_id = str(shift.get("calendar_id") or "").strip()
             event_id = str(shift.get("google_event_id") or "").strip()
@@ -147,16 +147,33 @@ async def create_schedule(
                 filtered_shifts.append(shift)
                 continue
 
-            existing_schedule, existing_index, existing_shift = existing_info
+            existing_schedule, existing_index = existing_info
+            schedule_key = str(existing_schedule["_id"])
+            work = schedule_revisions.get(schedule_key)
+            if work is None:
+                work = {
+                    "doc": existing_schedule,
+                    "shifts": [dict(sh) for sh in (existing_schedule.get("shifts") or [])],
+                    "changed": False,
+                }
+                schedule_revisions[schedule_key] = work
+
+            existing_shift = work["shifts"][existing_index]
             schedule_locked = (existing_schedule.get("status") or "pending") == "confirmed"
             shift_locked = (existing_shift.get("status") or "pending") == "confirmed"
             if schedule_locked or shift_locked:
                 locked_duplicates.append(shift)
                 continue
 
-            # Preserve identity/linkage fields but replace the operational shift details
-            # with the latest admin-selected values. A changed assignment requires the
-            # guard to confirm availability again.
+            changed = any(
+                (existing_shift.get(field) or "") != (shift.get(field) or "")
+                for field in compare_fields
+            )
+            if not changed:
+                skipped_duplicates.append(shift)
+                continue
+
+            now = datetime.utcnow()
             revised = dict(existing_shift)
             revised.update({
                 "date": shift.get("date"),
@@ -175,10 +192,17 @@ async def create_schedule(
                 "availability_status": "pending",
                 "availability_confirmed_at": None,
                 "availability_confirmed_by_guard_id": None,
+                "assignment_updated_at": now,
             })
-            existing_shifts = list(existing_schedule.get("shifts") or [])
-            existing_shifts[existing_index] = revised
+            work["shifts"][existing_index] = revised
+            work["changed"] = True
+            updated_duplicates.append(shift)
 
+        for work in schedule_revisions.values():
+            if not work["changed"]:
+                continue
+            existing_schedule = work["doc"]
+            existing_shifts = work["shifts"]
             remaining_confirmed = sum(1 for sh in existing_shifts if sh.get("status") == "confirmed")
             if remaining_confirmed == len(existing_shifts) and existing_shifts:
                 parent_status = "confirmed"
@@ -198,7 +222,6 @@ async def create_schedule(
                     "updated_at": now,
                 }},
             )
-            updated_duplicates.append(shift)
 
         clean_shifts = filtered_shifts
 
