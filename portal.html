@@ -1,5 +1,6 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width,initial-scale=1" name="viewport"/><title>OpsGuard Portal</title><style>:root{--bg:#0B1F3B;--bg2:#1F3C88;--radius:14px}*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f3f4f6;color:#111827}header{background:var(--bg);color:#fff;padding:12px 18px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;position:sticky;top:0;z-index:1000}header h1{font-size:1.1rem;margin:0}.env-badge{display:none;margin-left:8px;padding:3px 7px;border-radius:999px;background:#facc15;color:#422006;font-size:.68rem;font-weight:900;letter-spacing:.06em;vertical-align:middle}.nav-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap}.nav-btn{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);padding:6px 10px;color:#fff;border-radius:999px;font-size:.75rem;cursor:pointer}.nav-btn:hover{background:rgba(255,255,255,.18)}.user-menu-wrap{position:relative;display:none}.avatar-btn{width:34px;height:34px;border-radius:999px;display:grid;place-items:center;background:#fff;color:var(--bg);font-weight:800;font-size:.9rem;border:none;cursor:pointer}.user-dropdown{position:absolute;right:0;top:44px;background:#fff;color:#111827;border-radius:12px;min-width:190px;box-shadow:0 10px 30px rgba(0,0,0,.15);overflow:hidden;display:none}.ud-head{padding:8px 10px;border-bottom:1px solid #e5e7eb;font-size:.78rem;color:#374151;background:#f9fafb}.user-dropdown button{width:100%;text-align:left;padding:8px 10px;border:none;background:#fff;font-size:.8rem;cursor:pointer}.user-dropdown button:hover{background:#f3f4f6}.shell{max-width:1100px;margin:18px auto;padding:0 14px 60px}.card{background:#fff;border-radius:var(--radius);padding:12px 12px 16px;box-shadow:0 10px 30px rgba(11,31,59,.08);margin-bottom:12px}.row{display:flex;gap:10px;flex-wrap:wrap}.input-group{margin-bottom:8px;width:100%}label{display:block;font-weight:600;margin-bottom:2px;font-size:.78rem}input,select,textarea{width:100%;padding:6px 8px;border-radius:9px;border:1px solid #d1d5db;font-size:.8rem}button.primary{background:var(--bg2);border:none;color:#fff;padding:7px 11px;border-radius:999px;cursor:pointer;font-weight:600;font-size:.78rem}button.primary:hover{opacity:.95}.hidden{display:none}table{width:100%;border-collapse:collapse;font-size:.72rem}th,td{border-bottom:1px solid #e5e7eb;padding:5px 4px;text-align:left}th{font-weight:600;color:#4b5563}.table-scroll{height:120px;overflow-y:auto;overflow-x:hidden;border-radius:10px;border:1px solid #e5e7eb;background:#fff;margin-top:4px}.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;z-index:2000}.modal{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(520px,calc(100% - 24px));background:#fff;border-radius:16px;padding:12px;box-shadow:0 20px 60px rgba(0,0,0,.25);display:none;z-index:2001;max-height:90vh;overflow-y:auto}.modal h3{margin:0 0 4px;font-size:1rem}.modal small{color:#6b7280;font-size:.72rem}.modal .actions{display:flex;gap:8px;margin-top:6px;flex-wrap:wrap}.modal .actions .secondary{background:#0B1F3B}p.small{font-size:.7rem;margin-top:4px;color:#4b5563}.avail-line{padding:2px 4px;border-radius:6px;font-size:.75rem}.avail-line:hover{background:#e5e7eb}.icon-btn{background:transparent;border:1px solid #d1d5db;border-radius:999px;padding:3px 8px;cursor:pointer;font-size:.72rem}.icon-btn:hover{background:#f3f4f6}a{color:var(--bg2);text-decoration:none}a:hover{text-decoration:underline}.dash-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0}.dash-metric{border:1px solid #e5e7eb;border-radius:14px;padding:12px;background:#fff;min-height:96px}.dash-metric-label{font-size:.72rem;color:#4b5563;font-weight:700}.dash-metric-value{font-size:1.65rem;line-height:1.05;font-weight:900;color:#0B1F3B;margin-top:5px}.dash-metric-sub{font-size:.7rem;color:#6b7280;margin-top:4px}.dash-section{border:1px solid #e5e7eb;border-radius:14px;padding:11px;background:#f9fafb;margin-top:10px}.dash-section h3{margin:0 0 6px;font-size:.9rem}.dash-action-list{display:grid;gap:8px}.dash-action-item{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:9px}.dash-action-main{min-width:0}.dash-action-title{font-size:.78rem;font-weight:800}.dash-action-meta{font-size:.7rem;color:#6b7280;margin-top:2px}.dash-action-amount{font-size:.78rem;font-weight:800;white-space:nowrap}.dash-btn-row{display:flex;flex-wrap:wrap;gap:7px;margin-top:9px}.dash-empty{font-size:.75rem;color:#6b7280;padding:8px 2px}.dash-calendar-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.dash-calendar-stat{background:#fff;border-radius:10px;padding:8px;text-align:center;border:1px solid #e5e7eb}.dash-calendar-stat strong{display:block;font-size:1.05rem;color:#0B1F3B}.pay-list{display:grid;gap:10px;margin-top:8px}.pay-card{border:1px solid #e5e7eb;border-radius:12px;padding:10px;background:#fff}.pay-card-top{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}.pay-card-title{font-weight:800;font-size:.88rem}.pay-card-meta{font-size:.75rem;color:#4b5563;margin-top:3px}.status-pill{display:inline-block;border-radius:999px;padding:4px 8px;font-size:.7rem;font-weight:800;white-space:nowrap}.status-submitted{background:#fef3c7;color:#92400e}.status-approved{background:#dbeafe;color:#1e40af}.status-paid{background:#dcfce7;color:#166534}.pay-detail-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-top:8px;font-size:.74rem}.pay-detail{background:#f9fafb;border-radius:8px;padding:6px}.password-wrap{display:flex;gap:4px}.password-wrap input{flex:1}.eye-btn{min-width:58px;padding:0 10px;border:1px solid #d1d5db;background:#fff;border-radius:9px;cursor:pointer;font-size:.78rem;font-weight:700;color:#0B1F3B}@media(min-width:700px){.row>.half{width:calc(50% - 5px)}.row>.third{width:calc(33.333% - 7px)}.dash-grid{grid-template-columns:repeat(4,minmax(0,1fr))}.dash-action-list{grid-template-columns:repeat(2,minmax(0,1fr))}}</style></head><body data-environment="__OPSGUARD_ENV__">
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width,initial-scale=1" name="viewport"/><title>OpsGuard Portal</title><style>:root{--bg:#0B1F3B;--bg2:#1F3C88;--radius:14px}*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f3f4f6;color:#111827}header{background:var(--bg);color:#fff;padding:12px 18px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;position:sticky;top:0;z-index:1000}header h1{font-size:1.1rem;margin:0}.env-badge{display:none;margin-left:8px;padding:3px 7px;border-radius:999px;background:#facc15;color:#422006;font-size:.68rem;font-weight:900;letter-spacing:.06em;vertical-align:middle}.nav-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap}.nav-btn{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);padding:6px 10px;color:#fff;border-radius:999px;font-size:.75rem;cursor:pointer}.nav-btn:hover{background:rgba(255,255,255,.18)}.user-menu-wrap{position:relative;display:none}.avatar-btn{width:34px;height:34px;border-radius:999px;display:grid;place-items:center;background:#fff;color:var(--bg);font-weight:800;font-size:.9rem;border:none;cursor:pointer}.user-dropdown{position:absolute;right:0;top:44px;background:#fff;color:#111827;border-radius:12px;min-width:190px;box-shadow:0 10px 30px rgba(0,0,0,.15);overflow:hidden;display:none}.ud-head{padding:8px 10px;border-bottom:1px solid #e5e7eb;font-size:.78rem;color:#374151;background:#f9fafb}.user-dropdown button{width:100%;text-align:left;padding:8px 10px;border:none;background:#fff;font-size:.8rem;cursor:pointer}.user-dropdown button:hover{background:#f3f4f6}.shell{max-width:1100px;margin:18px auto;padding:0 14px 60px}.card{background:#fff;border-radius:var(--radius);padding:12px 12px 16px;box-shadow:0 10px 30px rgba(11,31,59,.08);margin-bottom:12px}.row{display:flex;gap:10px;flex-wrap:wrap}.input-group{margin-bottom:8px;width:100%}label{display:block;font-weight:600;margin-bottom:2px;font-size:.78rem}input,select,textarea{width:100%;padding:6px 8px;border-radius:9px;border:1px solid #d1d5db;font-size:.8rem}button.primary{background:var(--bg2);border:none;color:#fff;padding:7px 11px;border-radius:999px;cursor:pointer;font-weight:600;font-size:.78rem}button.primary:hover{opacity:.95}.hidden{display:none}table{width:100%;border-collapse:collapse;font-size:.72rem}th,td{border-bottom:1px solid #e5e7eb;padding:5px 4px;text-align:left}th{font-weight:600;color:#4b5563}.table-scroll{height:120px;overflow-y:auto;overflow-x:hidden;border-radius:10px;border:1px solid #e5e7eb;background:#fff;margin-top:4px}.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;z-index:2000}.modal{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(520px,calc(100% - 24px));background:#fff;border-radius:16px;padding:12px;box-shadow:0 20px 60px rgba(0,0,0,.25);display:none;z-index:2001;max-height:90vh;overflow-y:auto}.modal h3{margin:0 0 4px;font-size:1rem}.modal small{color:#6b7280;font-size:.72rem}.modal .actions{display:flex;gap:8px;margin-top:6px;flex-wrap:wrap}.modal .actions .secondary{background:#0B1F3B}p.small{font-size:.7rem;margin-top:4px;color:#4b5563}.avail-line{padding:2px 4px;border-radius:6px;font-size:.75rem}.avail-line:hover{background:#e5e7eb}.icon-btn{background:transparent;border:1px solid #d1d5db;border-radius:999px;padding:3px 8px;cursor:pointer;font-size:.72rem}.icon-btn:hover{background:#f3f4f6}a{color:var(--bg2);text-decoration:none}a:hover{text-decoration:underline}.dash-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0}.dash-metric{border:1px solid #e5e7eb;border-radius:14px;padding:12px;background:#fff;min-height:96px}.dash-metric-label{font-size:.72rem;color:#4b5563;font-weight:700}.dash-metric-value{font-size:1.65rem;line-height:1.05;font-weight:900;color:#0B1F3B;margin-top:5px}.dash-metric-sub{font-size:.7rem;color:#6b7280;margin-top:4px}.dash-section{border:1px solid #e5e7eb;border-radius:14px;padding:11px;background:#f9fafb;margin-top:10px}.dash-section h3{margin:0 0 6px;font-size:.9rem}.dash-action-list{display:grid;gap:8px}.dash-action-item{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:9px}.dash-action-main{min-width:0}.dash-action-title{font-size:.78rem;font-weight:800}.dash-action-meta{font-size:.7rem;color:#6b7280;margin-top:2px}.dash-action-amount{font-size:.78rem;font-weight:800;white-space:nowrap}.dash-btn-row{display:flex;flex-wrap:wrap;gap:7px;margin-top:9px}.dash-empty{font-size:.75rem;color:#6b7280;padding:8px 2px}.dash-calendar-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.dash-calendar-stat{background:#fff;border-radius:10px;padding:8px;text-align:center;border:1px solid #e5e7eb}.dash-calendar-stat strong{display:block;font-size:1.05rem;color:#0B1F3B}.pay-list{display:grid;gap:10px;margin-top:8px}.pay-card{border:1px solid #e5e7eb;border-radius:12px;padding:10px;background:#fff}.pay-card-top{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}.pay-card-title{font-weight:800;font-size:.88rem}.pay-card-meta{font-size:.75rem;color:#4b5563;margin-top:3px}.status-pill{display:inline-block;border-radius:999px;padding:4px 8px;font-size:.7rem;font-weight:800;white-space:nowrap}.status-submitted{background:#fef3c7;color:#92400e}.status-approved{background:#dbeafe;color:#1e40af}.status-paid{background:#dcfce7;color:#166534}.pay-detail-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-top:8px;font-size:.74rem}.pay-detail{background:#f9fafb;border-radius:8px;padding:6px}.password-wrap{display:flex;gap:4px}.password-wrap input{flex:1}.eye-btn{min-width:58px;padding:0 10px;border:1px solid #d1d5db;background:#fff;border-radius:9px;cursor:pointer;font-size:.78rem;font-weight:700;color:#0B1F3B}@media(min-width:700px){.row>.half{width:calc(50% - 5px)}.row>.third{width:calc(33.333% - 7px)}.dash-grid{grid-template-columns:repeat(4,minmax(0,1fr))}.dash-action-list{grid-template-columns:repeat(2,minmax(0,1fr))}}.section-heading-row{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap}.section-heading-row h3{margin:0}.compact-action{flex:0 0 auto}.schedule-panel{border:1px solid #e5e7eb;border-radius:12px;background:#f9fafb;padding:10px;margin-top:10px}.manual-schedule-panel{background:#fff}.schedule-recipient-panel{border-top:1px solid #e5e7eb;margin-top:10px;padding-top:10px}.guard-picker-list{border:1px solid #d1d5db;border-radius:10px;padding:4px 10px;max-height:220px;overflow:auto;background:#fff}.guard-picker-row{display:grid;grid-template-columns:24px minmax(0,1fr);align-items:center;gap:10px;padding:10px 2px;border-bottom:1px solid #eef0f3;cursor:pointer}.guard-picker-row:last-child{border-bottom:none}.schedule-guard-check,input[type="checkbox"],input[type="radio"]{width:auto!important;min-width:0!important}.schedule-guard-check{width:18px!important;height:18px!important;margin:0!important;justify-self:center}.guard-picker-label{min-width:0;text-align:left;overflow-wrap:anywhere;line-height:1.25}.dashboard-subcard{box-shadow:none;border:1px solid #e5e7eb;margin-top:12px;background:#f9fafb}.operations-clear{justify-content:flex-end}.operations-table-scroll,.confirmations-table-scroll,.calendar-preview-scroll{height:auto;max-height:420px;overflow:auto}.table-scroll{overflow-x:auto!important;overflow-y:auto;height:auto;max-height:420px}#admin-shifts{min-width:980px}#admin-schedule-confirmations{min-width:820px}#calendar-preview-table{min-width:760px}#admin-shifts th,#admin-shifts td,#admin-schedule-confirmations th,#admin-schedule-confirmations td,#calendar-preview-table th,#calendar-preview-table td{vertical-align:middle}#admin-shifts th,#admin-shifts td{white-space:nowrap}#admin-shifts th:first-child,#admin-shifts td:first-child{min-width:150px;white-space:normal}#admin-shifts input[type="checkbox"]{width:18px!important;height:18px!important;margin:0!important}.danger-action{background:#991b1b!important}.guard-management-row{align-items:flex-end}.guard-management-row>button{margin-bottom:8px}.operations-actions{margin-bottom:4px}@media(max-width:699px){.section-heading-row>.compact-action{width:100%}.dash-btn-row>button{flex:1 1 100%}.guard-management-row>button{width:100%;margin-bottom:0}.schedule-panel{padding:9px}.guard-picker-list{padding:3px 8px}.guard-picker-row{grid-template-columns:24px minmax(0,1fr);padding:10px 0}.table-scroll{-webkit-overflow-scrolling:touch}.operations-table-scroll,.confirmations-table-scroll,.calendar-preview-scroll{max-height:360px}}.dashboard-launcher{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:12px 0}.dashboard-launcher-card{appearance:none;border:1px solid #dbe2ea;background:#fff;border-radius:14px;padding:14px;text-align:left;cursor:pointer;box-shadow:0 5px 18px rgba(11,31,59,.06);color:#0B1F3B;min-height:88px}.dashboard-launcher-card:hover{border-color:#9ca3af;transform:translateY(-1px)}.dashboard-launcher-card strong{display:block;font-size:.9rem;margin-bottom:5px}.dashboard-launcher-card span{display:block;font-size:.72rem;line-height:1.35;color:#6b7280;font-weight:500}.dashboard-panel-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px}.dashboard-panel-head h3{margin:0}.dashboard-back-btn{flex:0 0 auto}.dashboard-panel.hidden{display:none!important}@media(min-width:900px){.dashboard-launcher{grid-template-columns:repeat(5,minmax(0,1fr))}}@media(max-width:560px){.dashboard-launcher{grid-template-columns:1fr}.dashboard-launcher-card{min-height:72px}.dashboard-back-btn{width:100%}}.admin-standalone-page{width:100%}.admin-standalone-page>.dash-section,.admin-standalone-page>.manual-schedule-page{margin:0}.manual-schedule-page{display:block!important;position:static!important;width:auto!important;max-width:none!important;max-height:none!important;overflow:visible!important;background:transparent!important;box-shadow:none!important;padding:0!important;border-radius:0!important}.admin-standalone-page .dashboard-panel-head{border-bottom:1px solid #e5e7eb;padding-bottom:10px;margin-bottom:14px}.dash-metric-button{font:inherit;color:inherit;text-align:left;cursor:pointer;width:100%;appearance:none}.dash-metric-button:hover,.dash-metric-button:focus-visible{border-color:#8aa0b8;box-shadow:0 7px 20px rgba(11,31,59,.10);transform:translateY(-1px)}.dash-metric-button:active{transform:translateY(0)}.payroll-queue-mode .payroll-controls{display:none!important}.payroll-queue-label{font-weight:800;color:#0B1F3B;margin:0 0 8px;font-size:.88rem}.payroll-queue-mode #admin-shifts{min-width:720px!important;width:max-content}.payroll-queue-mode #admin-shifts th,.payroll-queue-mode #admin-shifts td{padding:6px 7px!important;font-size:.78rem;line-height:1.15}.payroll-queue-mode #admin-shifts th:first-child,.payroll-queue-mode #admin-shifts td:first-child{min-width:92px!important;max-width:120px!important;width:100px!important}.payroll-queue-mode #admin-shifts th:nth-child(2),.payroll-queue-mode #admin-shifts td:nth-child(2){min-width:82px!important;width:82px!important}.payroll-queue-mode #admin-shifts th:nth-child(3),.payroll-queue-mode #admin-shifts td:nth-child(3){min-width:78px!important;width:78px!important}.payroll-queue-mode #admin-shifts th:nth-child(4),.payroll-queue-mode #admin-shifts td:nth-child(4),.payroll-queue-mode #admin-shifts th:nth-child(5),.payroll-queue-mode #admin-shifts td:nth-child(5){min-width:54px!important;width:54px!important}.payroll-queue-mode #admin-shifts th:nth-child(6),.payroll-queue-mode #admin-shifts td:nth-child(6){min-width:46px!important;width:46px!important}.payroll-queue-mode #admin-shifts th:nth-child(7),.payroll-queue-mode #admin-shifts td:nth-child(7){min-width:58px!important;width:58px!important}.payroll-queue-mode .operations-table-scroll{margin-top:2px;max-height:none}.payroll-queue-mode #admin-total{margin-top:8px!important;line-height:1.3}@media(max-width:560px){.payroll-queue-mode{padding:16px!important}.payroll-queue-mode .dash-section{padding:0!important}.payroll-queue-mode #admin-shifts{min-width:690px!important}.payroll-queue-mode #admin-shifts th,.payroll-queue-mode #admin-shifts td{padding:5px 6px!important;font-size:.74rem}.payroll-queue-mode #admin-shifts th:first-child,.payroll-queue-mode #admin-shifts td:first-child{min-width:84px!important;width:84px!important;max-width:105px!important}.payroll-queue-mode #admin-shifts th:nth-child(2),.payroll-queue-mode #admin-shifts td:nth-child(2){min-width:80px!important;width:80px!important}.payroll-queue-mode .dashboard-panel-head{margin-bottom:8px!important;padding-bottom:8px!important}}</style></head><body data-environment="__OPSGUARD_ENV__">
 <header><h1>OpsGuard Portal <span class="env-badge" id="env-badge">STAGING</span></h1><div class="nav-row">
 <button class="nav-btn" id="nav-login" onclick="showSection('login')">Login</button>
 <button class="nav-btn" id="nav-submit" onclick="showSection('submit')">Submit Hours</button>
@@ -69,34 +70,36 @@
 </div>
 <div class="card hidden" id="section-admin-dashboard">
 <h2 style="margin:0 0 3px">Admin Dashboard</h2>
-<p class="small" style="margin-bottom:8px">Your OpsGuard control centre. Build and send schedules, manage guards, review hours, payments, confirmations, exports and Calendar status here.</p>
+<p class="small" style="margin-bottom:8px">Your OpsGuard control centre. Schedule guards, manage accounts, review hours, payments and confirmations here.</p>
 <div class="dash-grid">
-<div class="dash-metric"><div class="dash-metric-label">Needs Approval</div><div class="dash-metric-value" id="dash-needs-approval">—</div><div class="dash-metric-sub" id="dash-needs-approval-sub">Submitted hours</div></div>
-<div class="dash-metric"><div class="dash-metric-label">Ready to Pay</div><div class="dash-metric-value" id="dash-ready-pay">—</div><div class="dash-metric-sub" id="dash-ready-pay-sub">Approved, unpaid</div></div>
-<div class="dash-metric"><div class="dash-metric-label">Paid</div><div class="dash-metric-value" id="dash-paid">—</div><div class="dash-metric-sub" id="dash-paid-sub">Paid records</div></div>
-<div class="dash-metric"><div class="dash-metric-label">Awaiting Confirmation</div><div class="dash-metric-value" id="dash-awaiting-confirm">—</div><div class="dash-metric-sub" id="dash-awaiting-confirm-sub">Scheduled shifts</div></div>
+<button class="dash-metric dash-metric-button" onclick="openDashboardMetric('needs-approval')" type="button"><div class="dash-metric-label">Needs Approval</div><div class="dash-metric-value" id="dash-needs-approval">—</div><div class="dash-metric-sub" id="dash-needs-approval-sub">Submitted hours</div></button>
+<button class="dash-metric dash-metric-button" onclick="openDashboardMetric('ready-pay')" type="button"><div class="dash-metric-label">Ready to Pay</div><div class="dash-metric-value" id="dash-ready-pay">—</div><div class="dash-metric-sub" id="dash-ready-pay-sub">Approved, unpaid</div></button>
+<button class="dash-metric dash-metric-button" onclick="openDashboardMetric('paid')" type="button"><div class="dash-metric-label">Paid</div><div class="dash-metric-value" id="dash-paid">—</div><div class="dash-metric-sub" id="dash-paid-sub">Paid records</div></button>
+<button class="dash-metric dash-metric-button" onclick="openDashboardMetric('awaiting-confirmation')" type="button"><div class="dash-metric-label">Awaiting Confirmation</div><div class="dash-metric-value" id="dash-awaiting-confirm">—</div><div class="dash-metric-sub" id="dash-awaiting-confirm-sub">Scheduled shifts</div></button>
 </div>
-<div class="dash-section">
+<div class="dashboard-launcher" id="dashboard-launcher">
+<button class="dashboard-launcher-card" onclick="showSection('admin-calendar-schedule')" type="button"><strong>Calendar &amp; Schedule</strong><span>Preview Calendar shifts and send selected shifts</span></button>
+<button class="dashboard-launcher-card" onclick="openCheckAvailabilityModal()" type="button"><strong>Manual Schedule</strong><span>Build and send a schedule manually</span></button>
+<button class="dashboard-launcher-card" onclick="openPayrollPage()" type="button"><strong>Payroll</strong><span>Hours, approvals, payments and CSV export</span></button>
+<button class="dashboard-launcher-card" onclick="showSection('admin-guard-management')" type="button"><strong>Guard Account Management</strong><span>Manage the registered guard roster</span></button>
+<button class="dashboard-launcher-card" onclick="openConfirmationsPage()" type="button"><strong>Schedule Confirmations</strong><span>Review confirmed and pending schedules</span></button>
+</div>
+<p class="small hidden" id="schedule-admin-status"></p>
+<div class="dash-section" id="dashboard-attention">
 <h3>Needs Attention</h3>
 <div class="dash-action-list" id="dash-attention-list" style="max-height:420px;overflow-y:auto;overscroll-behavior:contain;padding-right:4px"><div class="dash-empty">Loading dashboard…</div></div>
 </div>
-<div class="dash-section">
-<h3>Calendar &amp; Schedule</h3>
-<div class="dash-calendar-grid">
-<div class="dash-calendar-stat"><strong id="dash-confirmed">—</strong><span class="small">Confirmed</span></div>
-<div class="dash-calendar-stat"><strong id="dash-ready-export">—</strong><span class="small">Ready to export</span></div>
-<div class="dash-calendar-stat"><strong id="dash-exported">—</strong><span class="small">Exported</span></div>
-</div>
-<div class="dash-btn-row">
 
-<button class="primary" onclick="openCheckAvailabilityModal()" style="background:#0B1F3B" type="button">Build / Send Schedule</button>
-<button class="primary" onclick="dashboardExportConfirmed()" style="background:#166534" type="button">Export Confirmed (.ics)</button>
-<button class="primary secondary" onclick="loadAdminDashboard()" type="button">Refresh</button>
+
+
+</div><div class="card hidden admin-standalone-page" id="section-admin-calendar-schedule"><div class="dash-section" id="dashboard-calendar-schedule">
+<div class="dashboard-panel-head">
+<div><h3>Calendar &amp; Schedule</h3><p class="small">Preview Google Calendar shifts, choose the shifts you want, then send them to one or more guards.</p></div>
+<button class="primary secondary dashboard-back-btn" onclick="showSection('admin-dashboard')" type="button">← Back to Dashboard</button>
 </div>
-<p class="small" id="dash-status"></p>
-<div style="border-top:1px solid #e5e7eb;margin-top:10px;padding-top:10px">
-<div style="display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap">
-<div><strong style="font-size:.85rem">Google Calendar Sync</strong><div class="small" id="calendar-sync-connection">Checking connection…</div></div>
+<div class="schedule-panel">
+<div class="section-heading-row">
+<div><strong>Google Calendar shifts</strong><div class="small" id="calendar-sync-connection">Checking connection…</div></div>
 <span class="status-pill status-submitted" id="calendar-sync-badge">Checking</span>
 </div>
 <div class="row" style="margin-top:8px">
@@ -105,72 +108,101 @@
 </div>
 <div class="dash-btn-row">
 <button class="primary" id="calendar-preview-btn" onclick="previewGoogleCalendarShifts()" type="button">1. Preview Calendar Shifts</button>
-<button class="primary secondary" onclick="selectAllCalendarPreviewShifts()" type="button">Select all available</button>
-<button class="primary secondary" onclick="clearCalendarPreviewShiftSelection()" type="button">Clear shifts</button>
+<button class="primary secondary" id="calendar-select-all-btn" onclick="selectAllCalendarPreviewShifts()" type="button">Select all available</button>
+<button class="primary secondary" id="calendar-clear-shifts-btn" onclick="clearCalendarPreviewShiftSelection()" type="button">Clear shifts</button>
 </div>
 <p class="small" id="calendar-sync-status"></p>
-<div class="table-scroll" id="calendar-preview-wrap" style="height:260px;display:none;margin-top:7px">
+<div class="table-scroll calendar-preview-scroll" id="calendar-preview-wrap" style="display:none;margin-top:7px">
 <table id="calendar-preview-table"><thead><tr><th>Select</th><th>Date</th><th>Venue</th><th>Shift</th><th>Calendar guard</th><th>Start</th><th>Calendar slot</th><th>OpsGuard</th></tr></thead><tbody></tbody></table>
 </div>
-<div id="calendar-direct-send-panel" style="border-top:1px solid #e5e7eb;margin-top:9px;padding-top:8px">
-<strong style="font-size:.84rem">2. Choose guard recipients</strong>
+<div class="schedule-recipient-panel" id="calendar-direct-send-panel">
+<strong>2. Choose guard recipients</strong>
 <p class="small" style="margin:4px 0 6px">Select one or more registered guards. Every selected guard receives the selected shifts as their own OpsGuard schedule.</p>
-<div id="calendar-preview-guard-list" style="border:1px solid #d1d5db;border-radius:9px;padding:7px;max-height:180px;overflow-y:auto;background:#fff"><span class="small">Loading registered guards…</span></div>
-<div class="input-group" style="margin-top:7px"><label>Note to guards (optional)</label><textarea id="calendar-preview-note" rows="2"></textarea></div>
+<div class="guard-picker-list" id="calendar-preview-guard-list"><span class="small">Loading registered guards…</span></div>
+<div class="input-group" style="margin-top:9px"><label>Note to guards (optional)</label><textarea id="calendar-preview-note" rows="2"></textarea></div>
 <div class="dash-btn-row">
 <button class="primary" id="calendar-send-selected-btn" onclick="sendSelectedCalendarShiftsDirect()" style="background:#7c3aed" type="button">3. Send Selected Shifts</button>
-<button class="primary secondary" onclick="clearScheduleGuardSelection()" type="button">Clear guards</button>
+<button class="primary secondary" onclick="clearScheduleGuardSelection()" type="button">Clear guard selection</button>
 </div>
 </div>
-<p class="small">Google Calendar stays read-only here. Previewed Calendar end times are reference only; the OpsGuard end time is left TBD. Rows already linked/drafted in OpsGuard stay disabled to prevent duplicate assignments.</p>
+<p class="small">Google Calendar stays read-only here. Previewed Calendar end times are reference only; OpsGuard leaves the end time TBD. Existing linked assignments remain disabled to prevent duplicates.</p>
 </div>
+</div></div><div class="card hidden admin-standalone-page" id="section-admin-payroll"><div class="dash-section" id="dashboard-payroll">
+<div class="dashboard-panel-head">
+<div><h3 id="payroll-page-title">Payroll</h3><p class="small" id="payroll-page-description">Filter submitted hours, approve hours, mark payments and export payroll records.</p></div>
+<button class="primary secondary dashboard-back-btn" onclick="showSection('admin-dashboard')" type="button">← Back to Dashboard</button>
 </div>
-
-<div class="dash-section" id="dashboard-operations"><h3>Operations</h3><p class="small">All normal admin work is available here.</p>
-
+<div class="payroll-controls" id="payroll-controls">
 <div class="row">
 <div class="third input-group"><label>Hourly rate ($)</label><input id="admin-rate" step=".01" type="number" value="20"/></div>
-<div class="third input-group"><label>Guard filter (shifts in selected range)</label><select id="admin-guard-filter"><option value="__all__">All guards</option></select></div>
+<div class="third input-group"><label>Guard filter</label><select id="admin-guard-filter"><option value="__all__">All guards</option></select></div>
 <div class="third input-group"><label>Venue</label><select id="admin-venue-filter"><option value="__all__">All venues</option><option value="Baby G">Baby G</option><option value="Garrison">Garrison</option><option value="Get Well">Get Well</option><option value="Jean Darlene">Jean Darlene</option><option value="St Anne's">St Anne's</option><option value="Standard Time">Standard Time</option><option value="Two Kats">Two Kats</option><option value="__other__">Other...</option></select></div>
 </div>
 <div class="row">
-<div class="third input-group"><label>Start date / From</label><input id="admin-from-date-filter" title="Example: 2026-06-15" type="date"/></div>
-<div class="third input-group"><label>End date / To</label><input id="admin-to-date-filter" title="Example: 2026-06-30" type="date"/></div>
-<div class="third input-group" style="justify-content:flex-end"><label> </label><button class="primary secondary" onclick="clearAdminDateFilters()" style="padding:8px 12px;white-space:nowrap" type="button">Clear dates</button></div>
+<div class="third input-group"><label>Start date / From</label><input id="admin-from-date-filter" type="date"/></div>
+<div class="third input-group"><label>End date / To</label><input id="admin-to-date-filter" type="date"/></div>
+<div class="third input-group operations-clear"><label> </label><button class="primary secondary" onclick="clearAdminDateFilters()" type="button">Clear dates</button></div>
 </div>
-<div class="card" style="padding:8px;margin:4px 0 8px;background:#f9fafb">
-<h3 style="margin:0 0 4px;font-size:.86rem">Build &amp; Send Schedules</h3>
-<p class="small" style="margin:0 0 6px">Choose one or more registered guards, build the shifts once, then send to everyone selected. Date and venue filters do not change this roster.</p>
-<div class="input-group"><label>Schedule recipients</label>
-<div id="admin-schedule-guard-list" style="border:1px solid #d1d5db;border-radius:9px;padding:7px;max-height:180px;overflow-y:auto;background:#fff"><span class="small">Loading registered guards…</span></div>
-</div>
-<div class="row"><button class="primary" onclick="openCheckAvailabilityModal()" type="button">Build / Send Schedule</button><button class="primary secondary" onclick="clearScheduleGuardSelection()" type="button">Clear guard selection</button></div>
-<p class="small" id="admin-management-status"></p>
-<div style="border-top:1px solid #e5e7eb;margin-top:8px;padding-top:7px">
-<div class="row"><div class="half input-group"><label>Guard account management</label><select id="admin-user-manage"><option value="">Choose registered guard</option></select></div><button class="primary" onclick="adminDeleteSelectedGuard()" style="background:#991b1b" type="button">Delete selected guard</button></div>
-</div>
-</div>
-<div class="card" style="padding:8px;margin:4px 0 8px;background:#f9fafb">
-<h3 style="margin:0 0 4px;font-size:.86rem">Schedule confirmations</h3>
-<p class="small" style="margin:0 0 6px">Confirmed shifts are locked for guards. If a confirmed manual shift has no Google event yet, use Create Calendar Event. This is separate from syncing or exporting existing Calendar slots.</p>
-<div class="row"><button class="primary" onclick="loadAdminScheduleConfirmations()" style="background:#0B1F3B" type="button">Refresh confirmations</button><button class="primary" onclick="exportAllConfirmedCalendar()" style="background:#166534" type="button">Export All Confirmed (.ics)</button></div>
-<p class="small" style="margin:4px 0">Create Calendar Event directly creates a missing event after a guard confirms. Open Calendar Template and Export All Confirmed (.ics) remain separate manual export options.</p>
-<p class="small" id="admin-schedule-confirmation-summary"></p>
-<p id="admin-confirmation-alert" role="status" style="display:none;font-weight:700;padding:10px;margin:6px 0;background:#dcfce7;color:#14532d;border-radius:8px"></p>
-<div class="table-scroll"><table id="admin-schedule-confirmations"><thead><tr><th>Guard</th><th>Venue</th><th>Shift</th><th>Date</th><th>Time</th><th>Status</th><th>Confirmed</th><th>Calendar</th><th>Admin</th></tr></thead><tbody><tr><td colspan="9">No confirmation data loaded.</td></tr></tbody></table></div>
-</div>
-<p class="small" style="margin:2px 0 8px">For a range, choose a Start date and End date, for example 2026-06-15 to 2026-06-30, then click Load shifts or Export CSV.</p>
-<div class="row">
-<button class="primary" onclick="refreshAdminGuardOptionsForCurrentRange().then(loadAllShifts)">Load shifts</button>
+<div class="dash-btn-row operations-actions">
+<button class="primary" onclick="refreshAdminGuardOptionsForCurrentRange().then(loadAllShifts)" type="button">Load shifts</button>
 <button class="primary" onclick="exportAdminCsvDownload()" style="background:#0B1F3B" type="button">Export CSV</button>
-<button class="primary" onclick="openCheckAvailabilityModal()" style="background:#0B1F3B">Build / Send Schedule</button>
 </div>
-<div class="table-scroll" style="margin-top:6px">
+<p class="small">Choose your filters and date range, then Load shifts. Approval and Paid changes stay on the same filtered list.</p>
+</div>
+<div class="payroll-queue-label hidden" id="payroll-queue-label"></div>
+<div class="table-scroll operations-table-scroll">
 <table id="admin-shifts"><thead><tr><th>Guard</th><th>Date</th><th>Venue</th><th>Start</th><th>End</th><th>Hours</th><th>Pay</th><th>Approved</th><th>Paid</th><th>Status</th><th>Delete</th></tr></thead><tbody></tbody></table>
 </div>
-<p class="small" id="admin-total"></p><p class="small" id="csv-status"></p><p class="small" id="schedule-admin-status"></p>
-</div></div>
+<p class="small" id="admin-total"></p>
+<p class="small" id="csv-status"></p>
+</div></div><div class="card hidden admin-standalone-page" id="section-admin-guard-management"><div class="dash-section" id="dashboard-guard-management">
+<div class="dashboard-panel-head">
+<div><h3>Guard Account Management</h3><p class="small">Manage the complete registered guard roster. Historical shift records remain when a guard account is removed.</p></div>
+<button class="primary secondary dashboard-back-btn" onclick="showSection('admin-dashboard')" type="button">← Back to Dashboard</button>
+</div>
+<div class="row guard-management-row">
+<div class="half input-group"><label>Registered guard</label><select id="admin-user-manage"><option value="">Choose registered guard</option></select></div>
+<button class="primary danger-action" onclick="adminDeleteSelectedGuard()" type="button">Delete selected guard</button>
+</div>
+<p class="small" id="admin-management-status"></p>
+</div></div><div class="card hidden admin-standalone-page" id="section-admin-confirmations"><div class="dash-section" id="dashboard-confirmations">
+<div class="dashboard-panel-head">
+<div><h3>Schedule Confirmations</h3><p class="small">Review schedules sent to guards and see which shifts have been confirmed.</p></div>
+<button class="primary secondary dashboard-back-btn" onclick="showSection('admin-dashboard')" type="button">← Back to Dashboard</button>
+</div>
+<div class="dash-btn-row"><button class="primary secondary" onclick="loadAdminScheduleConfirmations()" type="button">Refresh confirmations</button></div>
+<p class="small" id="admin-schedule-confirmation-summary"></p>
+<p id="admin-confirmation-alert" role="status" style="display:none;font-weight:700;padding:10px;margin:6px 0;background:#dcfce7;color:#14532d;border-radius:8px"></p>
+<div class="table-scroll confirmations-table-scroll">
+<table id="admin-schedule-confirmations"><thead><tr><th>Guard</th><th>Venue</th><th>Shift</th><th>Date</th><th>Time</th><th>Status</th><th>Confirmed</th><th>Admin</th></tr></thead><tbody><tr><td colspan="8">No confirmation data loaded.</td></tr></tbody></table>
+</div>
+</div></div><div class="card hidden admin-standalone-page" id="section-admin-manual-schedule"><div class="dashboard-panel-head"><div><h2>Manual Schedule</h2><p class="small">Build shifts manually and send them to one or more guards.</p></div><button class="primary secondary dashboard-back-btn" onclick="showSection('admin-dashboard')" type="button">← Back to Dashboard</button></div><div class="manual-schedule-page" id="schedule-modal">
 
+<div class="input-group" style="margin-top:8px"><label>Send to guards</label><div id="schedule-modal-guard-list" style="border:1px solid #d1d5db;border-radius:9px;padding:7px;max-height:160px;overflow-y:auto;background:#fff"><span class="small">Loading registered guards…</span></div></div>
+<div class="input-group"><label>Note to guards (optional)</label><textarea id="schedule-note" rows="2"></textarea></div>
+<div class="input-group"><label>Availability summary</label>
+<div id="schedule-summary-preview" style="border:1px solid #d1d5db;border-radius:9px;padding:6px 8px;font-size:.75rem;max-height:120px;overflow-y:auto;background:#f9fafb"></div>
+<p class="small">Click a line above to add it to the proposed schedule.</p></div>
+<div class="card" style="margin-top:6px;padding:8px">
+<h3 style="margin:0 0 3px;font-size:.86rem">Add working days</h3>
+<p class="small" style="margin:0 0 4px">Each added row becomes part of the schedule.</p>
+<div class="row"><div class="half input-group"><label>Date</label><input id="sched-date" type="date"/></div><div class="half input-group"><label>Venue</label><select id="sched-venue"><option value="">Choose venue</option><option>Baby G</option><option>Garrison</option><option>Get Well</option><option>Jean Darlene</option><option>St Anne's</option><option>Standard Time</option><option>Two Kats</option></select></div></div>
+<div class="row"><div class="half input-group"><label>Shift</label><input autocomplete="off" id="sched-shift-code" list="sched-shift-code-options" maxlength="4" placeholder="S1"/><datalist id="sched-shift-code-options"><option value="S1"></option><option value="S2"></option><option value="S3"></option><option value="S4"></option><option value="S5"></option><option value="S6"></option><option value="S7"></option><option value="S8"></option><option value="S9"></option><option value="S10"></option></datalist></div></div>
+<div class="row">
+<div class="half input-group"><label>Start time</label><div style="display:flex;gap:4px"><select id="sched-start-hour"></select><select id="sched-start-min"></select><select id="sched-start-ampm"><option>AM</option><option>PM</option></select></div></div>
+<div class="half input-group"><label>End time (optional)</label><div style="display:flex;gap:4px"><select id="sched-end-hour"></select><select id="sched-end-min"></select><select id="sched-end-ampm"><option>AM</option><option>PM</option></select></div></div>
+</div>
+<div class="row" style="align-items:center;margin-top:4px">
+<button class="primary" onclick="addShiftToScheduleDraft()">Add to schedule</button>
+<button class="primary secondary" onclick="cancelScheduleBuild()" type="button">Cancel</button>
+<button class="primary" onclick="sendScheduleFromAdmin()" type="button">Send to Selected Guards</button>
+</div>
+<p class="small" id="schedule-add-status"></p>
+<div class="input-group" style="margin-top:4px"><label>Proposed schedule</label><textarea disabled="" id="schedule-proposed-list" rows="4"></textarea></div>
+</div>
+
+<p class="small" id="schedule-modal-status"></p>
+</div></div>
 </div>
 <div class="modal-backdrop" id="modal-backdrop"></div>
 <div class="modal" id="profile-modal">
@@ -196,56 +228,114 @@
 <div class="actions"><button class="primary" onclick="submitPasswordReset()">Reset password</button><button class="primary secondary" onclick="closeResetPasswordModal()">Close</button></div>
 <p class="small" id="reset-password-status"></p>
 </div>
-<div class="modal" id="schedule-modal">
-<h3>Build / Send Schedule</h3><small>Select one or more guards, build the shifts once, then send. A Google Calendar event is not required.</small>
-<div class="input-group" style="margin-top:8px"><label>Send to guards</label><div id="schedule-modal-guard-list" style="border:1px solid #d1d5db;border-radius:9px;padding:7px;max-height:160px;overflow-y:auto;background:#fff"><span class="small">Loading registered guards…</span></div></div>
-<div class="input-group"><label>Note to guards (optional)</label><textarea id="schedule-note" rows="2"></textarea></div>
-<div class="input-group"><label>Availability summary</label>
-<div id="schedule-summary-preview" style="border:1px solid #d1d5db;border-radius:9px;padding:6px 8px;font-size:.75rem;max-height:120px;overflow-y:auto;background:#f9fafb"></div>
-<p class="small">Click a line above to add it to the proposed schedule.</p></div>
-<div class="card" style="margin-top:6px;padding:8px">
-<h3 style="margin:0 0 3px;font-size:.86rem">Add working days</h3>
-<p class="small" style="margin:0 0 4px">Each added row becomes part of the schedule.</p>
-<div class="row"><div class="half input-group"><label>Date</label><input id="sched-date" type="date"/></div><div class="half input-group"><label>Venue</label><select id="sched-venue"><option value="">Choose venue</option><option>Baby G</option><option>Garrison</option><option>Get Well</option><option>Jean Darlene</option><option>St Anne's</option><option>Standard Time</option><option>Two Kats</option></select></div></div>
-<div class="row"><div class="half input-group"><label>Shift</label><input id="sched-shift-code" list="sched-shift-code-options" placeholder="S1" maxlength="4" autocomplete="off"/><datalist id="sched-shift-code-options"><option value="S1"></option><option value="S2"></option><option value="S3"></option><option value="S4"></option><option value="S5"></option><option value="S6"></option><option value="S7"></option><option value="S8"></option><option value="S9"></option><option value="S10"></option></datalist></div></div>
-<div class="row">
-<div class="half input-group"><label>Start time</label><div style="display:flex;gap:4px"><select id="sched-start-hour"></select><select id="sched-start-min"></select><select id="sched-start-ampm"><option>AM</option><option>PM</option></select></div></div>
-<div class="half input-group"><label>End time (optional)</label><div style="display:flex;gap:4px"><select id="sched-end-hour"></select><select id="sched-end-min"></select><select id="sched-end-ampm"><option>AM</option><option>PM</option></select></div></div>
-</div>
-<div class="row" style="align-items:center;margin-top:4px">
-<button class="primary" onclick="addShiftToScheduleDraft()">Add to schedule</button>
-<button class="primary secondary" onclick="cancelScheduleBuild()" type="button">Cancel</button>
-<button class="primary" onclick="sendScheduleFromAdmin()" type="button">Send to Selected Guards</button>
-</div>
-<p class="small" id="schedule-add-status"></p>
-<div class="input-group" style="margin-top:4px"><label>Proposed schedule</label><textarea disabled="" id="schedule-proposed-list" rows="4"></textarea></div>
-</div>
-<div class="actions"><button class="primary secondary" onclick="closeScheduleModal()">Close</button></div>
-<p class="small" id="schedule-modal-status"></p>
-</div>
+
 <script>
 const API_BASE=window.location.origin+"/api";
 const OPSGUARD_ENV=(document.body.dataset.environment||"production").toLowerCase();
 const ENV_BADGE=document.getElementById("env-badge");
 if(ENV_BADGE&&OPSGUARD_ENV!=="production"){ENV_BADGE.style.display="inline-block";ENV_BADGE.textContent=OPSGUARD_ENV.toUpperCase();document.title="OpsGuard "+OPSGUARD_ENV.toUpperCase();}
-let authToken=null,currentUserEmail=null,currentUserName=null,currentUserRole=null,myShiftsCache=[],allShiftsCache=[],adminFilteredShifts=[],scheduleDraft=[],currentGuardAvailability=[],adminUserMap={},scheduleSelectedGuardIds=new Set(),calendarDraftRowsCache=[],apiWarmPromise=null,adminConfirmationsInitialized=false,adminSeenConfirmedShifts=new Set(),adminScheduleConfirmationsCache=[];
+let authToken=null,currentUserEmail=null,currentUserName=null,currentUserRole=null,myShiftsCache=[],allShiftsCache=[],adminFilteredShifts=[],adminPayrollQuickFilter=null,adminConfirmationQuickFilter=null,scheduleDraft=[],currentGuardAvailability=[],adminUserMap={},scheduleSelectedGuardIds=new Set(),calendarDraftRowsCache=[],apiWarmPromise=null,adminConfirmationsInitialized=false,adminSeenConfirmedShifts=new Set(),adminScheduleConfirmationsCache=[];
 const FIXED_VENUES=["Baby G","Garrison","Get Well","Jean Darlene","St Anne's","Standard Time","Two Kats"];
 const VENUE_CALENDAR_IDS={"Baby G":"s374q7mjj2hoc77f71oml6n5uc@group.calendar.google.com","Garrison":"garrisonstaff@gmail.com","Jean Darlene":"78f673188cd9e7f1c76014eee634b0b5578f9da7f0657796fcb45e05080f45c3@group.calendar.google.com","St Anne's":"78f673188cd9e7f1c76014eee634b0b5578f9da7f0657796fcb45e05080f45c3@group.calendar.google.com","Get Well":"78f673188cd9e7f1c76014eee634b0b5578f9da7f0657796fcb45e05080f45c3@group.calendar.google.com","Standard Time":"78f673188cd9e7f1c76014eee634b0b5578f9da7f0657796fcb45e05080f45c3@group.calendar.google.com","Two Kats":"78f673188cd9e7f1c76014eee634b0b5578f9da7f0657796fcb45e05080f45c3@group.calendar.google.com"};
 
+function returnToDashboard(){showSection("admin-dashboard");}
+function openDashboardPanel(name){showSection("admin-"+name);}
+function setPayrollQueueMode(kind){
+  const page=document.getElementById("section-admin-payroll");
+  const title=document.getElementById("payroll-page-title");
+  const desc=document.getElementById("payroll-page-description");
+  const label=document.getElementById("payroll-queue-label");
+  if(!page)return;
+  const isQueue=!!kind;
+  page.classList.toggle("payroll-queue-mode",isQueue);
+  const queueTitle=payrollQuickFilterLabel(kind);
+  if(title)title.textContent=isQueue?queueTitle:"Payroll";
+  if(desc)desc.textContent=isQueue?"Only "+queueTitle.toLowerCase()+" records are shown here.":"Filter submitted hours, approve hours, mark payments and export payroll records.";
+  if(label){
+    label.textContent=isQueue?queueTitle+" queue":"";
+    label.classList.toggle("hidden",!isQueue);
+  }
+}
+function payrollQuickFilterLabel(kind){
+  if(kind==="needs-approval")return "Needs Approval";
+  if(kind==="ready-pay")return "Ready to Pay";
+  if(kind==="paid")return "Paid";
+  return "";
+}
+function filterPayrollRowsForQueue(rows,kind){
+  const items=Array.isArray(rows)?rows:[];
+  if(kind==="needs-approval")return items.filter(s=>!s.approved&&!s.paid);
+  if(kind==="ready-pay")return items.filter(s=>s.approved&&!s.paid);
+  if(kind==="paid")return items.filter(s=>!!s.paid);
+  return items;
+}
+async function loadPayrollQuickFilter(kind){
+  if(!authToken||currentUserRole!=="admin")return;
+  adminPayrollQuickFilter=kind||null;
+  const label=payrollQuickFilterLabel(adminPayrollQuickFilter);
+  const totalEl=document.getElementById("admin-total");
+  const tbody=document.querySelector("#admin-shifts tbody");
+  if(tbody)tbody.innerHTML="<tr><td colspan='11'>Loading "+(label||"payroll")+"…</td></tr>";
+  try{
+    const rate=getAdminHourlyRate();
+    const data=await rawApi("/shifts?hourly_rate="+encodeURIComponent(rate),{method:"GET",silent:true});
+    const all=Array.isArray(data&&data.items)?data.items:[];
+    allShiftsCache=all;
+    const rows=filterPayrollRowsForQueue(all,adminPayrollQuickFilter);
+    renderAdminShifts({items:rows});
+    if(totalEl&&label)totalEl.textContent=label+" · "+totalEl.textContent;
+  }catch(e){
+    if(tbody)tbody.innerHTML="<tr><td colspan='11'>Could not load "+(label||"payroll")+".</td></tr>";
+  }
+}
+function openPayrollPage(){
+  adminPayrollQuickFilter=null;
+  setPayrollQueueMode(null);
+  showSection("admin-payroll");
+}
+function openConfirmationsPage(){
+  adminConfirmationQuickFilter=null;
+  showSection("admin-confirmations");
+}
+function openDashboardMetric(kind){
+  if(kind==="awaiting-confirmation"){
+    adminConfirmationQuickFilter="pending";
+    showSection("admin-confirmations");
+    return;
+  }
+  adminPayrollQuickFilter=kind;
+  setPayrollQueueMode(kind);
+  showSection("admin-payroll");
+}
 function showSection(id){
-  const allSections=["login","submit","availability","schedule","pay","admin-dashboard","admin"];
+  const allSections=["login","submit","availability","schedule","pay","admin-dashboard","admin","admin-calendar-schedule","admin-manual-schedule","admin-payroll","admin-guard-management","admin-confirmations"];
   const guardSections=["submit","availability","schedule","pay"];
+  const adminSections=["admin-dashboard","admin","admin-calendar-schedule","admin-manual-schedule","admin-payroll","admin-guard-management","admin-confirmations"];
   if(!authToken&&id!=="login")id="login";
-  if((id==="admin-dashboard"||id==="admin")&&currentUserRole!=="admin")id=authToken?"submit":"login";
+  if(adminSections.includes(id)&&currentUserRole!=="admin")id=authToken?"submit":"login";
   if(authToken&&currentUserRole!=="admin"&&id!=="login"&&!guardSections.includes(id))id="submit";
   allSections.forEach(s=>{const el=document.getElementById("section-"+s);if(el)el.classList.add("hidden")});
   const t=document.getElementById("section-"+id);if(t)t.classList.remove("hidden");
   if(id==="schedule"&&authToken)loadMySchedule();
   if(id==="pay"&&authToken)loadMyShifts();
   if(id==="admin-dashboard"&&currentUserRole==="admin"){
+    adminPayrollQuickFilter=null;
+    setPayrollQueueMode(null);
     loadAdminDashboard();
+  }
+  if(id==="admin-calendar-schedule"&&currentUserRole==="admin"){
+    loadCalendarSyncStatus();
     loadAdminUsers();
-    refreshAdminGuardOptionsForCurrentRange();
+    updateCalendarActionButtons();
+  }
+  if(id==="admin-payroll"&&currentUserRole==="admin"){
+    refreshAdminGuardOptionsForCurrentRange().catch(()=>{});
+    if(adminPayrollQuickFilter)loadPayrollQuickFilter(adminPayrollQuickFilter);
+  }
+  if(id==="admin-guard-management"&&currentUserRole==="admin"){
+    loadAdminUsers();
+  }
+  if(id==="admin-confirmations"&&currentUserRole==="admin"){
     loadAdminScheduleConfirmations();
   }
 }
@@ -312,6 +402,7 @@ async function adminSetApproved(shiftId,approved){
   try{
     const updated=await rawApi("/shifts/"+encodeURIComponent(shiftId)+"/approved",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({approved:!!approved})});
     syncAdminShiftCaches(updated,true);
+    if(adminPayrollQuickFilter)await loadPayrollQuickFilter(adminPayrollQuickFilter);
     const dash=document.getElementById("section-admin-dashboard");if(dash&&!dash.classList.contains("hidden"))loadAdminDashboard();
   }catch(e){alert("Approval update failed: "+(e&&e.message?e.message:String(e)));await loadAllShifts();}
 }
@@ -321,6 +412,7 @@ async function adminSetPaid(shiftId,paid){
   try{
     const updated=await rawApi("/shifts/"+encodeURIComponent(shiftId)+"/paid",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({paid:!!paid})});
     syncAdminShiftCaches(updated,true);
+    if(adminPayrollQuickFilter)await loadPayrollQuickFilter(adminPayrollQuickFilter);
     const dash=document.getElementById("section-admin-dashboard");if(dash&&!dash.classList.contains("hidden"))loadAdminDashboard();
   }catch(e){alert("Payment status update failed: "+(e&&e.message?e.message:String(e)));await loadAllShifts();}
 }
@@ -665,7 +757,7 @@ function scheduleGuardListMarkup(){
   const esc=s=>String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
   return guards.map(u=>{
     const id=String(u.id||""),checked=scheduleSelectedGuardIds.has(id)?" checked":"";
-    return '<label style="display:flex;align-items:center;gap:7px;padding:6px 3px;border-bottom:1px solid #f3f4f6"><input class="schedule-guard-check" type="checkbox" value="'+esc(id)+'"'+checked+'><span>'+esc(scheduleGuardLabel(u))+'</span></label>';
+    return '<label class="guard-picker-row"><input class="schedule-guard-check" type="checkbox" value="'+esc(id)+'"'+checked+'><span class="guard-picker-label">'+esc(scheduleGuardLabel(u))+'</span></label>';
   }).join("");
 }
 function renderScheduleGuardPickers(){
@@ -766,39 +858,89 @@ function initCalendarPreviewDates(){
   from.value=localDate(now);to.value=localDate(later);
 }
 let calendarPreviewCache=[];
+let calendarPreviewLoading=false;
+
+function updateCalendarActionButtons(){
+  const previewBtn=document.getElementById("calendar-preview-btn");
+  const selectAllBtn=document.getElementById("calendar-select-all-btn");
+  const clearBtn=document.getElementById("calendar-clear-shifts-btn");
+  const sendBtn=document.getElementById("calendar-send-selected-btn");
+  const hasRows=calendarPreviewCache.some(row=>!row.already_in_opsguard);
+  const hasSelected=!!document.querySelector(".calendar-preview-select:checked");
+  if(previewBtn)previewBtn.disabled=calendarPreviewLoading;
+  if(selectAllBtn)selectAllBtn.disabled=calendarPreviewLoading||!hasRows;
+  if(clearBtn)clearBtn.disabled=calendarPreviewLoading||!hasSelected;
+  if(sendBtn)sendBtn.disabled=calendarPreviewLoading||!hasSelected;
+}
+
+function setCalendarPreviewLoading(loading){
+  calendarPreviewLoading=!!loading;
+  const previewBtn=document.getElementById("calendar-preview-btn");
+  if(previewBtn)previewBtn.textContent=calendarPreviewLoading?"Previewing Calendar Shifts…":"1. Preview Calendar Shifts";
+  updateCalendarActionButtons();
+}
+
 function renderCalendarPreview(items){
-  const wrap=document.getElementById("calendar-preview-wrap"),tbody=document.querySelector("#calendar-preview-table tbody"),importBtn=document.getElementById("calendar-import-drafts-btn");
+  const wrap=document.getElementById("calendar-preview-wrap"),tbody=document.querySelector("#calendar-preview-table tbody");
   if(!wrap||!tbody)return;
   calendarPreviewCache=Array.isArray(items)?items:[];
-  wrap.style.display="block";tbody.innerHTML="";
-  if(importBtn)importBtn.disabled=true;
-  if(!calendarPreviewCache.length){tbody.innerHTML="<tr><td colspan='8'>No S-numbered calendar shifts found in this range.</td></tr>";return;}
+  wrap.style.display="block";
+  tbody.innerHTML="";
+  if(!calendarPreviewCache.length){
+    tbody.innerHTML="<tr><td colspan='8'>No S-numbered calendar shifts found in this range.</td></tr>";
+    updateCalendarActionButtons();
+    return;
+  }
   calendarPreviewCache.forEach((row,index)=>{
     const tr=document.createElement("tr");
     const slot=(row.calendar_duration_minutes==null?"Unknown":row.calendar_duration_minutes+" min")+(row.requires_end_time_review?" ⚠":"");
     const disabled=row.already_in_opsguard?"disabled":"";
-    tr.innerHTML="<td style='text-align:center'><input class='calendar-preview-select' type='checkbox' data-index='"+index+"' "+disabled+" onchange='updateCalendarDraftImportButton()'></td><td>"+(row.date||"")+"</td><td>"+(row.venue||"")+"</td><td><strong>"+(row.shift_code||"")+"</strong></td><td>"+(row.guard||"Unassigned")+"</td><td>"+(row.start_time||"")+"</td><td>"+slot+"</td><td>"+(row.already_in_opsguard?"Linked / Drafted":"Calendar only")+"</td>";
+    tr.innerHTML="<td style='text-align:center'><input class='calendar-preview-select' type='checkbox' data-index='"+index+"' "+disabled+" onchange='updateCalendarActionButtons()'></td><td>"+(row.date||"")+"</td><td>"+(row.venue||"")+"</td><td><strong>"+(row.shift_code||"")+"</strong></td><td>"+(row.guard||"Unassigned")+"</td><td>"+(row.start_time||"")+"</td><td>"+slot+"</td><td>"+(row.already_in_opsguard?"Linked / Drafted":"Calendar only")+"</td>";
     tbody.appendChild(tr);
   });
+  updateCalendarActionButtons();
 }
+
 function updateCalendarDraftImportButton(){
-  const btn=document.getElementById("calendar-import-drafts-btn");
-  if(!btn)return;
-  btn.disabled=!document.querySelector(".calendar-preview-select:checked");
+  updateCalendarActionButtons();
 }
+
 function selectedCalendarPreviewRows(){
   return [...document.querySelectorAll(".calendar-preview-select:checked")]
     .map(el=>calendarPreviewCache[Number(el.dataset.index)])
     .filter(Boolean);
 }
+
 function selectAllCalendarPreviewShifts(){
+  if(calendarPreviewLoading)return;
   document.querySelectorAll(".calendar-preview-select:not(:disabled)").forEach(cb=>{cb.checked=true;});
-  updateCalendarDraftImportButton();
+  updateCalendarActionButtons();
 }
+
 function clearCalendarPreviewShiftSelection(){
+  if(calendarPreviewLoading)return;
   document.querySelectorAll(".calendar-preview-select").forEach(cb=>{cb.checked=false;});
-  updateCalendarDraftImportButton();
+  updateCalendarActionButtons();
 }
+
+async function previewGoogleCalendarShifts(){
+  const st=document.getElementById("calendar-sync-status"),from=document.getElementById("calendar-preview-from")?.value||"",to=document.getElementById("calendar-preview-to")?.value||"";
+  if(calendarPreviewLoading)return;
+  if(!from||!to){if(st)st.textContent="Choose both preview dates.";return;}
+  setCalendarPreviewLoading(true);
+  if(st)st.textContent="Reading Garrison, Baby G and Titan Security calendars in parallel…";
+  try{
+    const data=await rawApi("/calendar-sync/preview",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({from_date:from,to_date:to}),silent:true,timeoutMs:120000});
+    renderCalendarPreview(data.items||[]);
+    const sourceSummary=(data.sources||[]).map(s=>s.source+": "+(s.shifts_found||0)).join(" | ");
+    if(st)st.textContent=(data.count||0)+" S-numbered calendar shifts found"+(sourceSummary?" — "+sourceSummary:"")+". Calendar slot end times are reference only; OpsGuard end time may be left TBD."+(data.errors&&data.errors.length?" Some calendars returned an error.":"");
+  }catch(e){
+    if(st)st.textContent="Calendar preview failed: "+(e&&e.message?e.message:String(e));
+  }finally{
+    setCalendarPreviewLoading(false);
+  }
+}
+
 async function sendSelectedCalendarShiftsDirect(){
   const st=document.getElementById("calendar-sync-status");
   if(!authToken){if(st)st.textContent="Login first.";return;}
@@ -1141,7 +1283,8 @@ function clearAdminDateFilters(){
 }
 
 async function loadAllShifts(){
-  if(!authToken||currentUserRole!=="admin")return;const tbody=document.querySelector("#admin-shifts tbody"),totalEl=document.getElementById("admin-total"),csvStatus=document.getElementById("csv-status");csvStatus.textContent="";document.getElementById("schedule-admin-status").textContent="";tbody.innerHTML="<tr><td colspan='9'>Loading...</td></tr>";totalEl.textContent="";try{const params=buildAdminShiftQuery();const data=await rawApi("/shifts?"+params.toString(),{method:"GET",silent:true});allShiftsCache=Array.isArray(data.items)?data.items:[];renderAdminShifts(data);}catch(e){tbody.innerHTML="<tr><td colspan='9'>Could not load shifts.</td></tr>";totalEl.textContent="Error loading shifts.";}
+  if(!authToken||currentUserRole!=="admin")return;
+  adminPayrollQuickFilter=null;const tbody=document.querySelector("#admin-shifts tbody"),totalEl=document.getElementById("admin-total"),csvStatus=document.getElementById("csv-status");csvStatus.textContent="";document.getElementById("schedule-admin-status").textContent="";tbody.innerHTML="<tr><td colspan='9'>Loading...</td></tr>";totalEl.textContent="";try{const params=buildAdminShiftQuery();const data=await rawApi("/shifts?"+params.toString(),{method:"GET",silent:true});allShiftsCache=Array.isArray(data.items)?data.items:[];renderAdminShifts(data);}catch(e){tbody.innerHTML="<tr><td colspan='9'>Could not load shifts.</td></tr>";totalEl.textContent="Error loading shifts.";}
 }
 
 function csvEscape(value){
@@ -1337,9 +1480,10 @@ async function exportAdminCsvDownload(){
     const params=buildAdminShiftQuery();
     const data=await rawApi("/shifts?"+params.toString(),{method:"GET",silent:true});
     allShiftsCache=Array.isArray(data&&data.items)?data.items:[];
-    renderAdminShifts(data||{items:[]});
+    const exportRows=filterPayrollRowsForQueue(allShiftsCache,adminPayrollQuickFilter);
+    renderAdminShifts({items:exportRows});
 
-    if(!allShiftsCache.length){
+    if(!exportRows.length){
       throw new Error("No shifts found for the selected filters.");
     }
 
@@ -1437,6 +1581,7 @@ function renderScheduleDraft(){
   box.value=scheduleDraft.map((s,i)=>(i+1)+". "+(s.venue||"Venue?")+" "+(s.shift_code||"")+" | "+s.date+" | "+s.start_time+" - "+(s.end_time||"TBD")).join("\n");
 }
 async function openCheckAvailabilityModal(){
+  showSection("admin-manual-schedule");
   const adminSt=document.getElementById("schedule-admin-status");if(adminSt)adminSt.textContent="";
   if(!authToken)return alert("Login first.");
   if(!Object.keys(adminUserMap||{}).length)await loadAdminUsers();
@@ -1445,10 +1590,6 @@ async function openCheckAvailabilityModal(){
   const modalSt=document.getElementById("schedule-modal-status");if(modalSt)modalSt.textContent="";
   const addSt=document.getElementById("schedule-add-status");if(addSt)addSt.textContent="";
   renderScheduleGuardPickers();renderScheduleDraft();renderScheduleAvailability();
-  document.getElementById("modal-backdrop").style.display="block";
-  document.getElementById("schedule-modal").style.display="block";
-  document.getElementById("profile-modal").style.display="none";
-  document.getElementById("forgot-modal").style.display="none";
   const guards=selectedScheduleGuards();
   if(!guards.length){
     currentGuardAvailability=[];renderScheduleAvailability();
@@ -1472,7 +1613,7 @@ async function openCheckAvailabilityModal(){
     if(modalSt)modalSt.textContent="Could not load availability: "+(e&&e.message?e.message:String(e));
   }
 }
-function closeScheduleModal(){document.getElementById("schedule-modal").style.display="none";document.getElementById("modal-backdrop").style.display="none";}
+function closeScheduleModal(){showSection("admin-dashboard");}
 function addShiftToScheduleDraft(){
   const date=(document.getElementById("sched-date")||{}).value||"";
   const sh=(document.getElementById("sched-start-hour")||{}).value||"",sm=(document.getElementById("sched-start-min")||{}).value||"00",sap=(document.getElementById("sched-start-ampm")||{}).value||"AM";
@@ -1490,7 +1631,7 @@ function addShiftToScheduleDraft(){
   scheduleDraft.sort((a,b)=>parseScheduleRowDateTime(a)-parseScheduleRowDateTime(b));
   renderScheduleDraft();if(st)st.textContent="Added to proposed schedule.";
 }
-function cancelScheduleBuild(){scheduleDraft=[];renderScheduleDraft();closeScheduleModal();}
+function cancelScheduleBuild(){scheduleDraft=[];renderScheduleDraft();showSection("admin-dashboard");}
 async function sendScheduleFromAdmin(){
   if(!authToken)return alert("Login first.");
   const guards=selectedScheduleGuards(),st=document.getElementById("schedule-modal-status");
@@ -1666,47 +1807,37 @@ async function loadAdminScheduleConfirmations(){
     const data=await rawApi("/schedules",{method:"GET",silent:true});
     const items=Array.isArray(data)?data:[];
     adminScheduleConfirmationsCache=items;
-    let confirmed=0,pending=0,exported=0;
+    let confirmed=0,pending=0;
     const confirmedKeys=new Set(),newEvents=[];
     tbody.innerHTML="";
-    if(!items.length){tbody.innerHTML="<tr><td colspan='9'>No schedules have been sent yet.</td></tr>";if(summary)summary.textContent="";return;}
+    if(!items.length){tbody.innerHTML="<tr><td colspan='8'>No schedules have been sent yet.</td></tr>";if(summary)summary.textContent="";return;}
     items.slice(0,100).forEach(function(sch){
       (sch.shifts||[]).forEach(function(sh,index){
         const isConfirmed=(sch.status==="confirmed"||sh.status==="confirmed");
         const key=String(sch.id)+"-"+index;
-        if(isConfirmed){confirmed++;confirmedKeys.add(key);if(sh.calendar_exported_at)exported++;if(adminConfirmationsInitialized&&!adminSeenConfirmedShifts.has(key))newEvents.push((sch.guard||"Guard")+" confirmed "+(sh.date||"their shift")+" ("+(sh.start_time||"")+"-"+(sh.end_time||"")+")");}
-        else pending++;
+        if(isConfirmed){
+          confirmed++;confirmedKeys.add(key);
+          if(adminConfirmationsInitialized&&!adminSeenConfirmedShifts.has(key))newEvents.push((sch.guard||"Guard")+" confirmed "+(sh.date||"their shift")+" ("+(sh.start_time||"")+"-"+(sh.end_time||"TBD")+")");
+        }else pending++;
+        if(adminConfirmationQuickFilter==="pending"&&isConfirmed)return;
         const tr=document.createElement("tr");
         if(isConfirmed)tr.style.background="#ecfdf5";
-        let calStatus="—";
-        if(isConfirmed){
-          const calParts=[];
-          if(!sh.google_event_id)calParts.push("<button type='button' class='primary calendar-create' style='background:#166534;white-space:nowrap'>Create Calendar Event</button>");
-          if(!sh.calendar_exported_at)calParts.push("<button type='button' class='primary secondary calendar-open' style='margin-top:4px;white-space:nowrap'>Open Calendar Template</button>");
-          if(sh.calendar_exported_at){
-            const label=sh.google_event_id?"ON CALENDAR ✓":"EXPORTED ✓";
-            calParts.push("<span style='font-weight:700;color:#166534'>"+label+"</span><div class='small'>"+formatScheduleTimestamp(sh.calendar_exported_at)+"</div><button type='button' class='primary secondary calendar-clear' style='margin-top:4px;white-space:nowrap'>Clear Export</button>");
-          }
-          calStatus=calParts.join("<div style='height:4px'></div>")||"—";
-        }
-        const adminAction="<button type='button' class='primary admin-delete-shift' style='background:#991b1b;white-space:nowrap'>Delete Shift</button>";
-        tr.innerHTML="<td>"+(sch.guard||"")+"</td><td>"+(sh.venue||"—")+"</td><td>"+(sh.shift_code||"—")+"</td><td>"+(sh.date||"")+"</td><td>"+(sh.start_time||"")+" – "+(sh.end_time||"")+"</td><td style='font-weight:700'>"+(isConfirmed?"CONFIRMED ✓ — LOCKED FOR GUARD":"Awaiting guard")+"</td><td>"+(isConfirmed?formatScheduleTimestamp(sh.confirmed_at||sch.confirmed_at):"")+"</td><td>"+calStatus+"</td><td>"+adminAction+"</td>";
-        const createBtn=tr.querySelector(".calendar-create");if(createBtn)createBtn.addEventListener("click",()=>createCalendarEventForShift(sch.id,index));
-        const openBtn=tr.querySelector(".calendar-open");if(openBtn)openBtn.addEventListener("click",()=>exportConfirmedShiftToGoogle(sch.id,index));
-        const clearBtn=tr.querySelector(".calendar-clear");if(clearBtn)clearBtn.addEventListener("click",()=>clearCalendarExportStatus(sch.id,index));
+        const adminAction="<button type='button' class='primary admin-delete-shift danger-action'>Delete Shift</button>";
+        tr.innerHTML="<td>"+(sch.guard||"")+"</td><td>"+(sh.venue||"—")+"</td><td>"+(sh.shift_code||"—")+"</td><td>"+(sh.date||"")+"</td><td>"+(sh.start_time||"")+" – "+(sh.end_time||"TBD")+"</td><td style='font-weight:700'>"+(isConfirmed?"CONFIRMED ✓ — LOCKED FOR GUARD":"Awaiting guard")+"</td><td>"+(isConfirmed?formatScheduleTimestamp(sh.confirmed_at||sch.confirmed_at):"")+"</td><td>"+adminAction+"</td>";
         const deleteBtn=tr.querySelector(".admin-delete-shift");if(deleteBtn)deleteBtn.addEventListener("click",()=>adminDeleteScheduledShift(sch.id,index,sch.guard,sh));
         tbody.appendChild(tr);
       });
     });
-    if(!tbody.children.length)tbody.innerHTML="<tr><td colspan='9'>No assigned shifts.</td></tr>";
-    if(summary)summary.textContent="Confirmed shifts: "+confirmed+" | Awaiting confirmation: "+pending+" | Calendar exported: "+exported+". Admin can delete any shift or clear an export record.";
+    if(!tbody.children.length)tbody.innerHTML=adminConfirmationQuickFilter==="pending"?"<tr><td colspan='8'>No shifts are awaiting confirmation.</td></tr>":"<tr><td colspan='8'>No assigned shifts.</td></tr>";
+    if(summary)summary.textContent=adminConfirmationQuickFilter==="pending"?"Showing awaiting confirmation: "+pending+".":"Confirmed shifts: "+confirmed+" | Awaiting confirmation: "+pending+".";
     adminSeenConfirmedShifts=confirmedKeys;adminConfirmationsInitialized=true;
     if(newEvents.length&&banner){
       banner.style.display="block";
       banner.textContent="NEW SHIFT CONFIRMATION: "+newEvents.slice(0,4).join(" | ")+(newEvents.length>4?" | +"+(newEvents.length-4)+" more":"");
     }
-  }catch(e){tbody.innerHTML="<tr><td colspan='9'>Could not load shift confirmations.</td></tr>";if(summary)summary.textContent="";}
+  }catch(e){tbody.innerHTML="<tr><td colspan='8'>Could not load shift confirmations.</td></tr>";if(summary)summary.textContent="";}
 }
+
 function wireAuthButtons(){
   const loginBtn=document.getElementById("login-btn"),registerBtn=document.getElementById("register-btn");
   if(loginBtn)loginBtn.addEventListener("click",e=>{e.preventDefault();login();});
