@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width,initial-scale=1" name="viewport"/><title>OpsGuard Portal</title><style>:root{--bg:#0B1F3B;--bg2:#1F3C88;--radius:14px}*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f3f4f6;color:#111827}header{background:var(--bg);color:#fff;padding:12px 18px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;position:sticky;top:0;z-index:1000}header h1{font-size:1.1rem;margin:0}.env-badge{display:none;margin-left:8px;padding:3px 7px;border-radius:999px;background:#facc15;color:#422006;font-size:.68rem;font-weight:900;letter-spacing:.06em;vertical-align:middle}.nav-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap}.nav-btn{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);padding:6px 10px;color:#fff;border-radius:999px;font-size:.75rem;cursor:pointer}.nav-btn:hover{background:rgba(255,255,255,.18)}.user-menu-wrap{position:relative;display:none}.avatar-btn{width:34px;height:34px;border-radius:999px;display:grid;place-items:center;background:#fff;color:var(--bg);font-weight:800;font-size:.9rem;border:none;cursor:pointer}.user-dropdown{position:absolute;right:0;top:44px;background:#fff;color:#111827;border-radius:12px;min-width:190px;box-shadow:0 10px 30px rgba(0,0,0,.15);overflow:hidden;display:none}.ud-head{padding:8px 10px;border-bottom:1px solid #e5e7eb;font-size:.78rem;color:#374151;background:#f9fafb}.user-dropdown button{width:100%;text-align:left;padding:8px 10px;border:none;background:#fff;font-size:.8rem;cursor:pointer}.user-dropdown button:hover{background:#f3f4f6}.shell{max-width:1100px;margin:18px auto;padding:0 14px 60px}.card{background:#fff;border-radius:var(--radius);padding:12px 12px 16px;box-shadow:0 10px 30px rgba(11,31,59,.08);margin-bottom:12px}.row{display:flex;gap:10px;flex-wrap:wrap}.input-group{margin-bottom:8px;width:100%}label{display:block;font-weight:600;margin-bottom:2px;font-size:.78rem}input,select,textarea{width:100%;padding:6px 8px;border-radius:9px;border:1px solid #d1d5db;font-size:.8rem}button.primary{background:var(--bg2);border:none;color:#fff;padding:7px 11px;border-radius:999px;cursor:pointer;font-weight:600;font-size:.78rem}button.primary:hover{opacity:.95}.hidden{display:none}table{width:100%;border-collapse:collapse;font-size:.72rem}th,td{border-bottom:1px solid #e5e7eb;padding:5px 4px;text-align:left}th{font-weight:600;color:#4b5563}.table-scroll{height:120px;overflow-y:auto;overflow-x:hidden;border-radius:10px;border:1px solid #e5e7eb;background:#fff;margin-top:4px}.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;z-index:2000}.modal{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(520px,calc(100% - 24px));background:#fff;border-radius:16px;padding:12px;box-shadow:0 20px 60px rgba(0,0,0,.25);display:none;z-index:2001;max-height:90vh;overflow-y:auto}.modal h3{margin:0 0 4px;font-size:1rem}.modal small{color:#6b7280;font-size:.72rem}.modal .actions{display:flex;gap:8px;margin-top:6px;flex-wrap:wrap}.modal .actions .secondary{background:#0B1F3B}p.small{font-size:.7rem;margin-top:4px;color:#4b5563}.avail-line{padding:2px 4px;border-radius:6px;font-size:.75rem}.avail-line:hover{background:#e5e7eb}.icon-btn{background:transparent;border:1px solid #d1d5db;border-radius:999px;padding:3px 8px;cursor:pointer;font-size:.72rem}.icon-btn:hover{background:#f3f4f6}a{color:var(--bg2);text-decoration:none}a:hover{text-decoration:underline}.dash-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0}.dash-metric{border:1px solid #e5e7eb;border-radius:14px;padding:12px;background:#fff;min-height:96px}.dash-metric-label{font-size:.72rem;color:#4b5563;font-weight:700}.dash-metric-value{font-size:1.65rem;line-height:1.05;font-weight:900;color:#0B1F3B;margin-top:5px}.dash-metric-sub{font-size:.7rem;color:#6b7280;margin-top:4px}.dash-section{border:1px solid #e5e7eb;border-radius:14px;padding:11px;background:#f9fafb;margin-top:10px}.dash-section h3{margin:0 0 6px;font-size:.9rem}.dash-action-list{display:grid;gap:8px}.dash-action-item{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:9px}.dash-action-main{min-width:0}.dash-action-title{font-size:.78rem;font-weight:800}.dash-action-meta{font-size:.7rem;color:#6b7280;margin-top:2px}.dash-action-amount{font-size:.78rem;font-weight:800;white-space:nowrap}.dash-btn-row{display:flex;flex-wrap:wrap;gap:7px;margin-top:9px}.dash-empty{font-size:.75rem;color:#6b7280;padding:8px 2px}.dash-calendar-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.dash-calendar-stat{background:#fff;border-radius:10px;padding:8px;text-align:center;border:1px solid #e5e7eb}.dash-calendar-stat strong{display:block;font-size:1.05rem;color:#0B1F3B}.pay-list{display:grid;gap:10px;margin-top:8px}.pay-card{border:1px solid #e5e7eb;border-radius:12px;padding:10px;background:#fff}.pay-card-top{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}.pay-card-title{font-weight:800;font-size:.88rem}.pay-card-meta{font-size:.75rem;color:#4b5563;margin-top:3px}.status-pill{display:inline-block;border-radius:999px;padding:4px 8px;font-size:.7rem;font-weight:800;white-space:nowrap}.status-submitted{background:#fef3c7;color:#92400e}.status-approved{background:#dbeafe;color:#1e40af}.status-paid{background:#dcfce7;color:#166534}.pay-detail-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-top:8px;font-size:.74rem}.pay-detail{background:#f9fafb;border-radius:8px;padding:6px}.password-wrap{display:flex;gap:4px}.password-wrap input{flex:1}.eye-btn{min-width:58px;padding:0 10px;border:1px solid #d1d5db;background:#fff;border-radius:9px;cursor:pointer;font-size:.78rem;font-weight:700;color:#0B1F3B}@media(min-width:700px){.row>.half{width:calc(50% - 5px)}.row>.third{width:calc(33.333% - 7px)}.dash-grid{grid-template-columns:repeat(4,minmax(0,1fr))}.dash-action-list{grid-template-columns:repeat(2,minmax(0,1fr))}}.section-heading-row{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap}.section-heading-row h3{margin:0}.compact-action{flex:0 0 auto}.schedule-panel{border:1px solid #e5e7eb;border-radius:12px;background:#f9fafb;padding:10px;margin-top:10px}.manual-schedule-panel{background:#fff}.schedule-recipient-panel{border-top:1px solid #e5e7eb;margin-top:10px;padding-top:10px}.guard-picker-list{border:1px solid #d1d5db;border-radius:10px;padding:4px 10px;max-height:220px;overflow:auto;background:#fff}.guard-picker-row{display:grid;grid-template-columns:24px minmax(0,1fr);align-items:center;gap:10px;padding:10px 2px;border-bottom:1px solid #eef0f3;cursor:pointer}.guard-picker-row:last-child{border-bottom:none}.schedule-guard-check,input[type="checkbox"],input[type="radio"]{width:auto!important;min-width:0!important}.schedule-guard-check{width:18px!important;height:18px!important;margin:0!important;justify-self:center}.guard-picker-label{min-width:0;text-align:left;overflow-wrap:anywhere;line-height:1.25}.dashboard-subcard{box-shadow:none;border:1px solid #e5e7eb;margin-top:12px;background:#f9fafb}.operations-clear{justify-content:flex-end}.operations-table-scroll,.confirmations-table-scroll,.calendar-preview-scroll{height:auto;max-height:420px;overflow:auto}.table-scroll{overflow-x:auto!important;overflow-y:auto;height:auto;max-height:420px}#admin-shifts{min-width:980px}#admin-schedule-confirmations{min-width:820px}#calendar-preview-table{min-width:760px}#admin-shifts th,#admin-shifts td,#admin-schedule-confirmations th,#admin-schedule-confirmations td,#calendar-preview-table th,#calendar-preview-table td{vertical-align:middle}#admin-shifts th,#admin-shifts td{white-space:nowrap}#admin-shifts th:first-child,#admin-shifts td:first-child{min-width:150px;white-space:normal}#admin-shifts input[type="checkbox"]{width:18px!important;height:18px!important;margin:0!important}.danger-action{background:#991b1b!important}.guard-management-row{align-items:flex-end}.guard-management-row>button{margin-bottom:8px}.operations-actions{margin-bottom:4px}@media(max-width:699px){.section-heading-row>.compact-action{width:100%}.dash-btn-row>button{flex:1 1 100%}.guard-management-row>button{width:100%;margin-bottom:0}.schedule-panel{padding:9px}.guard-picker-list{padding:3px 8px}.guard-picker-row{grid-template-columns:24px minmax(0,1fr);padding:10px 0}.table-scroll{-webkit-overflow-scrolling:touch}.operations-table-scroll,.confirmations-table-scroll,.calendar-preview-scroll{max-height:360px}}.dashboard-launcher{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:12px 0}.dashboard-launcher-card{appearance:none;border:1px solid #dbe2ea;background:#fff;border-radius:14px;padding:14px;text-align:left;cursor:pointer;box-shadow:0 5px 18px rgba(11,31,59,.06);color:#0B1F3B;min-height:88px}.dashboard-launcher-card:hover{border-color:#9ca3af;transform:translateY(-1px)}.dashboard-launcher-card strong{display:block;font-size:.9rem;margin-bottom:5px}.dashboard-launcher-card span{display:block;font-size:.72rem;line-height:1.35;color:#6b7280;font-weight:500}.dashboard-panel-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px}.dashboard-panel-head h3{margin:0}.dashboard-back-btn{flex:0 0 auto}.dashboard-panel.hidden{display:none!important}@media(min-width:900px){.dashboard-launcher{grid-template-columns:repeat(5,minmax(0,1fr))}}@media(max-width:560px){.dashboard-launcher{grid-template-columns:1fr}.dashboard-launcher-card{min-height:72px}.dashboard-back-btn{width:100%}}.admin-standalone-page{width:100%}.admin-standalone-page>.dash-section,.admin-standalone-page>.manual-schedule-page{margin:0}.manual-schedule-page{display:block!important;position:static!important;width:auto!important;max-width:none!important;max-height:none!important;overflow:visible!important;background:transparent!important;box-shadow:none!important;padding:0!important;border-radius:0!important}.admin-standalone-page .dashboard-panel-head{border-bottom:1px solid #e5e7eb;padding-bottom:10px;margin-bottom:14px}.dash-metric-button{font:inherit;color:inherit;text-align:left;cursor:pointer;width:100%;appearance:none}.dash-metric-button:hover,.dash-metric-button:focus-visible{border-color:#8aa0b8;box-shadow:0 7px 20px rgba(11,31,59,.10);transform:translateY(-1px)}.dash-metric-button:active{transform:translateY(0)}.payroll-queue-mode .payroll-controls{display:none!important}.payroll-queue-label{font-weight:800;color:#0B1F3B;margin:0 0 8px;font-size:.88rem}.payroll-queue-mode #admin-shifts{min-width:720px!important;width:max-content}.payroll-queue-mode #admin-shifts th,.payroll-queue-mode #admin-shifts td{padding:6px 7px!important;font-size:.78rem;line-height:1.15}.payroll-queue-mode #admin-shifts th:first-child,.payroll-queue-mode #admin-shifts td:first-child{min-width:92px!important;max-width:120px!important;width:100px!important}.payroll-queue-mode #admin-shifts th:nth-child(2),.payroll-queue-mode #admin-shifts td:nth-child(2){min-width:82px!important;width:82px!important}.payroll-queue-mode #admin-shifts th:nth-child(3),.payroll-queue-mode #admin-shifts td:nth-child(3){min-width:78px!important;width:78px!important}.payroll-queue-mode #admin-shifts th:nth-child(4),.payroll-queue-mode #admin-shifts td:nth-child(4),.payroll-queue-mode #admin-shifts th:nth-child(5),.payroll-queue-mode #admin-shifts td:nth-child(5){min-width:54px!important;width:54px!important}.payroll-queue-mode #admin-shifts th:nth-child(6),.payroll-queue-mode #admin-shifts td:nth-child(6){min-width:46px!important;width:46px!important}.payroll-queue-mode #admin-shifts th:nth-child(7),.payroll-queue-mode #admin-shifts td:nth-child(7){min-width:58px!important;width:58px!important}.payroll-queue-mode .operations-table-scroll{margin-top:2px;max-height:none}.payroll-queue-mode #admin-total{margin-top:8px!important;line-height:1.3}@media(max-width:560px){.payroll-queue-mode{padding:16px!important}.payroll-queue-mode .dash-section{padding:0!important}.payroll-queue-mode #admin-shifts{min-width:690px!important}.payroll-queue-mode #admin-shifts th,.payroll-queue-mode #admin-shifts td{padding:5px 6px!important;font-size:.74rem}.payroll-queue-mode #admin-shifts th:first-child,.payroll-queue-mode #admin-shifts td:first-child{min-width:84px!important;width:84px!important;max-width:105px!important}.payroll-queue-mode #admin-shifts th:nth-child(2),.payroll-queue-mode #admin-shifts td:nth-child(2){min-width:80px!important;width:80px!important}.payroll-queue-mode .dashboard-panel-head{margin-bottom:8px!important;padding-bottom:8px!important}}</style></head><body data-environment="__OPSGUARD_ENV__">
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width,initial-scale=1" name="viewport"/><title>OpsGuard Portal</title><style>:root{--bg:#0B1F3B;--bg2:#1F3C88;--radius:14px}*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f3f4f6;color:#111827}header{background:var(--bg);color:#fff;padding:12px 18px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;position:sticky;top:0;z-index:1000}header h1{font-size:1.1rem;margin:0}.env-badge{display:none;margin-left:8px;padding:3px 7px;border-radius:999px;background:#facc15;color:#422006;font-size:.68rem;font-weight:900;letter-spacing:.06em;vertical-align:middle}.nav-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap}.nav-btn{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);padding:6px 10px;color:#fff;border-radius:999px;font-size:.75rem;cursor:pointer}.nav-btn:hover{background:rgba(255,255,255,.18)}.user-menu-wrap{position:relative;display:none}.avatar-btn{width:34px;height:34px;border-radius:999px;display:grid;place-items:center;background:#fff;color:var(--bg);font-weight:800;font-size:.9rem;border:none;cursor:pointer}.user-dropdown{position:absolute;right:0;top:44px;background:#fff;color:#111827;border-radius:12px;min-width:190px;box-shadow:0 10px 30px rgba(0,0,0,.15);overflow:hidden;display:none}.ud-head{padding:8px 10px;border-bottom:1px solid #e5e7eb;font-size:.78rem;color:#374151;background:#f9fafb}.user-dropdown button{width:100%;text-align:left;padding:8px 10px;border:none;background:#fff;font-size:.8rem;cursor:pointer}.user-dropdown button:hover{background:#f3f4f6}.shell{max-width:1100px;margin:18px auto;padding:0 14px 60px}.card{background:#fff;border-radius:var(--radius);padding:12px 12px 16px;box-shadow:0 10px 30px rgba(11,31,59,.08);margin-bottom:12px}.row{display:flex;gap:10px;flex-wrap:wrap}.input-group{margin-bottom:8px;width:100%}label{display:block;font-weight:600;margin-bottom:2px;font-size:.78rem}input,select,textarea{width:100%;padding:6px 8px;border-radius:9px;border:1px solid #d1d5db;font-size:.8rem}button.primary{background:var(--bg2);border:none;color:#fff;padding:7px 11px;border-radius:999px;cursor:pointer;font-weight:600;font-size:.78rem}button.primary:hover{opacity:.95}.hidden{display:none}table{width:100%;border-collapse:collapse;font-size:.72rem}th,td{border-bottom:1px solid #e5e7eb;padding:5px 4px;text-align:left}th{font-weight:600;color:#4b5563}.table-scroll{height:120px;overflow-y:auto;overflow-x:hidden;border-radius:10px;border:1px solid #e5e7eb;background:#fff;margin-top:4px}.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;z-index:2000}.modal{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(520px,calc(100% - 24px));background:#fff;border-radius:16px;padding:12px;box-shadow:0 20px 60px rgba(0,0,0,.25);display:none;z-index:2001;max-height:90vh;overflow-y:auto}.modal h3{margin:0 0 4px;font-size:1rem}.modal small{color:#6b7280;font-size:.72rem}.modal .actions{display:flex;gap:8px;margin-top:6px;flex-wrap:wrap}.modal .actions .secondary{background:#0B1F3B}p.small{font-size:.7rem;margin-top:4px;color:#4b5563}.avail-line{padding:2px 4px;border-radius:6px;font-size:.75rem}.avail-line:hover{background:#e5e7eb}.icon-btn{background:transparent;border:1px solid #d1d5db;border-radius:999px;padding:3px 8px;cursor:pointer;font-size:.72rem}.icon-btn:hover{background:#f3f4f6}a{color:var(--bg2);text-decoration:none}a:hover{text-decoration:underline}.dash-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0}.dash-metric{border:1px solid #e5e7eb;border-radius:14px;padding:12px;background:#fff;min-height:96px}.dash-metric-label{font-size:.72rem;color:#4b5563;font-weight:700}.dash-metric-value{font-size:1.65rem;line-height:1.05;font-weight:900;color:#0B1F3B;margin-top:5px}.dash-metric-sub{font-size:.7rem;color:#6b7280;margin-top:4px}.dash-section{border:1px solid #e5e7eb;border-radius:14px;padding:11px;background:#f9fafb;margin-top:10px}.dash-section h3{margin:0 0 6px;font-size:.9rem}.dash-action-list{display:grid;gap:8px}.dash-action-item{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:9px}.dash-action-main{min-width:0}.dash-action-title{font-size:.78rem;font-weight:800}.dash-action-meta{font-size:.7rem;color:#6b7280;margin-top:2px}.dash-action-amount{font-size:.78rem;font-weight:800;white-space:nowrap}.dash-btn-row{display:flex;flex-wrap:wrap;gap:7px;margin-top:9px}.dash-empty{font-size:.75rem;color:#6b7280;padding:8px 2px}.dash-calendar-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.dash-calendar-stat{background:#fff;border-radius:10px;padding:8px;text-align:center;border:1px solid #e5e7eb}.dash-calendar-stat strong{display:block;font-size:1.05rem;color:#0B1F3B}.pay-list{display:grid;gap:10px;margin-top:8px}.pay-card{border:1px solid #e5e7eb;border-radius:12px;padding:10px;background:#fff}.pay-card-top{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}.pay-card-title{font-weight:800;font-size:.88rem}.pay-card-meta{font-size:.75rem;color:#4b5563;margin-top:3px}.status-pill{display:inline-block;border-radius:999px;padding:4px 8px;font-size:.7rem;font-weight:800;white-space:nowrap}.status-submitted{background:#fef3c7;color:#92400e}.status-approved{background:#dbeafe;color:#1e40af}.status-paid{background:#dcfce7;color:#166534}.pay-detail-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-top:8px;font-size:.74rem}.pay-detail{background:#f9fafb;border-radius:8px;padding:6px}.password-wrap{display:flex;gap:4px}.password-wrap input{flex:1}.eye-btn{min-width:58px;padding:0 10px;border:1px solid #d1d5db;background:#fff;border-radius:9px;cursor:pointer;font-size:.78rem;font-weight:700;color:#0B1F3B}@media(min-width:700px){.row>.half{width:calc(50% - 5px)}.row>.third{width:calc(33.333% - 7px)}.dash-grid{grid-template-columns:repeat(4,minmax(0,1fr))}.dash-action-list{grid-template-columns:repeat(2,minmax(0,1fr))}}.section-heading-row{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap}.section-heading-row h3{margin:0}.compact-action{flex:0 0 auto}.schedule-panel{border:1px solid #e5e7eb;border-radius:12px;background:#f9fafb;padding:10px;margin-top:10px}.manual-schedule-panel{background:#fff}.schedule-recipient-panel{border-top:1px solid #e5e7eb;margin-top:10px;padding-top:10px}.guard-picker-list{border:1px solid #d1d5db;border-radius:10px;padding:4px 10px;max-height:220px;overflow:auto;background:#fff}.guard-picker-row{display:grid;grid-template-columns:24px minmax(0,1fr);align-items:center;gap:10px;padding:10px 2px;border-bottom:1px solid #eef0f3;cursor:pointer}.guard-picker-row:last-child{border-bottom:none}.schedule-guard-check,input[type="checkbox"],input[type="radio"]{width:auto!important;min-width:0!important}.schedule-guard-check{width:18px!important;height:18px!important;margin:0!important;justify-self:center}.guard-picker-label{min-width:0;text-align:left;overflow-wrap:anywhere;line-height:1.25}.dashboard-subcard{box-shadow:none;border:1px solid #e5e7eb;margin-top:12px;background:#f9fafb}.operations-clear{justify-content:flex-end}.operations-table-scroll,.confirmations-table-scroll,.calendar-preview-scroll{height:auto;max-height:420px;overflow:auto}.table-scroll{overflow-x:auto!important;overflow-y:auto;height:auto;max-height:420px}#admin-shifts{min-width:980px}#admin-schedule-confirmations{min-width:820px}#calendar-preview-table{min-width:760px}#admin-shifts th,#admin-shifts td,#admin-schedule-confirmations th,#admin-schedule-confirmations td,#calendar-preview-table th,#calendar-preview-table td{vertical-align:middle}#admin-shifts th,#admin-shifts td{white-space:nowrap}#admin-shifts th:first-child,#admin-shifts td:first-child{min-width:150px;white-space:normal}#admin-shifts input[type="checkbox"]{width:18px!important;height:18px!important;margin:0!important}.danger-action{background:#991b1b!important}.guard-management-row{align-items:flex-end}.guard-management-row>button{margin-bottom:8px}.operations-actions{margin-bottom:4px}@media(max-width:699px){.section-heading-row>.compact-action{width:100%}.dash-btn-row>button{flex:1 1 100%}.guard-management-row>button{width:100%;margin-bottom:0}.schedule-panel{padding:9px}.guard-picker-list{padding:3px 8px}.guard-picker-row{grid-template-columns:24px minmax(0,1fr);padding:10px 0}.table-scroll{-webkit-overflow-scrolling:touch}.operations-table-scroll,.confirmations-table-scroll,.calendar-preview-scroll{max-height:360px}}.dashboard-launcher{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:12px 0}.dashboard-launcher-card{appearance:none;border:1px solid #dbe2ea;background:#fff;border-radius:14px;padding:14px;text-align:left;cursor:pointer;box-shadow:0 5px 18px rgba(11,31,59,.06);color:#0B1F3B;min-height:88px}.dashboard-launcher-card:hover{border-color:#9ca3af;transform:translateY(-1px)}.dashboard-launcher-card strong{display:block;font-size:.9rem;margin-bottom:5px}.dashboard-launcher-card span{display:block;font-size:.72rem;line-height:1.35;color:#6b7280;font-weight:500}.dashboard-panel-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px}.dashboard-panel-head h3{margin:0}.dashboard-back-btn{flex:0 0 auto}.dashboard-panel.hidden{display:none!important}@media(min-width:900px){.dashboard-launcher{grid-template-columns:repeat(5,minmax(0,1fr))}}@media(max-width:560px){.dashboard-launcher{grid-template-columns:1fr}.dashboard-launcher-card{min-height:72px}.dashboard-back-btn{width:100%}}.admin-standalone-page{width:100%}.admin-standalone-page>.dash-section,.admin-standalone-page>.manual-schedule-page{margin:0}.manual-schedule-page{display:block!important;position:static!important;width:auto!important;max-width:none!important;max-height:none!important;overflow:visible!important;background:transparent!important;box-shadow:none!important;padding:0!important;border-radius:0!important}.admin-standalone-page .dashboard-panel-head{border-bottom:1px solid #e5e7eb;padding-bottom:10px;margin-bottom:14px}.dash-metric-button{font:inherit;color:inherit;text-align:left;cursor:pointer;width:100%;appearance:none}.dash-metric-button:hover,.dash-metric-button:focus-visible{border-color:#8aa0b8;box-shadow:0 7px 20px rgba(11,31,59,.10);transform:translateY(-1px)}.dash-metric-button:active{transform:translateY(0)}.payroll-queue-mode .payroll-controls{display:none!important}.payroll-queue-label{font-weight:800;color:#0B1F3B;margin:0 0 8px;font-size:.88rem}.payroll-queue-mode #admin-shifts{min-width:720px!important;width:max-content}.payroll-queue-mode #admin-shifts th,.payroll-queue-mode #admin-shifts td{padding:6px 7px!important;font-size:.78rem;line-height:1.15}.payroll-queue-mode #admin-shifts th:first-child,.payroll-queue-mode #admin-shifts td:first-child{min-width:92px!important;max-width:120px!important;width:100px!important}.payroll-queue-mode #admin-shifts th:nth-child(2),.payroll-queue-mode #admin-shifts td:nth-child(2){min-width:82px!important;width:82px!important}.payroll-queue-mode #admin-shifts th:nth-child(3),.payroll-queue-mode #admin-shifts td:nth-child(3){min-width:78px!important;width:78px!important}.payroll-queue-mode #admin-shifts th:nth-child(4),.payroll-queue-mode #admin-shifts td:nth-child(4),.payroll-queue-mode #admin-shifts th:nth-child(5),.payroll-queue-mode #admin-shifts td:nth-child(5){min-width:54px!important;width:54px!important}.payroll-queue-mode #admin-shifts th:nth-child(6),.payroll-queue-mode #admin-shifts td:nth-child(6){min-width:46px!important;width:46px!important}.payroll-queue-mode #admin-shifts th:nth-child(7),.payroll-queue-mode #admin-shifts td:nth-child(7){min-width:58px!important;width:58px!important}.payroll-queue-mode .operations-table-scroll{margin-top:2px;max-height:none}.payroll-queue-mode #admin-total{margin-top:8px!important;line-height:1.3}@media(max-width:560px){.payroll-queue-mode{padding:16px!important}.payroll-queue-mode .dash-section{padding:0!important}.payroll-queue-mode #admin-shifts{min-width:690px!important}.payroll-queue-mode #admin-shifts th,.payroll-queue-mode #admin-shifts td{padding:5px 6px!important;font-size:.74rem}.payroll-queue-mode #admin-shifts th:first-child,.payroll-queue-mode #admin-shifts td:first-child{min-width:84px!important;width:84px!important;max-width:105px!important}.payroll-queue-mode #admin-shifts th:nth-child(2),.payroll-queue-mode #admin-shifts td:nth-child(2){min-width:80px!important;width:80px!important}.payroll-queue-mode .dashboard-panel-head{margin-bottom:8px!important;padding-bottom:8px!important}}.queue-filter-bar{display:none;grid-template-columns:1.55fr 1fr 1.15fr;gap:8px;margin:2px 0 10px;padding:9px;border:1px solid #e5e7eb;border-radius:11px;background:#f8fafc}.queue-filter-field{min-width:0}.queue-filter-field label{display:block;margin:0 0 4px;font-size:.66rem;font-weight:800;color:#52606d;text-transform:uppercase;letter-spacing:.03em}.queue-filter-field input,.queue-filter-field select{width:100%;min-width:0;margin:0;padding:7px 8px;font-size:.78rem;border-radius:8px;box-sizing:border-box}.queue-date-pair{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:5px;align-items:center}.queue-date-pair span{font-size:.68rem;color:#6b7280;font-weight:700}.payroll-queue-mode #payroll-queue-filters{display:grid}.confirmation-queue-mode #confirmation-queue-filters{display:grid}.confirmation-queue-mode #confirmation-normal-actions{display:none!important}@media(max-width:560px){.queue-filter-bar{grid-template-columns:1fr 1fr;gap:7px;padding:8px}.queue-date-range{grid-column:1 / -1}.queue-filter-field label{font-size:.62rem}.queue-filter-field input,.queue-filter-field select{padding:6px 6px;font-size:.72rem}.queue-date-pair{gap:4px}}</style></head><body data-environment="__OPSGUARD_ENV__">
 <header><h1>OpsGuard Portal <span class="env-badge" id="env-badge">STAGING</span></h1><div class="nav-row">
 <button class="nav-btn" id="nav-login" onclick="showSection('login')">Login</button>
 <button class="nav-btn" id="nav-submit" onclick="showSection('submit')">Submit Hours</button>
@@ -132,6 +132,11 @@
 <div><h3 id="payroll-page-title">Payroll</h3><p class="small" id="payroll-page-description">Filter submitted hours, approve hours, mark payments and export payroll records.</p></div>
 <button class="primary secondary dashboard-back-btn" onclick="showSection('admin-dashboard')" type="button">← Back to Dashboard</button>
 </div>
+<div class="queue-filter-bar" id="payroll-queue-filters">
+  <div class="queue-filter-field queue-date-range"><label>Date range</label><div class="queue-date-pair"><input aria-label="From date" id="payroll-queue-date-from" onchange="handleQueueFromDate('payroll')" type="date"/><span>to</span><input aria-label="To date" id="payroll-queue-date-to" onchange="applyPayrollQueueFilters()" type="date"/></div></div>
+  <div class="queue-filter-field"><label>Venue</label><select id="payroll-queue-venue" onchange="applyPayrollQueueFilters()"><option value="">All venues</option></select></div>
+  <div class="queue-filter-field"><label>Guard</label><select id="payroll-queue-guard" onchange="applyPayrollQueueFilters()"><option value="">All guards</option></select></div>
+</div>
 <div class="payroll-controls" id="payroll-controls">
 <div class="row">
 <div class="third input-group"><label>Hourly rate ($)</label><input id="admin-rate" step=".01" type="number" value="20"/></div>
@@ -167,10 +172,15 @@
 <p class="small" id="admin-management-status"></p>
 </div></div><div class="card hidden admin-standalone-page" id="section-admin-confirmations"><div class="dash-section" id="dashboard-confirmations">
 <div class="dashboard-panel-head">
-<div><h3>Schedule Confirmations</h3><p class="small">Review schedules sent to guards and see which shifts have been confirmed.</p></div>
+<div><h3 id="confirmation-page-title">Schedule Confirmations</h3><p class="small" id="confirmation-page-description">Review schedules sent to guards and see which shifts have been confirmed.</p></div>
 <button class="primary secondary dashboard-back-btn" onclick="showSection('admin-dashboard')" type="button">← Back to Dashboard</button>
 </div>
-<div class="dash-btn-row"><button class="primary secondary" onclick="loadAdminScheduleConfirmations()" type="button">Refresh confirmations</button></div>
+<div class="queue-filter-bar" id="confirmation-queue-filters">
+  <div class="queue-filter-field queue-date-range"><label>Date range</label><div class="queue-date-pair"><input aria-label="From date" id="confirmation-queue-date-from" onchange="handleQueueFromDate('confirmation')" type="date"/><span>to</span><input aria-label="To date" id="confirmation-queue-date-to" onchange="applyConfirmationQueueFilters()" type="date"/></div></div>
+  <div class="queue-filter-field"><label>Venue</label><select id="confirmation-queue-venue" onchange="applyConfirmationQueueFilters()"><option value="">All venues</option></select></div>
+  <div class="queue-filter-field"><label>Guard</label><select id="confirmation-queue-guard" onchange="applyConfirmationQueueFilters()"><option value="">All guards</option></select></div>
+</div>
+<div class="dash-btn-row" id="confirmation-normal-actions"><button class="primary secondary" onclick="loadAdminScheduleConfirmations()" type="button">Refresh confirmations</button></div>
 <p class="small" id="admin-schedule-confirmation-summary"></p>
 <p id="admin-confirmation-alert" role="status" style="display:none;font-weight:700;padding:10px;margin:6px 0;background:#dcfce7;color:#14532d;border-radius:8px"></p>
 <div class="table-scroll confirmations-table-scroll">
@@ -234,12 +244,90 @@ const API_BASE=window.location.origin+"/api";
 const OPSGUARD_ENV=(document.body.dataset.environment||"production").toLowerCase();
 const ENV_BADGE=document.getElementById("env-badge");
 if(ENV_BADGE&&OPSGUARD_ENV!=="production"){ENV_BADGE.style.display="inline-block";ENV_BADGE.textContent=OPSGUARD_ENV.toUpperCase();document.title="OpsGuard "+OPSGUARD_ENV.toUpperCase();}
-let authToken=null,currentUserEmail=null,currentUserName=null,currentUserRole=null,myShiftsCache=[],allShiftsCache=[],adminFilteredShifts=[],adminPayrollQuickFilter=null,adminConfirmationQuickFilter=null,scheduleDraft=[],currentGuardAvailability=[],adminUserMap={},scheduleSelectedGuardIds=new Set(),calendarDraftRowsCache=[],apiWarmPromise=null,adminConfirmationsInitialized=false,adminSeenConfirmedShifts=new Set(),adminScheduleConfirmationsCache=[];
+let authToken=null,currentUserEmail=null,currentUserName=null,currentUserRole=null,myShiftsCache=[],allShiftsCache=[],adminFilteredShifts=[],adminPayrollQuickFilter=null,adminPayrollQueueBaseRows=[],adminConfirmationQuickFilter=null,scheduleDraft=[],currentGuardAvailability=[],adminUserMap={},adminGuardDirectory=[],guardDirectoryLoadPromise=null,scheduleSelectedGuardIds=new Set(),calendarDraftRowsCache=[],apiWarmPromise=null,adminConfirmationsInitialized=false,adminSeenConfirmedShifts=new Set(),adminScheduleConfirmationsCache=[];
 const FIXED_VENUES=["Baby G","Garrison","Get Well","Jean Darlene","St Anne's","Standard Time","Two Kats"];
 const VENUE_CALENDAR_IDS={"Baby G":"s374q7mjj2hoc77f71oml6n5uc@group.calendar.google.com","Garrison":"garrisonstaff@gmail.com","Jean Darlene":"78f673188cd9e7f1c76014eee634b0b5578f9da7f0657796fcb45e05080f45c3@group.calendar.google.com","St Anne's":"78f673188cd9e7f1c76014eee634b0b5578f9da7f0657796fcb45e05080f45c3@group.calendar.google.com","Get Well":"78f673188cd9e7f1c76014eee634b0b5578f9da7f0657796fcb45e05080f45c3@group.calendar.google.com","Standard Time":"78f673188cd9e7f1c76014eee634b0b5578f9da7f0657796fcb45e05080f45c3@group.calendar.google.com","Two Kats":"78f673188cd9e7f1c76014eee634b0b5578f9da7f0657796fcb45e05080f45c3@group.calendar.google.com"};
 
 function returnToDashboard(){showSection("admin-dashboard");}
 function openDashboardPanel(name){showSection("admin-"+name);}
+function resetQueueFilters(prefix){
+  const fromEl=document.getElementById(prefix+"-queue-date-from");
+  const toEl=document.getElementById(prefix+"-queue-date-to");
+  const venueEl=document.getElementById(prefix+"-queue-venue");
+  const guardEl=document.getElementById(prefix+"-queue-guard");
+  if(fromEl)fromEl.value="";
+  if(toEl){toEl.value="";toEl.min="";}
+  if(venueEl)venueEl.value="";
+  if(guardEl)guardEl.value="";
+}
+function handleQueueFromDate(prefix){
+  const fromEl=document.getElementById(prefix+"-queue-date-from");
+  const toEl=document.getElementById(prefix+"-queue-date-to");
+  if(!fromEl||!toEl)return;
+  const fromValue=fromEl.value||"";
+  toEl.min=fromValue;
+  if(fromValue&&toEl.value&&toEl.value<fromValue)toEl.value="";
+  if(prefix==="payroll")applyPayrollQueueFilters();
+  if(prefix==="confirmation")applyConfirmationQueueFilters();
+  if(fromValue){
+    setTimeout(()=>{
+      try{
+        if(typeof toEl.showPicker==="function")toEl.showPicker();
+        else toEl.focus();
+      }catch(e){toEl.focus();}
+    },80);
+  }
+}
+function populateQueueFilterOptions(prefix,rows,guardGetter){
+  const venueEl=document.getElementById(prefix+"-queue-venue");
+  const guardEl=document.getElementById(prefix+"-queue-guard");
+  if(!venueEl||!guardEl)return;
+  const oldVenue=venueEl.value||"",oldGuard=guardEl.value||"";
+  const venues=[...new Set((rows||[]).map(r=>String(r.venue||"").trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+  const guards=[...new Set((rows||[]).map(r=>String(guardGetter(r)||"").trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+  venueEl.innerHTML="";
+  guardEl.innerHTML="";
+  const allVenue=document.createElement("option");allVenue.value="";allVenue.textContent="All venues";venueEl.appendChild(allVenue);
+  venues.forEach(v=>{const o=document.createElement("option");o.value=v;o.textContent=v;venueEl.appendChild(o);});
+  const allGuard=document.createElement("option");allGuard.value="";allGuard.textContent="All guards";guardEl.appendChild(allGuard);
+  guards.forEach(v=>{const o=document.createElement("option");o.value=v;o.textContent=v;guardEl.appendChild(o);});
+  venueEl.value=venues.includes(oldVenue)?oldVenue:"";
+  guardEl.value=guards.includes(oldGuard)?oldGuard:"";
+}
+function filterRowsByQueueControls(rows,prefix,guardGetter){
+  const fromValue=document.getElementById(prefix+"-queue-date-from")?.value||"";
+  const toValue=document.getElementById(prefix+"-queue-date-to")?.value||"";
+  const venueValue=document.getElementById(prefix+"-queue-venue")?.value||"";
+  const guardValue=document.getElementById(prefix+"-queue-guard")?.value||"";
+  return (rows||[]).filter(r=>{
+    const rowDate=String(r.date||"");
+    if(fromValue&&rowDate<fromValue)return false;
+    if(toValue&&rowDate>toValue)return false;
+    if(venueValue&&String(r.venue||"")!==venueValue)return false;
+    if(guardValue&&String(guardGetter(r)||"")!==guardValue)return false;
+    return true;
+  });
+}
+function applyPayrollQueueFilters(){
+  if(!adminPayrollQuickFilter)return;
+  const rows=filterRowsByQueueControls(adminPayrollQueueBaseRows,"payroll",r=>getGuardLabel(r));
+  renderAdminShifts({items:rows});
+  const totalEl=document.getElementById("admin-total"),label=payrollQuickFilterLabel(adminPayrollQuickFilter);
+  if(totalEl&&label)totalEl.textContent=label+" · "+totalEl.textContent;
+}
+function setConfirmationQueueMode(kind){
+  const page=document.getElementById("section-admin-confirmations");
+  const title=document.getElementById("confirmation-page-title");
+  const desc=document.getElementById("confirmation-page-description");
+  if(!page)return;
+  const isQueue=kind==="pending";
+  page.classList.toggle("confirmation-queue-mode",isQueue);
+  if(title)title.textContent=isQueue?"Awaiting Confirmation":"Schedule Confirmations";
+  if(desc)desc.textContent=isQueue?"Only schedules still awaiting a guard confirmation are shown here.":"Review schedules sent to guards and see which shifts have been confirmed.";
+}
+function applyConfirmationQueueFilters(){
+  if(adminConfirmationQuickFilter==="pending")loadAdminScheduleConfirmations();
+}
 function setPayrollQueueMode(kind){
   const page=document.getElementById("section-admin-payroll");
   const title=document.getElementById("payroll-page-title");
@@ -282,7 +370,10 @@ async function loadPayrollQuickFilter(kind){
     const all=Array.isArray(data&&data.items)?data.items:[];
     allShiftsCache=all;
     const rows=filterPayrollRowsForQueue(all,adminPayrollQuickFilter);
-    renderAdminShifts({items:rows});
+    adminPayrollQueueBaseRows=rows;
+    populateQueueFilterOptions("payroll",rows,r=>getGuardLabel(r));
+    const visibleRows=filterRowsByQueueControls(rows,"payroll",r=>getGuardLabel(r));
+    renderAdminShifts({items:visibleRows});
     if(totalEl&&label)totalEl.textContent=label+" · "+totalEl.textContent;
   }catch(e){
     if(tbody)tbody.innerHTML="<tr><td colspan='11'>Could not load "+(label||"payroll")+".</td></tr>";
@@ -290,20 +381,26 @@ async function loadPayrollQuickFilter(kind){
 }
 function openPayrollPage(){
   adminPayrollQuickFilter=null;
+  adminPayrollQueueBaseRows=[];
   setPayrollQueueMode(null);
   showSection("admin-payroll");
 }
 function openConfirmationsPage(){
   adminConfirmationQuickFilter=null;
+  setConfirmationQueueMode(null);
   showSection("admin-confirmations");
 }
 function openDashboardMetric(kind){
   if(kind==="awaiting-confirmation"){
     adminConfirmationQuickFilter="pending";
+    resetQueueFilters("confirmation");
+    setConfirmationQueueMode("pending");
     showSection("admin-confirmations");
     return;
   }
   adminPayrollQuickFilter=kind;
+  adminPayrollQueueBaseRows=[];
+  resetQueueFilters("payroll");
   setPayrollQueueMode(kind);
   showSection("admin-payroll");
 }
@@ -320,13 +417,19 @@ function showSection(id){
   if(id==="pay"&&authToken)loadMyShifts();
   if(id==="admin-dashboard"&&currentUserRole==="admin"){
     adminPayrollQuickFilter=null;
+    adminPayrollQueueBaseRows=[];
+    adminConfirmationQuickFilter=null;
     setPayrollQueueMode(null);
+    setConfirmationQueueMode(null);
     loadAdminDashboard();
   }
   if(id==="admin-calendar-schedule"&&currentUserRole==="admin"){
     loadCalendarSyncStatus();
     loadAdminUsers();
     updateCalendarActionButtons();
+  }
+  if(id==="admin-manual-schedule"&&currentUserRole==="admin"){
+    initializeManualSchedulePage().catch(()=>{});
   }
   if(id==="admin-payroll"&&currentUserRole==="admin"){
     refreshAdminGuardOptionsForCurrentRange().catch(()=>{});
@@ -738,7 +841,11 @@ function buildAdminShiftQuery(){
   const guard=guardSel?guardSel.value:"__all__";
   const venue=venueSel?venueSel.value:"__all__";
   params.set("hourly_rate", String(rate));
-  if(guard&&guard!=="__all__")params.set("guard", guard);
+  if(guard&&guard!=="__all__"){
+    if(guard.startsWith("id:"))params.set("guard_id",guard.slice(3));
+    else if(guard.startsWith("history:"))params.set("guard",guard.slice(8));
+    else params.set("guard",guard);
+  }
   if(venue&&venue!=="__all__")params.set("venue", venue);
   if(fromDate)params.set("from_date", fromDate);
   if(toDate)params.set("to_date", toDate);
@@ -753,7 +860,7 @@ function scheduleGuardLabel(u){
 }
 function scheduleGuardListMarkup(){
   const guards=Object.values(adminUserMap||{}).sort((a,b)=>scheduleGuardLabel(a).localeCompare(scheduleGuardLabel(b)));
-  if(!guards.length)return '<div class="small">No registered guard accounts exist in this environment.</div>';
+  if(!guards.length)return '<div class="small">Guard directory is loading or no active registered guards are available.</div>';
   const esc=s=>String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
   return guards.map(u=>{
     const id=String(u.id||""),checked=scheduleSelectedGuardIds.has(id)?" checked":"";
@@ -767,6 +874,8 @@ function renderScheduleGuardPickers(){
     box.querySelectorAll(".schedule-guard-check").forEach(cb=>cb.addEventListener("change",()=>{
       if(cb.checked)scheduleSelectedGuardIds.add(cb.value);else scheduleSelectedGuardIds.delete(cb.value);
       renderScheduleGuardPickers();
+      const manual=document.getElementById("section-admin-manual-schedule");
+      if(manual&&!manual.classList.contains("hidden"))updateManualScheduleGuardState().catch(()=>{});
     }));
   });
 }
@@ -778,33 +887,91 @@ function selectedScheduleGuards(){
   }).filter(g=>g.id);
 }
 function selectedScheduleGuard(){return selectedScheduleGuards()[0]||null;}
-async function loadAdminUsers(){
-  if(!authToken||currentUserRole!=="admin")return;
-  const manage=document.getElementById("admin-user-manage"),st=document.getElementById("admin-management-status");
-  const previous=manage?manage.value:"";
-  try{
-    const data=await rawApi("/auth/users",{method:"GET",silent:true});
-    const raw=Array.isArray(data)?data:(Array.isArray(data&&data.items)?data.items:[]);
-    const guards=raw.filter(u=>String(u.role||"guard").toLowerCase()!=="admin").sort((a,b)=>scheduleGuardLabel(a).localeCompare(scheduleGuardLabel(b)));
-    adminUserMap={};guards.forEach(u=>{if(u&&u.id)adminUserMap[String(u.id)]=u;});
-    scheduleSelectedGuardIds=new Set([...scheduleSelectedGuardIds].filter(id=>adminUserMap[id]));
-    if(manage){
-      manage.innerHTML="<option value=''>Choose registered guard</option>";
-      guards.forEach(u=>{const o=document.createElement("option");o.value=u.id;o.textContent=scheduleGuardLabel(u);manage.appendChild(o);});
-      if(previous&&[...manage.options].some(o=>o.value===previous))manage.value=previous;
+async function loadAdminUsers(force=false){
+  if(!authToken||currentUserRole!=="admin")return [];
+  if(guardDirectoryLoadPromise&&!force)return guardDirectoryLoadPromise;
+  guardDirectoryLoadPromise=(async()=>{
+    const manage=document.getElementById("admin-user-manage"),st=document.getElementById("admin-management-status");
+    const previous=manage?manage.value:"";
+    try{
+      const data=await rawApi("/auth/guard-directory",{method:"GET",silent:true});
+      const directory=Array.isArray(data&&data.items)?data.items:[];
+      const active=directory.filter(u=>u&&u.registered!==false&&u.schedulable!==false);
+      const historical=directory.filter(u=>u&&u.registered===false);
+      adminGuardDirectory=directory;
+      adminUserMap={};
+      active.forEach(u=>{if(u&&u.id)adminUserMap[String(u.id)]=u;});
+      scheduleSelectedGuardIds=new Set([...scheduleSelectedGuardIds].filter(id=>adminUserMap[id]));
+      if(manage){
+        manage.innerHTML="<option value=''>Choose registered guard</option>";
+        active.sort((a,b)=>scheduleGuardLabel(a).localeCompare(scheduleGuardLabel(b))).forEach(u=>{
+          const o=document.createElement("option");o.value=u.id;o.textContent=scheduleGuardLabel(u);manage.appendChild(o);
+        });
+        if(historical.length){
+          const group=document.createElement("optgroup");group.label="Historical only — no active account";
+          historical.sort((a,b)=>scheduleGuardLabel(a).localeCompare(scheduleGuardLabel(b))).forEach(u=>{
+            const o=document.createElement("option");o.value=u.id;o.textContent=(u.name||u.email||"Historical guard")+" — historical only";o.disabled=true;group.appendChild(o);
+          });
+          manage.appendChild(group);
+        }
+        if(previous&&[...manage.options].some(o=>o.value===previous&&!o.disabled))manage.value=previous;
+      }
+      renderScheduleGuardPickers();
+      renderCanonicalPayrollGuardOptions();
+      if(st){
+        const summary=data&&data.summary?data.summary:{};
+        const activeCount=summary.active_registered??active.length;
+        const historicalCount=summary.historical_only??historical.length;
+        st.textContent=activeCount+" active registered guards"+(historicalCount?" · "+historicalCount+" historical-only identities":"")+".";
+      }
+      return directory;
+    }catch(e){
+      if(Object.keys(adminUserMap||{}).length){
+        renderScheduleGuardPickers();
+        renderCanonicalPayrollGuardOptions();
+        if(st)st.textContent="Guard directory refresh failed; showing the last successfully loaded roster.";
+        return adminGuardDirectory;
+      }
+      if(st)st.textContent="Could not load guard directory: "+(e&&e.message?e.message:String(e));
+      renderScheduleGuardPickers();
+      return [];
+    }finally{
+      guardDirectoryLoadPromise=null;
     }
-    renderScheduleGuardPickers();
-    if(st)st.textContent=guards.length
-      ?guards.length+" registered guard account"+(guards.length===1?"":"s")+" loaded."
-      :"0 registered guard accounts in this environment. Staging uses an isolated user database; production guard accounts are not copied here.";
-  }catch(e){
-    adminUserMap={};scheduleSelectedGuardIds.clear();renderScheduleGuardPickers();
-    if(st)st.textContent="Could not load registered guard accounts: "+(e&&e.message?e.message:String(e));
-  }
+  })();
+  return guardDirectoryLoadPromise;
 }
 
 function buildRangeOnlyQuery(){const params=new URLSearchParams();const rate=Number(document.getElementById("admin-rate").value)||20;const venue=document.getElementById("admin-venue-filter")?.value||"__all__";const fromDate=document.getElementById("admin-from-date-filter")?.value||"";const toDate=document.getElementById("admin-to-date-filter")?.value||"";params.set("hourly_rate",String(rate));if(venue!=="__all__")params.set("venue",venue);if(fromDate)params.set("from_date",fromDate);if(toDate)params.set("to_date",toDate);return params;}
-async function refreshAdminGuardOptionsForCurrentRange(){if(!authToken||currentUserRole!=="admin")return;ensureFixedAdminVenueOptions();const guardSel=document.getElementById("admin-guard-filter"),previous=guardSel?guardSel.value:"__all__";try{const data=await rawApi("/shifts?"+buildRangeOnlyQuery().toString(),{method:"GET",silent:true});const rows=Array.isArray(data.items)?data.items:[];const guards=[...new Set(rows.map(getGuardLabel).filter(Boolean))].sort((a,b)=>a.localeCompare(b));setSelectOptions(guardSel,guards,"__all__","All guards",previous);}catch(e){setSelectOptions(guardSel,[],"__all__","All guards","__all__");}}
+function renderCanonicalPayrollGuardOptions(){
+  const guardSel=document.getElementById("admin-guard-filter");
+  if(!guardSel)return;
+  const previous=guardSel.value||"__all__";
+  guardSel.innerHTML="";
+  const all=document.createElement("option");all.value="__all__";all.textContent="All guards";guardSel.appendChild(all);
+  const active=adminGuardDirectory.filter(u=>u&&u.registered!==false&&u.schedulable!==false)
+    .sort((a,b)=>scheduleGuardLabel(a).localeCompare(scheduleGuardLabel(b)));
+  active.forEach(u=>{
+    const o=document.createElement("option");o.value="id:"+u.id;o.textContent=scheduleGuardLabel(u);guardSel.appendChild(o);
+  });
+  const historical=adminGuardDirectory.filter(u=>u&&u.registered===false)
+    .sort((a,b)=>scheduleGuardLabel(a).localeCompare(scheduleGuardLabel(b)));
+  if(historical.length){
+    const group=document.createElement("optgroup");group.label="Historical only";
+    historical.forEach(u=>{
+      const o=document.createElement("option");o.value="history:"+(u.name||u.email||"");o.textContent=(u.name||u.email||"Historical guard")+" — historical";group.appendChild(o);
+    });
+    guardSel.appendChild(group);
+  }
+  guardSel.value=[...guardSel.options].some(o=>o.value===previous&&!o.disabled)?previous:"__all__";
+}
+
+async function refreshAdminGuardOptionsForCurrentRange(){
+  if(!authToken||currentUserRole!=="admin")return;
+  ensureFixedAdminVenueOptions();
+  await loadAdminUsers();
+  renderCanonicalPayrollGuardOptions();
+}
 async function loadAdminFilterOptions(){await loadAdminUsers();await refreshAdminGuardOptionsForCurrentRange();}
 
 
@@ -1221,6 +1388,7 @@ async function loadAdminDashboard(){
     renderAdminDashboard(shifts,schedules);
     initCalendarPreviewDates();
     loadCalendarSyncStatus();
+    await loadAdminUsers();
     if(st)st.textContent="Updated just now.";
   }catch(e){
     if(st)st.textContent="Could not refresh dashboard.";
@@ -1576,42 +1744,75 @@ function renderScheduleAvailability(){
     holder.appendChild(row);
   });
 }
+async function updateManualScheduleGuardState(){
+  const modalSt=document.getElementById("schedule-modal-status");
+  const holder=document.getElementById("schedule-summary-preview");
+  const guards=selectedScheduleGuards();
+  if(!guards.length){
+    currentGuardAvailability=[];
+    renderScheduleAvailability();
+    if(holder)holder.textContent="Select one registered guard to view availability.";
+    if(modalSt)modalSt.textContent=Object.keys(adminUserMap||{}).length
+      ?"Choose one or more registered guards above."
+      :"No active registered guards are currently loaded.";
+    return;
+  }
+  if(guards.length>1){
+    currentGuardAvailability=[];
+    renderScheduleAvailability();
+    if(holder)holder.textContent="Availability is shown when one guard is selected.";
+    if(modalSt)modalSt.textContent=guards.length+" registered guards selected. Each will receive their own schedule.";
+    return;
+  }
+  const g=guards[0];
+  if(!adminUserMap[g.id]){
+    scheduleSelectedGuardIds.delete(g.id);
+    renderScheduleGuardPickers();
+    currentGuardAvailability=[];
+    renderScheduleAvailability();
+    if(modalSt)modalSt.textContent="That guard account is no longer active. Choose a current registered guard.";
+    return;
+  }
+  if(modalSt)modalSt.textContent=(g.name||g.email)+" is linked to an active registered OpsGuard guard account.";
+  try{
+    const guardQuery=g.email||g.name;
+    const data=await rawApi("/availability/admin?guard="+encodeURIComponent(guardQuery)+"&month="+encodeURIComponent(scheduleMonth()),{method:"GET",silent:true});
+    currentGuardAvailability=Array.isArray(data)?data:(data&&data.items)||[];
+    renderScheduleAvailability();
+    if(!currentGuardAvailability.length&&holder)holder.textContent="No availability records found for this guard/month.";
+  }catch(e){
+    currentGuardAvailability=[];
+    renderScheduleAvailability();
+    if(holder)holder.textContent="Availability could not be loaded. You can still build and send the schedule.";
+    if(modalSt)modalSt.textContent=(g.name||g.email)+" remains linked to an active registered guard account; availability could not be loaded.";
+  }
+}
+
+async function initializeManualSchedulePage(){
+  if(!authToken||currentUserRole!=="admin")return;
+  const modalSt=document.getElementById("schedule-modal-status");
+  const addSt=document.getElementById("schedule-add-status");
+  if(modalSt)modalSt.textContent="Refreshing registered guard directory…";
+  if(addSt)addSt.textContent="";
+  await loadAdminUsers(true);
+  scheduleSelectedGuardIds=new Set([...scheduleSelectedGuardIds].filter(id=>adminUserMap[id]));
+  renderScheduleGuardPickers();
+  renderScheduleDraft();
+  await updateManualScheduleGuardState();
+}
+
 function renderScheduleDraft(){
   const box=document.getElementById("schedule-proposed-list");if(!box)return;
   box.value=scheduleDraft.map((s,i)=>(i+1)+". "+(s.venue||"Venue?")+" "+(s.shift_code||"")+" | "+s.date+" | "+s.start_time+" - "+(s.end_time||"TBD")).join("\n");
 }
 async function openCheckAvailabilityModal(){
-  showSection("admin-manual-schedule");
-  const adminSt=document.getElementById("schedule-admin-status");if(adminSt)adminSt.textContent="";
   if(!authToken)return alert("Login first.");
-  if(!Object.keys(adminUserMap||{}).length)await loadAdminUsers();
   scheduleDraft=[];currentGuardAvailability=[];
   const note=document.getElementById("schedule-note");if(note)note.value="";
   const modalSt=document.getElementById("schedule-modal-status");if(modalSt)modalSt.textContent="";
   const addSt=document.getElementById("schedule-add-status");if(addSt)addSt.textContent="";
-  renderScheduleGuardPickers();renderScheduleDraft();renderScheduleAvailability();
-  const guards=selectedScheduleGuards();
-  if(!guards.length){
-    currentGuardAvailability=[];renderScheduleAvailability();
-    if(modalSt)modalSt.textContent=Object.keys(adminUserMap||{}).length?"Choose one or more guards above.":"No registered guard accounts exist in this staging environment.";
-    return;
-  }
-  if(guards.length>1){
-    currentGuardAvailability=[];renderScheduleAvailability();
-    if(modalSt)modalSt.textContent=guards.length+" guards selected. Build the schedule manually; availability is shown only when one guard is selected.";
-    return;
-  }
-  const g=guards[0];
-  try{
-    const guardQuery=g.email||g.name;
-    const data=await rawApi("/availability/admin?guard="+encodeURIComponent(guardQuery)+"&month="+encodeURIComponent(scheduleMonth()),{method:"GET"});
-    currentGuardAvailability=Array.isArray(data)?data:(data&&data.items)||[];
-    renderScheduleAvailability();
-    if(modalSt)modalSt.textContent="Availability loaded for "+(g.name||g.email)+" for "+scheduleMonth()+".";
-  }catch(e){
-    currentGuardAvailability=[];renderScheduleAvailability();
-    if(modalSt)modalSt.textContent="Could not load availability: "+(e&&e.message?e.message:String(e));
-  }
+  renderScheduleDraft();
+  showSection("admin-manual-schedule");
 }
 function closeScheduleModal(){showSection("admin-dashboard");}
 function addShiftToScheduleDraft(){
@@ -1634,8 +1835,10 @@ function addShiftToScheduleDraft(){
 function cancelScheduleBuild(){scheduleDraft=[];renderScheduleDraft();showSection("admin-dashboard");}
 async function sendScheduleFromAdmin(){
   if(!authToken)return alert("Login first.");
-  const guards=selectedScheduleGuards(),st=document.getElementById("schedule-modal-status");
-  if(!guards.length){if(st)st.textContent="Choose at least one registered guard.";return;}
+  await loadAdminUsers();
+  const guards=selectedScheduleGuards().filter(g=>adminUserMap[g.id]);
+  const st=document.getElementById("schedule-modal-status");
+  if(!guards.length){if(st)st.textContent="Choose at least one active registered guard.";return;}
   if(!scheduleDraft.length){if(st)st.textContent="Add at least one working day before sending.";return;}
   const note=(document.getElementById("schedule-note")||{}).value||"";
   if(!(await confirmAction("Send this "+scheduleDraft.length+"-shift schedule to "+guards.length+" selected guard"+(guards.length===1?"":"s")+"? Each guard receives their own OpsGuard schedule.","Send Schedules")))return;
@@ -1807,10 +2010,9 @@ async function loadAdminScheduleConfirmations(){
     const data=await rawApi("/schedules",{method:"GET",silent:true});
     const items=Array.isArray(data)?data:[];
     adminScheduleConfirmationsCache=items;
+    const rows=[];
     let confirmed=0,pending=0;
     const confirmedKeys=new Set(),newEvents=[];
-    tbody.innerHTML="";
-    if(!items.length){tbody.innerHTML="<tr><td colspan='8'>No schedules have been sent yet.</td></tr>";if(summary)summary.textContent="";return;}
     items.slice(0,100).forEach(function(sch){
       (sch.shifts||[]).forEach(function(sh,index){
         const isConfirmed=(sch.status==="confirmed"||sh.status==="confirmed");
@@ -1819,23 +2021,45 @@ async function loadAdminScheduleConfirmations(){
           confirmed++;confirmedKeys.add(key);
           if(adminConfirmationsInitialized&&!adminSeenConfirmedShifts.has(key))newEvents.push((sch.guard||"Guard")+" confirmed "+(sh.date||"their shift")+" ("+(sh.start_time||"")+"-"+(sh.end_time||"TBD")+")");
         }else pending++;
-        if(adminConfirmationQuickFilter==="pending"&&isConfirmed)return;
-        const tr=document.createElement("tr");
-        if(isConfirmed)tr.style.background="#ecfdf5";
-        const adminAction="<button type='button' class='primary admin-delete-shift danger-action'>Delete Shift</button>";
-        tr.innerHTML="<td>"+(sch.guard||"")+"</td><td>"+(sh.venue||"—")+"</td><td>"+(sh.shift_code||"—")+"</td><td>"+(sh.date||"")+"</td><td>"+(sh.start_time||"")+" – "+(sh.end_time||"TBD")+"</td><td style='font-weight:700'>"+(isConfirmed?"CONFIRMED ✓ — LOCKED FOR GUARD":"Awaiting guard")+"</td><td>"+(isConfirmed?formatScheduleTimestamp(sh.confirmed_at||sch.confirmed_at):"")+"</td><td>"+adminAction+"</td>";
-        const deleteBtn=tr.querySelector(".admin-delete-shift");if(deleteBtn)deleteBtn.addEventListener("click",()=>adminDeleteScheduledShift(sch.id,index,sch.guard,sh));
-        tbody.appendChild(tr);
+        rows.push({schedule:sch,shift:sh,index,isConfirmed,guard:sch.guard||"",venue:sh.venue||"",date:sh.date||""});
       });
     });
-    if(!tbody.children.length)tbody.innerHTML=adminConfirmationQuickFilter==="pending"?"<tr><td colspan='8'>No shifts are awaiting confirmation.</td></tr>":"<tr><td colspan='8'>No assigned shifts.</td></tr>";
-    if(summary)summary.textContent=adminConfirmationQuickFilter==="pending"?"Showing awaiting confirmation: "+pending+".":"Confirmed shifts: "+confirmed+" | Awaiting confirmation: "+pending+".";
+    let visibleRows=rows;
+    if(adminConfirmationQuickFilter==="pending"){
+      const pendingRows=rows.filter(r=>!r.isConfirmed);
+      populateQueueFilterOptions("confirmation",pendingRows,r=>r.guard);
+      visibleRows=filterRowsByQueueControls(pendingRows,"confirmation",r=>r.guard);
+    }
+    tbody.innerHTML="";
+    if(!items.length){
+      tbody.innerHTML="<tr><td colspan='8'>No schedules have been sent yet.</td></tr>";
+      if(summary)summary.textContent="";
+      return;
+    }
+    visibleRows.forEach(function(row){
+      const sch=row.schedule,sh=row.shift,index=row.index,isConfirmed=row.isConfirmed;
+      const tr=document.createElement("tr");
+      if(isConfirmed)tr.style.background="#ecfdf5";
+      const adminAction="<button type='button' class='primary admin-delete-shift danger-action'>Delete Shift</button>";
+      tr.innerHTML="<td>"+(sch.guard||"")+"</td><td>"+(sh.venue||"—")+"</td><td>"+(sh.shift_code||"—")+"</td><td>"+(sh.date||"")+"</td><td>"+(sh.start_time||"")+" – "+(sh.end_time||"TBD")+"</td><td style='font-weight:700'>"+(isConfirmed?"CONFIRMED ✓ — LOCKED FOR GUARD":"Awaiting guard")+"</td><td>"+(isConfirmed?formatScheduleTimestamp(sh.confirmed_at||sch.confirmed_at):"")+"</td><td>"+adminAction+"</td>";
+      const deleteBtn=tr.querySelector(".admin-delete-shift");if(deleteBtn)deleteBtn.addEventListener("click",()=>adminDeleteScheduledShift(sch.id,index,sch.guard,sh));
+      tbody.appendChild(tr);
+    });
+    if(!tbody.children.length)tbody.innerHTML=adminConfirmationQuickFilter==="pending"?"<tr><td colspan='8'>No awaiting confirmations match these filters.</td></tr>":"<tr><td colspan='8'>No assigned shifts.</td></tr>";
+    if(summary){
+      summary.textContent=adminConfirmationQuickFilter==="pending"
+        ?"Showing "+visibleRows.length+" of "+pending+" awaiting confirmation."
+        :"Confirmed shifts: "+confirmed+" | Awaiting confirmation: "+pending+".";
+    }
     adminSeenConfirmedShifts=confirmedKeys;adminConfirmationsInitialized=true;
     if(newEvents.length&&banner){
       banner.style.display="block";
       banner.textContent="NEW SHIFT CONFIRMATION: "+newEvents.slice(0,4).join(" | ")+(newEvents.length>4?" | +"+(newEvents.length-4)+" more":"");
     }
-  }catch(e){tbody.innerHTML="<tr><td colspan='8'>Could not load shift confirmations.</td></tr>";if(summary)summary.textContent="";}
+  }catch(e){
+    tbody.innerHTML="<tr><td colspan='8'>Could not load shift confirmations.</td></tr>";
+    if(summary)summary.textContent="";
+  }
 }
 
 function wireAuthButtons(){

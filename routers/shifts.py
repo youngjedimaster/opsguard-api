@@ -169,6 +169,7 @@ def _build_shift_query(
     from_date: Optional[str] = None,
     to_date: Optional[str] = None,
     user_lookup: Optional[dict[str, dict]] = None,
+    guard_id: Optional[str] = None,
 ) -> dict:
     query: dict[str, Any] = {}
 
@@ -190,7 +191,9 @@ def _build_shift_query(
         else:
             query["venue"] = {"$regex": "^" + re.escape(venue_text) + "$", "$options": "i"}
 
-    if guard:
+    if guard_id:
+        query["user_id"] = guard_id.strip()
+    elif guard:
         guard_text = guard.strip()
         guard_clauses: list[dict] = [
             {"guard_name": {"$regex": re.escape(guard_text), "$options": "i"}},
@@ -226,9 +229,10 @@ async def _load_filtered_shifts(
     from_date: Optional[str] = None,
     to_date: Optional[str] = None,
     hourly_rate: float = DEFAULT_HOURLY_RATE,
+    guard_id: Optional[str] = None,
 ) -> list[dict]:
     user_lookup = await _load_users_lookup(db)
-    query = _build_shift_query(guard, venue, date, from_date, to_date, user_lookup)
+    query = _build_shift_query(guard, venue, date, from_date, to_date, user_lookup, guard_id)
 
     cursor = db.shifts.find(query)
     items: list[dict] = []
@@ -364,7 +368,8 @@ async def admin_list_venues(
 
 @router.get("")
 async def admin_list_shifts(
-    guard: Optional[str] = Query(None, description="Optional guard name filter"),
+    guard: Optional[str] = Query(None, description="Optional historical guard name filter"),
+    guard_id: Optional[str] = Query(None, description="Optional registered guard account id filter"),
     venue: Optional[str] = Query(None, description="Optional venue filter"),
     date: Optional[str] = Query(None, description="Exact date in YYYY-MM-DD format"),
     from_date: Optional[str] = Query(None, description="Start date in YYYY-MM-DD format"),
@@ -373,7 +378,7 @@ async def admin_list_shifts(
     admin=Depends(get_admin_user),
     db=Depends(get_db),
 ):
-    items = await _load_filtered_shifts(db, guard, venue, date, from_date, to_date, hourly_rate)
+    items = await _load_filtered_shifts(db, guard, venue, date, from_date, to_date, hourly_rate, guard_id)
     totals = _build_totals(items)
     return {"items": items, "totals": totals}
 
