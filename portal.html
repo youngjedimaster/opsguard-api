@@ -1140,6 +1140,18 @@ function initCalendarPreviewDates(){
 }
 let calendarPreviewCache=[];
 const calendarPreviewStartOverrides=new Map();
+function calendarPreviewRowKey(row){
+  const calendarId=String(row&&row.calendar_id||"").trim();
+  const eventId=String(row&&row.google_event_id||"").trim();
+  if(calendarId&&eventId)return calendarId+"::"+eventId;
+  return [
+    calendarId,
+    String(row&&row.date||"").trim(),
+    String(row&&row.venue||"").trim(),
+    String(row&&row.shift_code||"").trim(),
+    String(row&&row.calendar_start_time||row&&row.start_time||"").trim()
+  ].join("::");
+}
 let calendarPreviewLoading=false;
 let calendarPreviewShiftFilters=new Set();
 
