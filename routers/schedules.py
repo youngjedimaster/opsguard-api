@@ -106,35 +106,123 @@ async def create_schedule(
                 "availability_status": "pending",
                 "availability_confirmed_at": None,
                 "availability_confirmed_by_guard_id": None,
+                "assignment_updated_at": datetime.utcnow(),
             }
         )
 
     skipped_duplicates = []
+    updated_duplicates = []
+    locked_duplicates = []
     if guard_id:
-        existing_pairs: set[tuple[str, str]] = set()
-        cursor = db.schedules.find(
-            {"guard_id": guard_id},
-            {"shifts.calendar_id": 1, "shifts.google_event_id": 1},
-        )
+        existing_by_pair: dict[tuple[str, str], tuple[dict, int]] = {}
+        cursor = db.schedules.find({"guard_id": guard_id})
         async for existing_schedule in cursor:
-            for existing_shift in existing_schedule.get("shifts") or []:
+            for existing_index, existing_shift in enumerate(existing_schedule.get("shifts") or []):
                 cal_id = str(existing_shift.get("calendar_id") or "").strip()
                 event_id = str(existing_shift.get("google_event_id") or "").strip()
                 if cal_id and event_id:
-                    existing_pairs.add((cal_id, event_id))
+                    existing_by_pair[(cal_id, event_id)] = (existing_schedule, existing_index)
 
+        schedule_revisions: dict[str, dict] = {}
         filtered_shifts = []
         request_pairs: set[tuple[str, str]] = set()
+        compare_fields = (
+            "date", "venue", "shift_code", "start_time", "end_time",
+            "calendar_id", "google_event_id", "calendar_start_time", "calendar_end_time",
+        )
+
         for shift in clean_shifts:
             cal_id = str(shift.get("calendar_id") or "").strip()
             event_id = str(shift.get("google_event_id") or "").strip()
             pair = (cal_id, event_id) if cal_id and event_id else None
-            if pair and (pair in existing_pairs or pair in request_pairs):
+
+            if pair and pair in request_pairs:
                 skipped_duplicates.append(shift)
                 continue
             if pair:
                 request_pairs.add(pair)
-            filtered_shifts.append(shift)
+
+            existing_info = existing_by_pair.get(pair) if pair else None
+            if not existing_info:
+                filtered_shifts.append(shift)
+                continue
+
+            existing_schedule, existing_index = existing_info
+            schedule_key = str(existing_schedule["_id"])
+            work = schedule_revisions.get(schedule_key)
+            if work is None:
+                work = {
+                    "doc": existing_schedule,
+                    "shifts": [dict(sh) for sh in (existing_schedule.get("shifts") or [])],
+                    "changed": False,
+                }
+                schedule_revisions[schedule_key] = work
+
+            existing_shift = work["shifts"][existing_index]
+            schedule_locked = (existing_schedule.get("status") or "pending") == "confirmed"
+            shift_locked = (existing_shift.get("status") or "pending") == "confirmed"
+            if schedule_locked or shift_locked:
+                locked_duplicates.append(shift)
+                continue
+
+            changed = any(
+                (existing_shift.get(field) or "") != (shift.get(field) or "")
+                for field in compare_fields
+            )
+            if not changed:
+                skipped_duplicates.append(shift)
+                continue
+
+            now = datetime.utcnow()
+            revised = dict(existing_shift)
+            revised.update({
+                "date": shift.get("date"),
+                "venue": shift.get("venue"),
+                "shift_code": shift.get("shift_code"),
+                "start_time": shift.get("start_time"),
+                "end_time": shift.get("end_time"),
+                "calendar_id": shift.get("calendar_id"),
+                "google_event_id": shift.get("google_event_id"),
+                "calendar_start_time": shift.get("calendar_start_time"),
+                "calendar_end_time": shift.get("calendar_end_time"),
+                "calendar_exported_at": None,
+                "calendar_export_method": None,
+                "status": "pending",
+                "confirmed_at": None,
+                "availability_status": "pending",
+                "availability_confirmed_at": None,
+                "availability_confirmed_by_guard_id": None,
+                "assignment_updated_at": now,
+            })
+            work["shifts"][existing_index] = revised
+            work["changed"] = True
+            updated_duplicates.append(shift)
+
+        for work in schedule_revisions.values():
+            if not work["changed"]:
+                continue
+            existing_schedule = work["doc"]
+            existing_shifts = work["shifts"]
+            remaining_confirmed = sum(1 for sh in existing_shifts if sh.get("status") == "confirmed")
+            if remaining_confirmed == len(existing_shifts) and existing_shifts:
+                parent_status = "confirmed"
+            elif remaining_confirmed:
+                parent_status = "partial"
+            else:
+                parent_status = "pending"
+
+            now = datetime.utcnow()
+            await db.schedules.update_one(
+                {"_id": existing_schedule["_id"]},
+                {"$set": {
+                    "shifts": existing_shifts,
+                    "status": parent_status,
+                    "confirmed_at": None if parent_status != "confirmed" else existing_schedule.get("confirmed_at"),
+                    "confirmed_by_guard_id": None if parent_status != "confirmed" else existing_schedule.get("confirmed_by_guard_id"),
+                    "updated_at": now,
+                }},
+            )
+
         clean_shifts = filtered_shifts
 
     if not clean_shifts:
@@ -143,8 +231,14 @@ async def create_schedule(
             "duplicate_only": True,
             "guard": guard,
             "guard_id": guard_id,
+            "updated_existing": len(updated_duplicates),
+            "locked_duplicates": len(locked_duplicates),
             "skipped_duplicates": len(skipped_duplicates),
-            "message": "All selected Calendar shifts are already assigned to this guard.",
+            "message": (
+                f"{len(updated_duplicates)} existing shift(s) updated."
+                if updated_duplicates
+                else "All selected Calendar shifts are already assigned to this guard."
+            ),
         }
 
     doc = {
@@ -176,6 +270,8 @@ async def create_schedule(
         }
     )
     response["created"] = True
+    response["updated_existing"] = len(updated_duplicates)
+    response["locked_duplicates"] = len(locked_duplicates)
     response["skipped_duplicates"] = len(skipped_duplicates)
     return response
 
