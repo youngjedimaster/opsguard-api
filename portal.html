@@ -29,7 +29,33 @@
   #my-schedule-table .guard-schedule-guard{display:none!important}
   #my-schedule-table .schedule-confirm-actions{justify-content:flex-start}
   #my-schedule-table .schedule-availability-btn{width:auto;max-width:100%}
-}.needs-approval-batch-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:4px 0 9px;padding:8px 10px;border:1px solid #dbe3ee;border-radius:10px;background:#f8fafc}.needs-approval-batch-bar.hidden{display:none!important}.needs-approval-batch-count{font-size:.76rem;font-weight:800;color:#334155}.needs-approval-batch-actions{display:flex;gap:6px;flex-wrap:wrap}.needs-approval-batch-actions .primary{padding:6px 9px;font-size:.72rem}.needs-approval-selected-row{background:#eef4ff!important;outline:2px solid #8fb0ef;outline-offset:-2px}.needs-approval-select-cell{text-align:center!important;width:38px!important;min-width:38px!important}.needs-approval-select-cell input{width:18px!important;height:18px!important;margin:0!important}@media(max-width:560px){.needs-approval-batch-bar{align-items:stretch}.needs-approval-batch-actions{width:100%}.needs-approval-batch-actions .primary{flex:1 1 auto}.needs-approval-batch-count{width:100%}}</style></head><body data-environment="__OPSGUARD_ENV__">
+}.needs-approval-batch-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:4px 0 9px;padding:8px 10px;border:1px solid #dbe3ee;border-radius:10px;background:#f8fafc}.needs-approval-batch-bar.hidden{display:none!important}.needs-approval-batch-count{font-size:.76rem;font-weight:800;color:#334155}.needs-approval-batch-actions{display:flex;gap:6px;flex-wrap:wrap}.needs-approval-batch-actions .primary{padding:6px 9px;font-size:.72rem}.needs-approval-selected-row{background:#eef4ff!important;outline:2px solid #8fb0ef;outline-offset:-2px}.needs-approval-select-cell{text-align:center!important;width:38px!important;min-width:38px!important}.needs-approval-select-cell input{width:18px!important;height:18px!important;margin:0!important}@media(max-width:560px){.needs-approval-batch-bar{align-items:stretch}.needs-approval-batch-actions{width:100%}.needs-approval-batch-actions .primary{flex:1 1 auto}.needs-approval-batch-count{width:100%}}.confirmation-action-bar{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:8px 0 10px}
+.confirmation-top-btn{min-width:0;padding:8px 7px!important;font-size:.76rem!important;white-space:nowrap}
+.schedule-confirm-actions{display:flex;gap:5px;align-items:center;flex-wrap:wrap}
+.schedule-confirm-actions .primary{padding:6px 8px!important;font-size:.7rem!important}
+.calendar-exported-state{font-weight:800;color:#166534;white-space:nowrap}
+.confirmation-calendar-panel{border:1px solid #dbe2ea;border-radius:12px;background:#fff;padding:10px;margin:8px 0 12px}
+.confirmation-calendar-toolbar{display:grid;grid-template-columns:38px minmax(0,1fr) auto 38px;gap:6px;align-items:center;margin-bottom:8px}
+.confirmation-calendar-toolbar strong{text-align:center;font-size:.9rem}
+.calendar-nav-btn{padding:7px 6px!important;min-width:0!important}
+.confirmation-calendar-legend{display:flex;gap:10px;flex-wrap:wrap;font-size:.68rem;margin:0 0 8px;color:#475569}
+.confirmation-calendar-legend span{display:flex;align-items:center;gap:4px}
+.confirmation-calendar-dot{display:inline-block;width:9px;height:9px;border-radius:50%}
+.confirmation-calendar-dot.confirmed{background:#15803d}.confirmation-calendar-dot.available{background:#2563eb}.confirmation-calendar-dot.awaiting{background:#b91c1c}
+.confirmation-calendar-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.confirmation-calendar-grid{display:grid;grid-template-columns:repeat(7,minmax(130px,1fr));min-width:910px;border:1px solid #e5e7eb;border-radius:10px;overflow:hidden;background:#e5e7eb;gap:1px}
+.confirmation-calendar-weekday{background:#f8fafc;padding:7px;text-align:center;font-size:.66rem;font-weight:800;text-transform:uppercase;color:#64748b}
+.confirmation-calendar-day{background:#fff;min-height:118px;padding:6px;overflow:hidden}
+.confirmation-calendar-day.outside{background:#f8fafc;color:#94a3b8}
+.confirmation-calendar-day.today{box-shadow:inset 0 0 0 2px #24489a}
+.confirmation-calendar-day-number{font-size:.7rem;font-weight:800;margin-bottom:4px}
+.confirmation-calendar-event{display:block;border-radius:6px;padding:4px 5px;margin:3px 0;font-size:.62rem;line-height:1.2;overflow-wrap:anywhere;border-left:3px solid transparent}
+.confirmation-calendar-event.confirmed{background:#dcfce7;border-left-color:#15803d;color:#14532d}
+.confirmation-calendar-event.available{background:#dbeafe;border-left-color:#2563eb;color:#1e3a8a}
+.confirmation-calendar-event.awaiting{background:#fee2e2;border-left-color:#b91c1c;color:#7f1d1d}
+.confirmation-calendar-event strong{display:block;font-size:.64rem}
+@media(max-width:560px){.confirmation-action-bar{gap:4px}.confirmation-top-btn{padding:8px 4px!important;font-size:.66rem!important}.confirmation-calendar-grid{grid-template-columns:repeat(7,132px);min-width:924px}.confirmation-calendar-toolbar{grid-template-columns:34px minmax(0,1fr) auto 34px}}
+</style></head><body data-environment="__OPSGUARD_ENV__">
 <header><h1>OpsGuard Portal <span class="env-badge" id="env-badge">STAGING</span></h1><div class="nav-row">
 <button class="nav-btn" id="nav-login" onclick="showSection('login')">Login</button>
 <button class="nav-btn" id="nav-submit" onclick="showSection('submit')">Submit Hours</button>
@@ -238,7 +264,28 @@
     <option value="all">All statuses</option>
   </select></div>
 </div>
-<div class="dash-btn-row" id="confirmation-normal-actions"><button class="primary secondary" onclick="loadAdminScheduleConfirmations()" type="button">Refresh confirmations</button></div>
+<div class="confirmation-action-bar" id="confirmation-normal-actions">
+  <button class="primary secondary confirmation-top-btn" onclick="loadAdminScheduleConfirmations()" type="button">Refresh</button>
+  <button class="primary secondary confirmation-top-btn" id="confirmation-calendar-toggle" onclick="toggleConfirmationCalendar()" type="button">Show on Calendar</button>
+  <button class="primary confirmation-top-btn" onclick="exportAllConfirmedToGoogle()" type="button">Export All</button>
+</div>
+<div class="confirmation-calendar-panel hidden" id="confirmation-calendar-panel">
+  <div class="confirmation-calendar-toolbar">
+    <button class="primary secondary calendar-nav-btn" onclick="moveConfirmationCalendarMonth(-1)" type="button">‹</button>
+    <strong id="confirmation-calendar-month">Calendar</strong>
+    <button class="primary secondary calendar-nav-btn" onclick="showConfirmationCalendarToday()" type="button">Today</button>
+    <button class="primary secondary calendar-nav-btn" onclick="moveConfirmationCalendarMonth(1)" type="button">›</button>
+  </div>
+  <div class="confirmation-calendar-legend">
+    <span><i class="confirmation-calendar-dot confirmed"></i>Confirmed</span>
+    <span><i class="confirmation-calendar-dot available"></i>Availability submitted</span>
+    <span><i class="confirmation-calendar-dot awaiting"></i>Awaiting availability</span>
+  </div>
+  <div class="confirmation-calendar-scroll">
+    <div class="confirmation-calendar-grid" id="confirmation-calendar-grid"></div>
+  </div>
+  <p class="small">Calendar view uses the current Date, Venue and Guard filters and shows all statuses together.</p>
+</div>
 <p class="small" id="admin-schedule-confirmation-summary"></p>
 <p id="admin-confirmation-alert" role="status" style="display:none;font-weight:700;padding:10px;margin:6px 0;background:#dcfce7;color:#14532d;border-radius:8px"></p>
 <div class="table-scroll confirmations-table-scroll">
@@ -2393,12 +2440,25 @@ async function createCalendarEventForShift(scheduleId,shiftIndex){
 }
 
 async function exportConfirmedShiftToGoogle(scheduleId,shiftIndex){
-  const sch=adminScheduleConfirmationsCache.find(x=>String(x.id)===String(scheduleId));if(!sch)return alert("Schedule not found. Refresh confirmations.");
-  const sh=(sch.shifts||[])[shiftIndex];if(!sh)return alert("Shift not found.");
+  const sch=adminScheduleConfirmationsCache.find(x=>String(x.id)===String(scheduleId));
+  if(!sch)return alert("Schedule not found. Refresh confirmations.");
+  const sh=(sch.shifts||[])[shiftIndex];
+  if(!sh)return alert("Shift not found.");
   if(!(sch.status==="confirmed"||sh.status==="confirmed"))return alert("Only confirmed shifts can be exported.");
-  const url=googleCalendarUrl(sch.guard||"",sh);if(!url)return alert("This shift has an invalid date/time.");
-  const w=window.open(url,"_blank");if(!w)return alert("Your browser blocked the Google Calendar window. Allow pop-ups and try again.");try{w.opener=null;}catch{}
-  try{await markCalendarExported(scheduleId,shiftIndex,"google-template");await loadAdminScheduleConfirmations();}catch(e){console.warn("Could not save calendar export status",e);}
+  if(sh.calendar_exported_at)return alert("This shift has already been exported.");
+  const label=[sh.date,sh.venue,sh.shift_code,sch.guard].filter(Boolean).join(" · ");
+  if(!(await confirmAction("Export "+label+" to its linked Google Calendar slot? Only the guard name in the event title will be updated. The S-number and Calendar times will not change.","Export")))return;
+  const summary=document.getElementById("admin-schedule-confirmation-summary");
+  if(summary)summary.textContent="Exporting confirmed shift to Google Calendar…";
+  try{
+    const data=await rawApi("/calendar-sync/export/"+encodeURIComponent(scheduleId)+"/shifts/"+shiftIndex,{method:"POST",silent:true});
+    if(summary)summary.textContent=(data.changed_title?"Exported guard name to Google Calendar.":"Calendar already had the correct guard name.")+" Calendar times unchanged.";
+    await loadAdminScheduleConfirmations();
+  }catch(e){
+    const message=e&&e.message?e.message:String(e);
+    if(summary)summary.textContent="Export failed: "+message;
+    alert("Export failed: "+message);
+  }
 }
 function icsEscape(v){return String(v||"").replace(/\\/g,"\\\\").replace(/\n/g,"\\n").replace(/,/g,"\\,").replace(/;/g,"\\;");}
 function confirmedUnexportedRows(){
@@ -2406,15 +2466,38 @@ function confirmedUnexportedRows(){
     if((sch.status==="confirmed"||sh.status==="confirmed")&&!sh.calendar_exported_at)out.push({sch,sh,index});
   }));return out;
 }
+async function exportAllConfirmedToGoogle(){
+  const eligible=[];
+  (adminScheduleConfirmationsCache||[]).forEach(sch=>(sch.shifts||[]).forEach((sh,index)=>{
+    if((sch.status==="confirmed"||sh.status==="confirmed")&&!sh.calendar_exported_at)eligible.push({sch,sh,index});
+  }));
+  if(!eligible.length)return alert("There are no confirmed, unexported shifts.");
+  if(!(await confirmAction("Export all "+eligible.length+" confirmed, unexported shift"+(eligible.length===1?"":"s")+" to their linked Google Calendar slots? Only guard names in the event titles will be updated. S-numbers and Calendar times will not change.","Export All")))return;
+  const summary=document.getElementById("admin-schedule-confirmation-summary");
+  let exported=0,skipped=0,loops=0,limited=false,skipDetails=[];
+  try{
+    do{
+      const data=await rawApi("/calendar-sync/export-confirmed",{method:"POST",silent:true});
+      const done=Array.isArray(data.exported)?data.exported:[];
+      const missed=Array.isArray(data.skipped)?data.skipped:[];
+      exported+=done.length;skipped+=missed.length;
+      skipDetails.push(...missed.slice(0,10));
+      limited=!!data.limited;
+      loops++;
+    }while(limited&&loops<20);
+    await loadAdminScheduleConfirmations();
+    const message="Export All complete: "+exported+" exported"+(skipped?"; "+skipped+" skipped":"")+(limited?"; more remain":"")+".";
+    if(summary)summary.textContent=message;
+    if(skipped||limited)alert(message+(skipDetails.length?" "+skipDetails.map(x=>(x.date||"")+" "+(x.venue||"")+" "+(x.shift_code||"")+": "+(x.reason||"Skipped")).join(" | "):""));
+  }catch(e){
+    const message=e&&e.message?e.message:String(e);
+    if(summary)summary.textContent="Export All failed: "+message;
+    alert("Export All failed: "+message);
+  }
+}
+
 async function exportAllConfirmedCalendar(){
-  const rows=confirmedUnexportedRows();if(!rows.length)return alert("There are no confirmed, unexported shifts.");
-  const lines=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Titan Global//OpsGuard//EN","CALSCALE:GREGORIAN","METHOD:PUBLISH"];
-  rows.forEach(r=>{const stamps=calendarShiftStamps(r.sh);if(!stamps)return;lines.push("BEGIN:VEVENT","UID:opsguard-"+r.sch.id+"-"+r.index+"@titannglobal.com","DTSTAMP:"+new Date().toISOString().replace(/[-:]/g,"").replace(/\.\d{3}Z$/,"Z"),"DTSTART;TZID=America/Toronto:"+stamps.start,"DTEND;TZID=America/Toronto:"+stamps.end,"SUMMARY:"+icsEscape(confirmedShiftTitle(r.sch.guard||"",r.sh)),"LOCATION:"+icsEscape(r.sh.venue||""),"DESCRIPTION:"+icsEscape("Confirmed OpsGuard shift"+(r.sh.venue?" — "+r.sh.venue:"")),"END:VEVENT");});
-  lines.push("END:VCALENDAR");
-  const blob=new Blob([lines.join("\r\n")+"\r\n"],{type:"text/calendar;charset=utf-8"});
-  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="TGS-confirmed-shifts.ics";document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},1000);
-  await Promise.all(rows.map(r=>markCalendarExported(r.sch.id,r.index,"ics").catch(()=>null)));
-  await loadAdminScheduleConfirmations();
+  return exportAllConfirmedToGoogle();
 }
 
 
@@ -2447,6 +2530,98 @@ async function adminDeleteScheduledShift(scheduleId,shiftIndex,guard,sh){
     await rawApi("/schedules/"+encodeURIComponent(scheduleId)+"/shifts/"+shiftIndex,{method:"DELETE",silent:true});
     await loadAdminScheduleConfirmations();
   }catch(e){alert("Could not delete shift: "+(e&&e.message?e.message:String(e)));}
+}
+
+
+let confirmationCalendarDate=new Date();
+function confirmationCalendarRows(){
+  const rows=[];
+  (adminScheduleConfirmationsCache||[]).forEach(function(sch){
+    (sch.shifts||[]).forEach(function(sh,index){
+      const isConfirmed=(sch.status==="confirmed"||sh.status==="confirmed");
+      const isAvailable=isConfirmed||sh.availability_status==="confirmed";
+      rows.push({
+        schedule:sch,shift:sh,index,
+        isConfirmed,isAvailable,
+        guard:sch.guard||sh.guard||"",
+        venue:sh.venue||"",date:sh.date||""
+      });
+    });
+  });
+  return filterRowsByQueueControls(rows,"confirmation",r=>r.guard);
+}
+function confirmationCalendarStatus(row){
+  if(row.isConfirmed)return "confirmed";
+  if(row.isAvailable)return "available";
+  return "awaiting";
+}
+function confirmationCalendarTimeValue(value){
+  const m=String(value||"").trim().toUpperCase().match(/^([0-9]{1,2}):([0-9]{2})[ ]*(AM|PM)$/);
+  if(!m)return 9999;
+  let h=Number(m[1])%12;if(m[3]==="PM")h+=12;
+  return h*60+Number(m[2]);
+}
+function renderConfirmationCalendar(){
+  const panel=document.getElementById("confirmation-calendar-panel"),grid=document.getElementById("confirmation-calendar-grid"),label=document.getElementById("confirmation-calendar-month");
+  if(!panel||!grid||panel.classList.contains("hidden"))return;
+  const y=confirmationCalendarDate.getFullYear(),m=confirmationCalendarDate.getMonth();
+  if(label)label.textContent=confirmationCalendarDate.toLocaleDateString("en-CA",{month:"long",year:"numeric"});
+  const weekdays=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+  let html=weekdays.map(d=>"<div class='confirmation-calendar-weekday'>"+d+"</div>").join("");
+  const first=new Date(y,m,1),start=new Date(y,m,1-first.getDay());
+  const today=new Date();today.setHours(0,0,0,0);
+  const rows=confirmationCalendarRows();
+  const byDate=new Map();
+  rows.forEach(row=>{
+    if(!row.date)return;
+    if(!byDate.has(row.date))byDate.set(row.date,[]);
+    byDate.get(row.date).push(row);
+  });
+  byDate.forEach(list=>list.sort((a,b)=>confirmationCalendarTimeValue(a.shift.start_time)-confirmationCalendarTimeValue(b.shift.start_time)||(a.guard||"").localeCompare(b.guard||"")));
+  for(let i=0;i<42;i++){
+    const d=new Date(start);d.setDate(start.getDate()+i);
+    const ds=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+    const outside=d.getMonth()!==m;
+    const isToday=d.getTime()===today.getTime();
+    const events=(byDate.get(ds)||[]).map(row=>{
+      const sh=row.shift,status=confirmationCalendarStatus(row);
+      const title=[sh.start_time||"",sh.shift_code||"",row.guard||"Guard"].filter(Boolean).join(" · ");
+      const detail=[row.venue,status==="confirmed"?"Confirmed":status==="available"?"Availability submitted":"Awaiting availability"].filter(Boolean).join(" — ");
+      return "<div class='confirmation-calendar-event "+status+"' title='"+String(detail).replace(/'/g,"&#39;")+"'><strong>"+title+"</strong><span>"+(row.venue||"")+"</span></div>";
+    }).join("");
+    html+="<div class='confirmation-calendar-day"+(outside?" outside":"")+(isToday?" today":"")+"'><div class='confirmation-calendar-day-number'>"+d.getDate()+"</div>"+events+"</div>";
+  }
+  grid.innerHTML=html;
+}
+function chooseInitialConfirmationCalendarMonth(){
+  const from=document.getElementById("confirmation-queue-date-from")?.value||"";
+  if(from){
+    const p=from.split("-").map(Number);
+    if(p.length===3&&p.every(Number.isFinite)){confirmationCalendarDate=new Date(p[0],p[1]-1,1);return;}
+  }
+  const rows=confirmationCalendarRows().filter(r=>r.date).sort((a,b)=>String(a.date).localeCompare(String(b.date)));
+  const todayText=new Date().toISOString().slice(0,10);
+  const target=rows.find(r=>r.date>=todayText)||rows[0];
+  if(target){
+    const p=target.date.split("-").map(Number);
+    if(p.length===3&&p.every(Number.isFinite)){confirmationCalendarDate=new Date(p[0],p[1]-1,1);return;}
+  }
+  const now=new Date();confirmationCalendarDate=new Date(now.getFullYear(),now.getMonth(),1);
+}
+function toggleConfirmationCalendar(){
+  const panel=document.getElementById("confirmation-calendar-panel"),btn=document.getElementById("confirmation-calendar-toggle");
+  if(!panel)return;
+  const opening=panel.classList.contains("hidden");
+  panel.classList.toggle("hidden",!opening);
+  if(btn)btn.textContent=opening?"Hide Calendar":"Show on Calendar";
+  if(opening){chooseInitialConfirmationCalendarMonth();renderConfirmationCalendar();}
+}
+function moveConfirmationCalendarMonth(delta){
+  confirmationCalendarDate=new Date(confirmationCalendarDate.getFullYear(),confirmationCalendarDate.getMonth()+Number(delta||0),1);
+  renderConfirmationCalendar();
+}
+function showConfirmationCalendarToday(){
+  const now=new Date();confirmationCalendarDate=new Date(now.getFullYear(),now.getMonth(),1);renderConfirmationCalendar();
 }
 
 async function loadAdminScheduleConfirmations(){
@@ -2502,14 +2677,20 @@ async function loadAdminScheduleConfirmations(){
         :isAvailable
           ?"<button type='button' class='primary admin-confirm-shift'>Confirm Shift</button>"
           :"<button type='button' class='primary admin-confirm-shift' disabled>Confirm Shift</button>";
+      const exportAction=isConfirmed
+        ?(sh.calendar_exported_at
+          ?"<span class='calendar-exported-state'>Exported ✓</span>"
+          :"<button type='button' class='primary secondary admin-export-shift'>Export</button>")
+        :"";
       const deleteAction="<button type='button' class='primary admin-delete-shift danger-action'>Delete Shift</button>";
-      const adminAction="<div class='schedule-confirm-actions'>"+confirmAction+deleteAction+"</div>";
+      const adminAction="<div class='schedule-confirm-actions'>"+confirmAction+exportAction+deleteAction+"</div>";
       const availabilityText=isAvailable
         ?"AVAILABLE ✓"+(sh.availability_confirmed_at?"<div class='small'>"+formatScheduleTimestamp(sh.availability_confirmed_at)+"</div>":"")
         :"Awaiting guard";
       const shiftText=isConfirmed?"CONFIRMED BY ADMIN ✓ — LOCKED":isAvailable?"Ready for admin decision":"Waiting for guard availability";
       tr.innerHTML="<td>"+(sch.guard||"")+"</td><td>"+(sh.venue||"—")+"</td><td>"+(sh.shift_code||"—")+"</td><td>"+(sh.date||"")+"</td><td>"+(sh.start_time||"")+" – "+(sh.end_time||"TBD")+"</td><td style='font-weight:700'>"+availabilityText+"</td><td style='font-weight:700'>"+shiftText+"</td><td>"+(isConfirmed?formatScheduleTimestamp(sh.confirmed_at||sch.confirmed_at):"")+"</td><td>"+adminAction+"</td>";
       const confirmBtn=tr.querySelector(".admin-confirm-shift");if(confirmBtn&&!confirmBtn.disabled)confirmBtn.addEventListener("click",()=>adminConfirmScheduledShift(sch.id,index,sch.guard,sh));
+      const exportBtn=tr.querySelector(".admin-export-shift");if(exportBtn)exportBtn.addEventListener("click",()=>exportConfirmedShiftToGoogle(sch.id,index));
       const deleteBtn=tr.querySelector(".admin-delete-shift");if(deleteBtn)deleteBtn.addEventListener("click",()=>adminDeleteScheduledShift(sch.id,index,sch.guard,sh));
       tbody.appendChild(tr);
     });
@@ -2524,6 +2705,7 @@ async function loadAdminScheduleConfirmations(){
       banner.style.display="block";
       banner.textContent="NEW AVAILABILITY: "+newAvailabilityEvents.slice(0,4).join(" | ")+(newAvailabilityEvents.length>4?" | +"+(newAvailabilityEvents.length-4)+" more":"");
     }
+    renderConfirmationCalendar();
   }catch(e){
     tbody.innerHTML="<tr><td colspan='9'>Could not load confirmations.</td></tr>";
     if(summary)summary.textContent="";
