@@ -1524,22 +1524,48 @@ async def _export_one(db, schedule_doc: dict, shift_index: int) -> dict:
     confirmed = (schedule_doc.get("status") == "confirmed") or (shift.get("status") == "confirmed")
     if not confirmed:
         raise HTTPException(status_code=409, detail="Only confirmed shifts can sync to Google Calendar")
+    if shift.get("calendar_exported_at"):
+        raise HTTPException(status_code=409, detail="This shift has already been exported to Google Calendar")
 
     guard = str(schedule_doc.get("guard") or shift.get("guard") or "").strip()
     shift_code = str(shift.get("shift_code") or "").strip().upper()
+    venue = str(shift.get("venue") or "").strip()
+    calendar_id = str(shift.get("calendar_id") or "").strip() or _calendar_map().get(venue, "")
+    event_id = str(shift.get("google_event_id") or "").strip()
     if not guard:
         raise HTTPException(status_code=409, detail="Guard name is missing")
     if not _valid_shift_code(shift_code):
         raise HTTPException(status_code=409, detail="Only S-numbered shifts can sync to Google Calendar")
+    if not calendar_id or not event_id:
+        raise HTTPException(status_code=409, detail="This shift is not linked to its original Google Calendar event; no Calendar event was changed")
 
-    event, calendar_id = await _find_existing_calendar_slot(shift, guard)
-    event_id = _event_id(event)
-    if not event_id:
-        raise HTTPException(status_code=409, detail="Matched calendar event has no event id")
-
-    venue = str(shift.get("venue") or "").strip()
-    target_title = _assignment_title(event, venue, shift_code, guard)
+    # Read the exact linked event before changing anything. We do not search by
+    # OpsGuard start time because admins may intentionally send guards earlier
+    # than the Calendar slot.
+    event = await _get_calendar_event(calendar_id, event_id)
     current_title = _event_summary(event)
+    title_match = SHIFT_TITLE_RE.match(current_title)
+    if not title_match:
+        raise HTTPException(status_code=409, detail="Linked Google Calendar event is no longer an S-numbered shift; no change was made")
+    calendar_shift_code = str(title_match.group(1) or "").strip()
+    if calendar_shift_code.upper() != shift_code:
+        raise HTTPException(status_code=409, detail=f"Linked Calendar event is {calendar_shift_code}, not {shift_code}; no change was made")
+
+    event_venue = _event_venue(event, calendar_id)
+    if event_venue and venue and event_venue != venue:
+        raise HTTPException(status_code=409, detail=f"Linked Calendar event belongs to {event_venue}, not {venue}; no change was made")
+
+    start_raw, end_raw = _event_bounds(event)
+    stored_start = str(shift.get("calendar_start_time") or "").strip()
+    stored_end = str(shift.get("calendar_end_time") or "").strip()
+    if stored_start and start_raw and stored_start != start_raw:
+        raise HTTPException(status_code=409, detail="Linked Calendar event start time changed since OpsGuard imported it; no change was made")
+    if stored_end and end_raw and stored_end != end_raw:
+        raise HTTPException(status_code=409, detail="Linked Calendar event end time changed since OpsGuard imported it; no change was made")
+
+    # Preserve the Calendar event's own S-number token. PATCH_EVENT receives only
+    # a summary/title field, so Google start/end times are never written here.
+    target_title = _assignment_title(event, venue, calendar_shift_code, guard)
     if current_title != target_title:
         await _execute(
             "GOOGLECALENDAR_PATCH_EVENT",
@@ -1552,14 +1578,13 @@ async def _export_one(db, schedule_doc: dict, shift_index: int) -> dict:
         )
 
     now = datetime.utcnow()
-    start_raw, end_raw = _event_bounds(event)
     update = {
         f"shifts.{shift_index}.calendar_id": calendar_id,
         f"shifts.{shift_index}.google_event_id": event_id,
         f"shifts.{shift_index}.calendar_start_time": start_raw,
         f"shifts.{shift_index}.calendar_end_time": end_raw,
         f"shifts.{shift_index}.calendar_exported_at": now,
-        f"shifts.{shift_index}.calendar_export_method": "composio-title-patch",
+        f"shifts.{shift_index}.calendar_export_method": "composio-linked-title-only",
         "updated_at": now,
     }
     await db.schedules.update_one({"_id": schedule_doc["_id"]}, {"$set": update})
@@ -1571,6 +1596,7 @@ async def _export_one(db, schedule_doc: dict, shift_index: int) -> dict:
         "title": target_title,
         "changed_title": current_title != target_title,
         "times_changed": False,
+        "shift_code_changed": False,
     }
 
 
