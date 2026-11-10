@@ -55,7 +55,9 @@
 .confirmation-calendar-event.awaiting{background:#fee2e2;border-left-color:#b91c1c;color:#7f1d1d}
 .confirmation-calendar-event strong{display:block;font-size:.64rem}
 @media(max-width:560px){.confirmation-action-bar{gap:4px}.confirmation-top-btn{padding:8px 4px!important;font-size:.66rem!important}.confirmation-calendar-grid{grid-template-columns:repeat(7,132px);min-width:924px}.confirmation-calendar-toolbar{grid-template-columns:34px minmax(0,1fr) auto 34px}}
-</style></head><body data-environment="__OPSGUARD_ENV__">
+#calendar-preview-table .calendar-venue-editor{min-width:120px;width:100%;padding:6px 7px;font-size:.78rem}
+#calendar-preview-table .calendar-venue-reference{display:block;margin-top:3px;font-size:.58rem;color:#64748b;white-space:normal}
+@media(max-width:699px){#calendar-preview-table .calendar-venue-editor{font-size:16px;padding:8px 7px}#calendar-preview-table .calendar-venue-reference{font-size:.66rem}}</style></head><body data-environment="__OPSGUARD_ENV__">
 <header><h1>OpsGuard Portal <span class="env-badge" id="env-badge">STAGING</span></h1><div class="nav-row">
 <button class="nav-btn" id="nav-login" onclick="showSection('login')">Login</button>
 <button class="nav-btn" id="nav-submit" onclick="showSection('submit')">Submit Hours</button>
@@ -189,7 +191,7 @@
 <button class="primary secondary" onclick="clearScheduleGuardSelection()" type="button">Clear guard selection</button>
 </div>
 </div>
-<p class="small">Google Calendar stays read-only here. Start times default to the Calendar time and can be edited in 12-hour format using 00, 15, 30 or 45 minutes. Your edited OpsGuard time is kept through preview refreshes; Google Calendar remains unchanged. Previewed Calendar end times are reference only; OpsGuard leaves the end time TBD.</p>
+<p class="small">Google Calendar stays read-only here. Start times and the guard-facing venue can be edited before sending. Venue can be set to Blank (hide venue). Your OpsGuard edits are kept through preview refreshes; Google Calendar remains unchanged. Previewed Calendar end times are reference only; OpsGuard leaves the end time TBD.</p>
 </div>
 </div></div><div class="card hidden admin-standalone-page" id="section-admin-payroll"><div class="dash-section" id="dashboard-payroll">
 <div class="dashboard-panel-head">
@@ -1187,6 +1189,7 @@ function initCalendarPreviewDates(){
 }
 let calendarPreviewCache=[];
 const calendarPreviewStartOverrides=new Map();
+const calendarPreviewVenueOverrides=new Map();
 function calendarPreviewRowKey(row){
   const calendarId=String(row&&row.calendar_id||"").trim();
   const eventId=String(row&&row.google_event_id||"").trim();
@@ -1194,7 +1197,7 @@ function calendarPreviewRowKey(row){
   return [
     calendarId,
     String(row&&row.date||"").trim(),
-    String(row&&row.venue||"").trim(),
+    String(row&&row._calendar_original_venue||row&&row.venue||"").trim(),
     String(row&&row.shift_code||"").trim(),
     String(row&&row.calendar_start_time||row&&row.start_time||"").trim()
   ].join("::");
@@ -1294,6 +1297,22 @@ function updateCalendarPreviewStartTimeParts(index){
   row.start_time=Number(hour)+":"+minute+" "+ampm;
   calendarPreviewStartOverrides.set(calendarPreviewRowKey(row),row.start_time);
 }
+function calendarEscapeHtml(value){
+  return String(value==null?"":value)
+    .replace(/&/g,"&amp;")
+    .replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;")
+    .replace(/'/g,"&#39;");
+}
+function updateCalendarPreviewVenue(index,value){
+  const row=calendarPreviewCache[Number(index)];
+  if(!row)return;
+  if(row._calendar_original_venue===undefined)row._calendar_original_venue=row.venue||"";
+  const key=calendarPreviewRowKey(row);
+  row.venue=String(value==null?"":value);
+  calendarPreviewVenueOverrides.set(key,row.venue);
+}
 function renderCalendarPreviewTable(){
   const wrap=document.getElementById("calendar-preview-wrap"),tbody=document.querySelector("#calendar-preview-table tbody");
   if(!wrap||!tbody)return;
@@ -1315,19 +1334,29 @@ function renderCalendarPreviewTable(){
   visible.forEach(function(item){
     const row=item.row,index=item.index;
     if(!row._calendar_original_start_time)row._calendar_original_start_time=row.start_time||"";
+    if(row._calendar_original_venue===undefined)row._calendar_original_venue=row.venue||"";
     const tr=document.createElement("tr");
     tr.className="calendar-preview-row";
     const slot=(row.calendar_duration_minutes==null?"Unknown":row.calendar_duration_minutes+" min")+(row.requires_end_time_review?" ⚠":"");
     const parts=calendarDisplayToParts(row.start_time||row._calendar_original_start_time||"");
     const original=row._calendar_original_start_time||row.start_time||"";
+    const originalVenue=row._calendar_original_venue||"";
     const hourOptions=Array.from({length:12},(_,i)=>String(i+1)).map(v=>"<option value='"+v+"' "+(parts.hour===v?"selected":"")+">"+v+"</option>").join("");
     const minuteValues=["00","15","30","45"];
     const minuteOptions=minuteValues.map(v=>"<option value='"+v+"' "+(parts.minute===v?"selected":"")+">"+v+"</option>").join("");
     const ampmOptions=["AM","PM"].map(v=>"<option value='"+v+"' "+(parts.ampm===v?"selected":"")+">"+v+"</option>").join("");
+    const venueValues=[...FIXED_VENUES];
+    if(originalVenue&&!venueValues.includes(originalVenue))venueValues.push(originalVenue);
+    if(row.venue&&!venueValues.includes(row.venue))venueValues.push(row.venue);
+    const venueOptions="<option value='' "+(row.venue===""?"selected":"")+">Blank (hide venue)</option>"
+      +venueValues.map(v=>{
+        const safe=calendarEscapeHtml(v);
+        return "<option value=\""+safe+"\" "+(row.venue===v?"selected":"")+">"+safe+"</option>";
+      }).join("");
     tr.innerHTML=
       "<td class='calendar-preview-select-cell' data-label='Select' style='text-align:center'><input class='calendar-preview-select' type='checkbox' data-index='"+index+"' onchange='updateCalendarActionButtons()'></td>"
       +"<td data-label='Date'>"+(row.date||"")+"</td>"
-      +"<td data-label='Venue'>"+(row.venue||"")+"</td>"
+      +"<td class='calendar-preview-venue-cell' data-label='Venue'><select class='calendar-venue-editor' aria-label='Guard-facing venue' onchange='updateCalendarPreviewVenue("+index+",this.value)'>"+venueOptions+"</select><span class='calendar-venue-reference'>Calendar: "+calendarEscapeHtml(originalVenue||"Not specified")+"</span></td>"
       +"<td data-label='Shift'><strong>"+(row.shift_code||"")+"</strong></td>"
       +"<td data-label='Calendar guard'>"+(row.guard||"Unassigned")+"</td>"
       +"<td class='calendar-preview-start-cell' data-label='Start time'><div class='calendar-start-editor' data-index='"+index+"'><select class='calendar-start-hour' aria-label='Start hour' onchange='updateCalendarPreviewStartTimeParts("+index+")'>"+hourOptions+"</select><select class='calendar-start-minute' aria-label='Start minute' onchange='updateCalendarPreviewStartTimeParts("+index+")'>"+minuteOptions+"</select><select class='calendar-start-ampm' aria-label='AM or PM' onchange='updateCalendarPreviewStartTimeParts("+index+")'>"+ampmOptions+"</select></div><span class='calendar-start-reference'>Calendar: "+original+"</span></td>"
@@ -1362,8 +1391,11 @@ function renderCalendarPreview(items){
   calendarPreviewCache=(Array.isArray(items)?items:[]).map(function(row){
     const copy={...row};
     copy._calendar_original_start_time=copy.start_time||"";
-    const override=calendarPreviewStartOverrides.get(calendarPreviewRowKey(copy));
-    if(override)copy.start_time=override;
+    copy._calendar_original_venue=copy.venue||"";
+    const key=calendarPreviewRowKey(copy);
+    const timeOverride=calendarPreviewStartOverrides.get(key);
+    if(timeOverride)copy.start_time=timeOverride;
+    if(calendarPreviewVenueOverrides.has(key))copy.venue=calendarPreviewVenueOverrides.get(key);
     return copy;
   });
   renderCalendarShiftFilterOptions();
