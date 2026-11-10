@@ -1443,6 +1443,39 @@ async function previewGoogleCalendarShifts(){
   }
 }
 
+function isTransientScheduleSendError(error){
+  if(!error)return false;
+  if(error.status)return false;
+  const name=String(error.name||"").toLowerCase();
+  const message=String(error.message||error||"").toLowerCase();
+  return name==="aborterror"
+    ||message.includes("abort")
+    ||message.includes("failed to fetch")
+    ||message.includes("network")
+    ||message.includes("load failed")
+    ||message.includes("fetch failed");
+}
+async function sendSchedulePayloadWithRetry(payload){
+  let lastError=null;
+  for(let attempt=1;attempt<=2;attempt++){
+    try{
+      const saved=await rawApi("/schedules",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify(payload),
+        silent:true,
+        timeoutMs:60000
+      });
+      return {saved,retried:attempt>1};
+    }catch(e){
+      lastError=e;
+      if(attempt>=2||!isTransientScheduleSendError(e))throw e;
+      await new Promise(resolve=>setTimeout(resolve,750));
+    }
+  }
+  throw lastError;
+}
+
 async function sendSelectedCalendarShiftsDirect(){
   const st=document.getElementById("calendar-sync-status");
   if(!authToken){if(st)st.textContent="Login first.";return;}
@@ -1474,10 +1507,12 @@ async function sendSelectedCalendarShiftsDirect(){
   const results=[];
   for(const g of guards){
     try{
+      if(st)st.textContent="Sending schedule to "+(g.name||g.email)+"…";
       const payload={guard:g.name||g.email,guard_id:g.id||null,note,shifts:shifts.map(s=>({...s,guard:g.name||g.email}))};
-      const saved=await rawApi("/schedules",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload),silent:true});
+      const outcome=await sendSchedulePayloadWithRetry(payload);
+      const saved=outcome.saved;
       results.push({
-        guard:g,ok:true,created:saved&&saved.created!==false,
+        guard:g,ok:true,retried:!!outcome.retried,created:saved&&saved.created!==false,
         createdShifts:Array.isArray(saved&&saved.shifts)?saved.shifts.length:0,
         skipped:Number(saved&&saved.skipped_duplicates||0),
         updated:Number(saved&&saved.updated_existing||0),
@@ -1489,6 +1524,7 @@ async function sendSelectedCalendarShiftsDirect(){
   }
 
   const sent=results.filter(r=>r.ok&&r.created),failed=results.filter(r=>!r.ok);
+  const recovered=results.filter(r=>r.ok&&r.retried).length;
   const createdShifts=results.reduce((n,r)=>n+Number(r.createdShifts||0),0);
   const skipped=results.reduce((n,r)=>n+Number(r.skipped||0),0);
   const updated=results.reduce((n,r)=>n+Number(r.updated||0),0);
@@ -1497,10 +1533,11 @@ async function sendSelectedCalendarShiftsDirect(){
   const accounted=createdShifts+updated+skipped+locked;
   const summary=expected+" selected assignment"+(expected===1?"":"s")+": "
     +createdShifts+" new, "+updated+" revised, "+skipped+" already unchanged, "+locked+" confirmed/locked"
+    +(recovered?"; "+recovered+" guard send"+(recovered===1?"":"s")+" recovered after retry":"")
     +(failed.length?"; "+failed.length+" guard send failed":"")
     +(accounted<expected&&!failed.length?"; "+(expected-accounted)+" not accounted for":"")+".";
 
-  if(sent.length||updated){
+  if(sent.length||updated||recovered){
     clearCalendarPreviewShiftSelection();
     await loadAdminScheduleConfirmations();
     await loadAdminDashboard();
