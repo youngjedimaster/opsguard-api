@@ -1203,6 +1203,7 @@ function calendarPreviewRowKey(row){
   ].join("::");
 }
 let calendarPreviewLoading=false;
+let calendarSendLoading=false;
 let calendarPreviewShiftFilters=new Set();
 
 function calendarShiftCode(row){
@@ -1374,16 +1375,25 @@ function updateCalendarActionButtons(){
   const sendBtn=document.getElementById("calendar-send-selected-btn");
   const hasRows=visibleCalendarPreviewRows().length>0;
   const hasSelected=!!document.querySelector(".calendar-preview-select:checked");
-  if(previewBtn)previewBtn.disabled=calendarPreviewLoading;
-  if(selectAllBtn)selectAllBtn.disabled=calendarPreviewLoading||!hasRows;
-  if(clearBtn)clearBtn.disabled=calendarPreviewLoading||!hasSelected;
-  if(sendBtn)sendBtn.disabled=calendarPreviewLoading||!hasSelected;
+  if(previewBtn)previewBtn.disabled=calendarPreviewLoading||calendarSendLoading;
+  if(selectAllBtn)selectAllBtn.disabled=calendarPreviewLoading||calendarSendLoading||!hasRows;
+  if(clearBtn)clearBtn.disabled=calendarPreviewLoading||calendarSendLoading||!hasSelected;
+  if(sendBtn)sendBtn.disabled=calendarPreviewLoading||calendarSendLoading||!hasSelected;
 }
 
 function setCalendarPreviewLoading(loading){
   calendarPreviewLoading=!!loading;
   const previewBtn=document.getElementById("calendar-preview-btn");
   if(previewBtn)previewBtn.textContent=calendarPreviewLoading?"Previewing Calendar Shifts…":"1. Preview Calendar Shifts";
+  updateCalendarActionButtons();
+}
+function setCalendarSendLoading(loading,label){
+  calendarSendLoading=!!loading;
+  const sendBtn=document.getElementById("calendar-send-selected-btn");
+  if(sendBtn){
+    sendBtn.textContent=calendarSendLoading?(label||"Sending…"):"3. Send Selected Shifts";
+    sendBtn.setAttribute("aria-busy",calendarSendLoading?"true":"false");
+  }
   updateCalendarActionButtons();
 }
 
@@ -1478,9 +1488,9 @@ async function sendSchedulePayloadWithRetry(payload){
 
 async function sendSelectedCalendarShiftsDirect(){
   const st=document.getElementById("calendar-sync-status");
+  if(calendarSendLoading)return;
   if(!authToken){if(st)st.textContent="Login first.";return;}
   if(currentUserRole!=="admin"){if(st)st.textContent="Admin access is required.";return;}
-  if(!Object.keys(adminUserMap||{}).length)await loadAdminUsers();
 
   const rows=selectedCalendarPreviewRows();
   const guards=selectedScheduleGuards();
@@ -1503,49 +1513,65 @@ async function sendSelectedCalendarShiftsDirect(){
   const label=rows.length+" selected shift"+(rows.length===1?"":"s")+" to "+guards.length+" guard"+(guards.length===1?"":"s");
   if(!(await confirmAction("Send "+label+"? Each selected guard receives their own OpsGuard schedule. Google Calendar will not be changed.","Send Selected Shifts")))return;
 
-  if(st)st.textContent="Sending "+label+"…";
+  setCalendarSendLoading(true,"Sending…");
+  if(st)st.textContent="Preparing "+label+"…";
   const results=[];
-  for(const g of guards){
-    try{
-      if(st)st.textContent="Sending schedule to "+(g.name||g.email)+"…";
-      const payload={guard:g.name||g.email,guard_id:g.id||null,note,shifts:shifts.map(s=>({...s,guard:g.name||g.email}))};
-      const outcome=await sendSchedulePayloadWithRetry(payload);
-      const saved=outcome.saved;
-      results.push({
-        guard:g,ok:true,retried:!!outcome.retried,created:saved&&saved.created!==false,
-        createdShifts:Array.isArray(saved&&saved.shifts)?saved.shifts.length:0,
-        skipped:Number(saved&&saved.skipped_duplicates||0),
-        updated:Number(saved&&saved.updated_existing||0),
-        locked:Number(saved&&saved.locked_duplicates||0)
-      });
-    }catch(e){
-      results.push({guard:g,ok:false,error:e&&e.message?e.message:String(e)});
+  try{
+    if(!Object.keys(adminUserMap||{}).length){
+      if(st)st.textContent="Preparing guard list…";
+      await loadAdminUsers();
     }
-  }
 
-  const sent=results.filter(r=>r.ok&&r.created),failed=results.filter(r=>!r.ok);
-  const recovered=results.filter(r=>r.ok&&r.retried).length;
-  const createdShifts=results.reduce((n,r)=>n+Number(r.createdShifts||0),0);
-  const skipped=results.reduce((n,r)=>n+Number(r.skipped||0),0);
-  const updated=results.reduce((n,r)=>n+Number(r.updated||0),0);
-  const locked=results.reduce((n,r)=>n+Number(r.locked||0),0);
-  const expected=rows.length*guards.length;
-  const accounted=createdShifts+updated+skipped+locked;
-  const summary=expected+" selected assignment"+(expected===1?"":"s")+": "
-    +createdShifts+" new, "+updated+" revised, "+skipped+" already unchanged, "+locked+" confirmed/locked"
-    +(recovered?"; "+recovered+" guard send"+(recovered===1?"":"s")+" recovered after retry":"")
-    +(failed.length?"; "+failed.length+" guard send failed":"")
-    +(accounted<expected&&!failed.length?"; "+(expected-accounted)+" not accounted for":"")+".";
+    for(let guardIndex=0;guardIndex<guards.length;guardIndex++){
+      const g=guards[guardIndex];
+      try{
+        const guardName=g.name||g.email;
+        setCalendarSendLoading(true,"Sending "+(guardIndex+1)+"/"+guards.length+"…");
+        if(st)st.textContent="Sending to "+guardName+" ("+(guardIndex+1)+" of "+guards.length+")…";
+        const payload={guard:guardName,guard_id:g.id||null,note,shifts:shifts.map(s=>({...s,guard:guardName}))};
+        const outcome=await sendSchedulePayloadWithRetry(payload);
+        const saved=outcome.saved;
+        results.push({
+          guard:g,ok:true,retried:!!outcome.retried,created:saved&&saved.created!==false,
+          createdShifts:Array.isArray(saved&&saved.shifts)?saved.shifts.length:0,
+          skipped:Number(saved&&saved.skipped_duplicates||0),
+          updated:Number(saved&&saved.updated_existing||0),
+          locked:Number(saved&&saved.locked_duplicates||0)
+        });
+      }catch(e){
+        results.push({guard:g,ok:false,error:e&&e.message?e.message:String(e)});
+      }
+    }
 
-  if(sent.length||updated||recovered){
-    clearCalendarPreviewShiftSelection();
-    await loadAdminScheduleConfirmations();
-    await loadAdminDashboard();
-    await previewGoogleCalendarShifts();
+    const sent=results.filter(r=>r.ok&&r.created),failed=results.filter(r=>!r.ok);
+    const recovered=results.filter(r=>r.ok&&r.retried).length;
+    const createdShifts=results.reduce((n,r)=>n+Number(r.createdShifts||0),0);
+    const skipped=results.reduce((n,r)=>n+Number(r.skipped||0),0);
+    const updated=results.reduce((n,r)=>n+Number(r.updated||0),0);
+    const locked=results.reduce((n,r)=>n+Number(r.locked||0),0);
+    const expected=rows.length*guards.length;
+    const accounted=createdShifts+updated+skipped+locked;
+    const summary=expected+" selected assignment"+(expected===1?"":"s")+": "
+      +createdShifts+" new, "+updated+" revised, "+skipped+" already unchanged, "+locked+" confirmed/locked"
+      +(recovered?"; "+recovered+" guard send"+(recovered===1?"":"s")+" recovered after retry":"")
+      +(failed.length?"; "+failed.length+" guard send failed":"")
+      +(accounted<expected&&!failed.length?"; "+(expected-accounted)+" not accounted for":"")+".";
+
+    if(sent.length||updated||recovered){
+      clearCalendarPreviewShiftSelection();
+      await loadAdminScheduleConfirmations();
+      await loadAdminDashboard();
+      await previewGoogleCalendarShifts();
+    }
+    if(st)st.textContent=summary;
+    if(locked||skipped||failed.length||accounted<expected)alert("Schedule send result: "+summary);
+    if(failed.length)alert("Some schedules could not be sent: "+failed.map(r=>(r.guard.name||r.guard.email)+": "+r.error).join(" | "));
+  }catch(e){
+    if(st)st.textContent="Schedule send could not start: "+(e&&e.message?e.message:String(e));
+    alert("Schedule send could not start: "+(e&&e.message?e.message:String(e)));
+  }finally{
+    setCalendarSendLoading(false);
   }
-  if(st)st.textContent=summary;
-  if(locked||skipped||failed.length||accounted<expected)alert("Schedule send result: "+summary);
-  if(failed.length)alert("Some schedules could not be sent: "+failed.map(r=>(r.guard.name||r.guard.email)+": "+r.error).join(" | "));
 }
 
 async function importSelectedCalendarDrafts(){
