@@ -1551,10 +1551,6 @@ async def _export_one(db, schedule_doc: dict, shift_index: int) -> dict:
     if calendar_shift_code.upper() != shift_code:
         raise HTTPException(status_code=409, detail=f"Linked Calendar event is {calendar_shift_code}, not {shift_code}; no change was made")
 
-    event_venue = _event_venue(event, calendar_id)
-    if event_venue and venue and event_venue != venue:
-        raise HTTPException(status_code=409, detail=f"Linked Calendar event belongs to {event_venue}, not {venue}; no change was made")
-
     start_raw, end_raw = _event_bounds(event)
     stored_start = str(shift.get("calendar_start_time") or "").strip()
     stored_end = str(shift.get("calendar_end_time") or "").strip()
@@ -1563,9 +1559,11 @@ async def _export_one(db, schedule_doc: dict, shift_index: int) -> dict:
     if stored_end and end_raw and stored_end != end_raw:
         raise HTTPException(status_code=409, detail="Linked Calendar event end time changed since OpsGuard imported it; no change was made")
 
-    # Preserve the Calendar event's own S-number token. PATCH_EVENT receives only
-    # a summary/title field, so Google start/end times are never written here.
-    target_title = _assignment_title(event, venue, calendar_shift_code, guard)
+    # Preserve the Calendar event's own S-number token and title convention.
+    # The OpsGuard shift venue is guard-facing/editable, so title formatting must
+    # come from the original linked Calendar event/calendar, not the edited venue.
+    calendar_venue = _event_venue(event, calendar_id) or ""
+    target_title = _assignment_title(event, calendar_venue, calendar_shift_code, guard)
     if current_title != target_title:
         await _execute(
             "GOOGLECALENDAR_PATCH_EVENT",

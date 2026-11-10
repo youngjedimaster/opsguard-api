@@ -365,6 +365,38 @@ async def admin_delete_schedule_shift(
     return serialize_schedule(updated)
 
 
+@router.patch("/{schedule_id}/shifts/{shift_index}/venue")
+async def admin_update_schedule_shift_venue(
+    schedule_id: str,
+    shift_index: int,
+    payload: dict,
+    admin=Depends(get_admin_user),
+    db=Depends(get_db),
+):
+    """Admin-only guard-facing venue edit. Does not change assignment state or Google Calendar linkage."""
+    if not ObjectId.is_valid(schedule_id):
+        raise HTTPException(status_code=400, detail="Invalid schedule id")
+    doc = await db.schedules.find_one({"_id": ObjectId(schedule_id)})
+    if not doc:
+        raise HTTPException(status_code=404, detail="Schedule not found")
+    shifts = doc.get("shifts") or []
+    if not 0 <= shift_index < len(shifts):
+        raise HTTPException(status_code=404, detail="Shift not found in schedule")
+    venue = str((payload or {}).get("venue") or "").strip()
+    if len(venue) > 120:
+        raise HTTPException(status_code=400, detail="Venue is too long")
+    now = datetime.utcnow()
+    await db.schedules.update_one(
+        {"_id": doc["_id"]},
+        {"$set": {
+            f"shifts.{shift_index}.venue": venue,
+            f"shifts.{shift_index}.venue_updated_at": now,
+            "updated_at": now,
+        }},
+    )
+    return serialize_schedule(await db.schedules.find_one({"_id": doc["_id"]}))
+
+
 @router.post("/{schedule_id}/confirm")
 async def admin_confirm_schedule(
     schedule_id: str,
