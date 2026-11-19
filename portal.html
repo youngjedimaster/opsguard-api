@@ -1934,9 +1934,11 @@ function renderAdminShifts(data){
     return;
   }
   rows.sort(function(a,b){
+    // Every Payroll view and filtered queue shows the newest shift first.
+    const newestFirst=parseShiftDateTime(b)-parseShiftDateTime(a);
+    if(newestFirst!==0)return newestFirst;
     const ga=String(getGuardLabel(a)||"").toLowerCase(),gb=String(getGuardLabel(b)||"").toLowerCase();
-    if(ga!==gb)return ga.localeCompare(gb);
-    return String(a.date||"").localeCompare(String(b.date||""));
+    return ga.localeCompare(gb);
   });
   adminFilteredShifts=rows;
   if(batchMode)pruneNeedsApprovalSelectionToVisible();else adminNeedsApprovalSelectedIds.clear();
